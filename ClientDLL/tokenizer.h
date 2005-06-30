@@ -22,17 +22,17 @@
 
 class CTokenizer
 {
-public:
-	CTokenizer(const CStdString& cs, const CStdString& csDelim);
-	void SetDelimiters(const CStdString& csDelim);
+  public:
+    CTokenizer(const CStdString & cs, const CStdString & csDelim);
+    void SetDelimiters(const CStdString & csDelim);
 
-	bool Next(CStdString& cs);
-	CStdString	Tail() const;
+    bool Next(CStdString & cs);
+    CStdString Tail() const;
 
-private:
-	CStdString m_cs;
-	std::bitset<256> m_delim;
-	int m_nCurPos;
+  private:
+      CStdString m_cs;
+      std::bitset < 256 > m_delim;
+    int m_nCurPos;
 };
 
-#endif  // !defined(__TOKENIZER_H__)
+#endif // !defined(__TOKENIZER_H__)

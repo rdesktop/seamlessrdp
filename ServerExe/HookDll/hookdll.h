@@ -20,7 +20,7 @@
 //Hooking
 typedef void (*SETHOOKS) ();
 typedef void (*REMOVEHOOKS) ();
-typedef int  (*GETINSTANCECOUNT) ();
+typedef int (*GETINSTANCECOUNT) ();
 
 //Terminal Server
 int OpenVirtualChannel();
@@ -29,4 +29,3 @@ int ChannelIsOpen();
 int WriteToChannel(PCHAR buffer);
 
 #endif
-

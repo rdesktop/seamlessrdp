@@ -50,16 +50,16 @@
 // GLOBAL variables
 //
 
-LPHANDLE              gphChannel;
-DWORD                 gdwOpenChannel;
+LPHANDLE gphChannel;
+DWORD gdwOpenChannel;
 PCHANNEL_ENTRY_POINTS gpEntryPoints;
 
 hash_table m_ht;
 HRGN m_regionResult;
 HWND m_mainWindowHandle = NULL;
-int classAlreadyRegistered=0;
+int classAlreadyRegistered = 0;
 
-int const ALWAYS__CLIP = 0;//set this to 0 to turn off clipping when there are no windows
+int const ALWAYS__CLIP = 0;     //set this to 0 to turn off clipping when there are no windows
 int const HIDE_TSAC_WINDOW = 1;
 int const OUTPUT_DEBUG_INFO = 0;
 int const OUTPUT_WINDOW_TABLE_DEBUG_INFO = 0;
@@ -67,12 +67,15 @@ int const OUTPUT_WINDOW_TABLE_DEBUG_INFO = 0;
 //
 // declarations
 //
-void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event, LPVOID pdata, UINT32 dataLength, UINT32 totalLength, UINT32 dataFlags);
-VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event, LPVOID pData, UINT dataLength);
+void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
+                                    LPVOID pdata, UINT32 dataLength,
+                                    UINT32 totalLength, UINT32 dataFlags);
+VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
+                                           LPVOID pData, UINT dataLength);
 BOOL VCAPITYPE VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints);
 
 void DoClipping(int forceRedraw);
-void CreateRegionFromWindowData(char *,void *);
+void CreateRegionFromWindowData(char *, void *);
 
-void CreateAndShowWindow(CWindowData* wd);
-void DestroyTaskbarWindow(CWindowData* wd);
+void CreateAndShowWindow(CWindowData * wd);
+void DestroyTaskbarWindow(CWindowData * wd);
