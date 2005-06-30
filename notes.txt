@@ -1,0 +1,33 @@
+todo:
+-----
+
+<WINDOW WORK>
+-support dos boxes/special cases (see: http://www.macadamian.com/column/windowshooks.html)
+
+<TASKBAR WORK>
+-maximise implementation
+-'un-maximise' implementation
+-minimise implementation
+-min/max of windows works with items on the taskbar
+-when window title changes on server, change it on client as well
+
+<BUGS>
+-find out why ALWAYS_CLIP does not work when opening with client from wnd
+
+<CODE TIDY>
+-check memory alloc on server and client code
+
+<IMPROVEMENTS>
+-incremental move needs work (only use region for window being modified)
+-refresh of window being done too often
+-when closing down, send message to turn off clipping (any open windows will be closed
+ by the OS, send a window destroyed message and clipping)
+-set current directory from parameter
+
+Limitations:
+------------
+
+-Must run in fullscreen mode. Client screen res must be set to a compatable TS screen res.
+-Must not display 'conection bar' in full screen mode.
+-Does not currently handle certain special types of window (DOS boxes)
+-need to have 'show window contents while dragging' 

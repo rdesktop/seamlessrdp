@@ -1,0 +1,5 @@
+LIBRARY TSWindowClipper
+
+EXPORTS
+        VirtualChannelEntry @1
+
