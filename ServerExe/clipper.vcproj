@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="TSWinSender"
+	Name="ServerExe"
 	ProjectGUID="{4C27EA74-3453-4222-BDD2-37C3B90438D2}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -141,9 +141,6 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\seamlessrdpshell.rc">
-		</File>
-		<File
 			RelativePath=".\hookdll\hook.cpp">
 		</File>
 		<File
@@ -157,6 +154,9 @@
 		</File>
 		<File
 			RelativePath=".\resource.h">
+		</File>
+		<File
+			RelativePath=".\seamlessrdpshell.rc">
 		</File>
 	</Files>
 	<Globals>
