@@ -156,7 +156,7 @@
 			RelativePath=".\resource.h">
 		</File>
 		<File
-			RelativePath=".\seamlessrdpshell.rc">
+			RelativePath=".\clipper.rc">
 		</File>
 	</Files>
 	<Globals>
