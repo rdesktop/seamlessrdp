@@ -1,5 +1,5 @@
 REGEDIT4
 
-[HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client\Default\AddIns\TSWindowClipper]
-"Name" = "TSWindowClipper.dll"
+[HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client\Default\AddIns\seamlessrdp]
+"Name" = "seamlessrdp.dll"
 

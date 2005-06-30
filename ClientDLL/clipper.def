@@ -1,4 +1,4 @@
-LIBRARY TSWindowClipper
+LIBRARY seamlessrdp
 
 EXPORTS
         VirtualChannelEntry @1

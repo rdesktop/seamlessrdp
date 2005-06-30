@@ -32,15 +32,15 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/TSWindowClipper.dll"
+				OutputFile="$(OutDir)/seamlessrdp.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				ModuleDefinitionFile="clipper.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/TSWindowClipper.pdb"
+				ProgramDatabaseFile="$(OutDir)/seamlessrdp.pdb"
 				SubSystem="2"
 				BaseAddress="0x1C000000"
-				ImportLibrary="$(OutDir)/TSWindowClipper.lib"
+				ImportLibrary="$(OutDir)/seamlessrdp.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -89,16 +89,16 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/TSWindowClipper.dll"
+				OutputFile="$(OutDir)/seamlessrdp.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="clipper.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/TSWindowClipper.pdb"
+				ProgramDatabaseFile="$(OutDir)/seamlessrdp.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				BaseAddress="0x1C000000"
-				ImportLibrary="$(OutDir)/TSWindowClipper.lib"
+				ImportLibrary="$(OutDir)/seamlessrdp.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
