@@ -1,16 +1,20 @@
-Microsoft Visual Studio Solution File, Format Version 7.00
+Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TSWinSender", "ServerExe\clipper.vcproj", "{4C27EA74-3453-4222-BDD2-37C3B90438D2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookDll", "ServerExe\HookDll\hookDll.vcproj", "{8B343CDF-D7F6-480A-83B8-7F534675FFE6}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClientDLL", "ClientDLL\TSWindowClipper.vcproj", "{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
-		ConfigName.0 = Debug
-		ConfigName.1 = Release
-	EndGlobalSection
-	GlobalSection(ProjectDependencies) = postSolution
+		Debug = Debug
+		Release = Release
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{4C27EA74-3453-4222-BDD2-37C3B90438D2}.Debug.ActiveCfg = Debug|Win32
@@ -27,7 +31,7 @@ Global
 		{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
-		Item:1 = notes.txt
+		notes.txt = notes.txt
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
