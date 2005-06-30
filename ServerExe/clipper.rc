@@ -86,7 +86,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,33,56,50,14
     GROUPBOX        "",IDC_STATIC,0,0,124,81
     CTEXT           " 0.1",IDC_STATIC,18,41,82,8
-    CTEXT           "WTS Window Clipper",IDC_STATIC,19,27,82,8
+    CTEXT           "seamlessrdp",IDC_STATIC,19,27,82,8
 END
 
 #endif    // German (Germany) resources
