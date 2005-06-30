@@ -1,0 +1,5 @@
+#!/bin/sh
+indent -i4 -br -npcs -npsl -nut \
+    ClientDLL/*.cpp ClientDLL/*.h \
+    ServerExe/*.cpp ServerExe/*.h \
+    ServerExe/HookDll/*.cpp ServerExe/HookDll/*.h
