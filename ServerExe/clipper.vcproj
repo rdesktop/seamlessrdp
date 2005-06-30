@@ -26,7 +26,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile="Debug/clipper.pch"
+				PrecompiledHeaderFile="Debug/seamlessrdpshell.pch"
 				AssemblerListingLocation="Debug/"
 				ObjectFile="Debug/"
 				ProgramDataBaseFileName="Debug/"
@@ -39,11 +39,11 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies=""
-				OutputFile="Debug/clipper.exe"
+				OutputFile="Debug/seamlessrdpshell.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="Debug/clipper.pdb"
+				ProgramDatabaseFile="Debug/seamlessrdpshell.pdb"
 				SubSystem="2"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -51,7 +51,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName="d:\Debug/clipper.tlb"/>
+				TypeLibraryName="d:\Debug/seamlessrdpshell.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="copy &quot;$(targetPath)&quot;  &quot;$(SolutionDir)\build\&quot;"/>
@@ -90,7 +90,7 @@
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/clipper.pch"
+				PrecompiledHeaderFile=".\Release/seamlessrdpshell.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -102,10 +102,10 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies=""
-				OutputFile=".\Release/clipper.exe"
+				OutputFile=".\Release/seamlessrdpshell.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/clipper.pdb"
+				ProgramDatabaseFile=".\Release/seamlessrdpshell.pdb"
 				SubSystem="2"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -113,7 +113,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/clipper.tlb"/>
+				TypeLibraryName=".\Release/seamlessrdpshell.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="copy &quot;$(targetPath)&quot;  &quot;$(SolutionDir)\build\&quot;"/>
@@ -141,7 +141,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath=".\clipper.rc">
+			RelativePath=".\seamlessrdpshell.rc">
 		</File>
 		<File
 			RelativePath=".\hookdll\hook.cpp">

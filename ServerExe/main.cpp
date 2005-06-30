@@ -1,6 +1,6 @@
 //*********************************************************************************
 //
-//Title: Terminal Services Window Clipper
+//Title: SeamlessRDP Shell
 //
 //Author: Martin Wickett
 //
@@ -21,14 +21,14 @@ NOTIFYICONDATA		nid;
 HINSTANCE			hAppInstance;
 
 static const UINT WM_TRAY_NOTIFY	= (WM_APP + 1000);
-static const char szAppName[]		= "Terminal Services Window Clipper";
+static const char szAppName[]		= "SeamlessRDP Shell";
 
 //
 // spawn a message box
 //
 void Message(const char* message)
 {
-	MessageBox(GetDesktopWindow(),message,"TS Window Clipper", MB_OK);
+	MessageBox(GetDesktopWindow(),message,"SeamlessRDP Shell", MB_OK);
 }
 
 //

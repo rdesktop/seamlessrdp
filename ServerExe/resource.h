@@ -1,6 +1,6 @@
 //*********************************************************************************
 //
-//Title: Terminal Services Window Clipper
+//Title: SeamlessRDP Shell
 //
 //Author: Martin Wickett
 //

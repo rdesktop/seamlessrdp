@@ -63,7 +63,7 @@ IDI_TRAY                ICON                    "icon.ico"
 
 IDR_TRAY MENU 
 BEGIN
-    POPUP "&Terminal Services Window Clipper"
+    POPUP "&SeamlessRDP Shell"
     BEGIN
         MENUITEM "&About",                      ID_WMABOUT
         MENUITEM "&Exit",                       ID_WMEXIT
