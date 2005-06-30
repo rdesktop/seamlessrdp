@@ -47,7 +47,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="copy &quot;$(targetPath)&quot;  &quot;$(SolutionDir)\build\&quot;
-copy &quot;$(TargetPath)&quot;  C:\WINDOWS\SYSTEM32
+
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
