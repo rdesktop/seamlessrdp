@@ -1,12 +1,6 @@
-//*********************************************************************************
 //
-//Title: SeamlessRDP Shell
+// Copyright (C) 2004-2005 Martin Wickett
 //
-//Author: Martin Wickett
-//
-//Date: 2004
-//
-//*********************************************************************************
 
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.

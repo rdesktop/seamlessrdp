@@ -1,12 +1,6 @@
-//*********************************************************************************
 //
-//Title: Terminal Services Window Clipper
+// Copyright (C) 2004-2005 Martin Wickett
 //
-//Author: Martin Wickett
-//
-//Date: 2004
-//
-//*********************************************************************************
 
 #define VER_FILETYPE                VFT_DLL
 #define VER_FILESUBTYPE             VFT2_UNKNOWN
