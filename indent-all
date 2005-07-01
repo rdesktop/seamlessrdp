@@ -1,5 +1,6 @@
 #!/bin/sh
-indent -i4 -br -npcs -npsl -nut \
+astyle --style=linux -C -s4 --suffix=.astyle \
     ClientDLL/*.cpp ClientDLL/*.h \
     ServerExe/*.cpp ServerExe/*.h \
     ServerExe/HookDll/*.cpp ServerExe/HookDll/*.h
+rm ClientDLL/*.astyle ServerExe/*.astyle ServerExe/HookDll/*.astyle

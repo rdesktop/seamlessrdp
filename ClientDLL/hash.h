@@ -15,7 +15,8 @@ typedef struct bucket
     char *key;
     void *data;
     struct bucket *next;
-} bucket;
+}
+bucket;
 
 /*
 ** This is what you actually declare an instance of to create a table.
@@ -31,7 +32,8 @@ typedef struct hash_table
     size_t size;
     size_t count;               /* HW */
     bucket **table;
-} hash_table;
+}
+hash_table;
 
 /*
 ** This is used to construct the table.  If it doesn't succeed, it sets

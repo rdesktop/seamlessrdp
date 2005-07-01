@@ -27,22 +27,22 @@ bool WTSWinClipper::Init()
 
         // check number of instances
         if (!
-            (mGetInstanceCount =
-             (GETINSTANCECOUNT) GetProcAddress(mCbtDllHinst,
-                                               "GetInstanceCount")))
+                (mGetInstanceCount =
+                     (GETINSTANCECOUNT) GetProcAddress(mCbtDllHinst,
+                                                       "GetInstanceCount")))
             break;
 
 
         // get our hook function
         if (!
-            (mSetCbtHook =
-             (SETHOOKS) GetProcAddress(mCbtDllHinst, "SetCbtHook")))
+                (mSetCbtHook =
+                     (SETHOOKS) GetProcAddress(mCbtDllHinst, "SetCbtHook")))
             break;
 
         // get our unkook function
         if (!
-            (mRemoveCbtHook =
-             (REMOVEHOOKS) GetProcAddress(mCbtDllHinst, "RemoveCbtHook")))
+                (mRemoveCbtHook =
+                     (REMOVEHOOKS) GetProcAddress(mCbtDllHinst, "RemoveCbtHook")))
             break;
 
         // report success

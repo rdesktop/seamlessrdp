@@ -54,14 +54,13 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
 
     if (OUTPUT_DEBUG_INFO == 1) {
         OutputDebugString
-            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Virtual channel data received");
+        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Virtual channel data received");
         OutputDebugString(ourData);
     }
 
     if (dataLength == totalLength) {
         switch (event) {
-        case CHANNEL_EVENT_DATA_RECEIVED:
-            {
+        case CHANNEL_EVENT_DATA_RECEIVED: {
                 CTokenizer tok(_T((LPSTR) ourData), _T(";"));
                 CStdString cs;
 
@@ -83,12 +82,10 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
                     if (strcmp(msg, "ID") == 0) {
                         msgTok.Next(msg);
                         wid->SetId(msg);
-                    }
-                    else if (strcmp(msg, "TITLE") == 0) {
+                    } else if (strcmp(msg, "TITLE") == 0) {
                         msgTok.Next(msg);
                         wid->SetTitle(msg);
-                    }
-                    else if (strcmp(msg, "POS") == 0) {
+                    } else if (strcmp(msg, "POS") == 0) {
                         msgTok.Next(msg);
 
                         CStdString pos;
@@ -102,8 +99,7 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
 
                         if (strchr(pos, '-') == NULL) {
                             wid->SetX1(atoi(pos));
-                        }
-                        else {
+                        } else {
                             wid->SetX1(0);
                         }
 
@@ -111,8 +107,7 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
 
                         if (strchr(pos, '-') == NULL) {
                             wid->SetY1(atoi(pos));
-                        }
-                        else {
+                        } else {
                             wid->SetY1(0);
                         }
 
@@ -120,8 +115,7 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
 
                         if (strchr(pos, '-') == NULL) {
                             wid->SetX2(atoi(pos));
-                        }
-                        else {
+                        } else {
                             wid->SetX2(0);
                         }
 
@@ -129,12 +123,10 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
 
                         if (strchr(pos, '-') == NULL) {
                             wid->SetY2(atoi(pos));
-                        }
-                        else {
+                        } else {
                             wid->SetY2(0);
                         }
-                    }
-                    else if (strcmp(msg, "TYPE") == 0) {
+                    } else if (strcmp(msg, "TYPE") == 0) {
                         msgTok.Next(msg);
                         mixMaxType = atoi(msg);
                     }
@@ -143,7 +135,7 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
                 if (strcmp(messageType, "HSHELL_WINDOWCREATED") == 0) {
                     if (OUTPUT_DEBUG_INFO == 1) {
                         OutputDebugString
-                            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HSHELL_WINDOWCREATED window title is:");
+                        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HSHELL_WINDOWCREATED window title is:");
                         OutputDebugString(wid->GetTitle());
                     }
 
@@ -157,11 +149,10 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
                     CreateAndShowWindow(wid);
 
                     DoClipping(1);
-                }
-                else if (strcmp(messageType, "HSHELL_WINDOWDESTROYED") == 0) {
+                } else if (strcmp(messageType, "HSHELL_WINDOWDESTROYED") == 0) {
                     if (OUTPUT_DEBUG_INFO == 1) {
                         OutputDebugString
-                            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HSHELL_WINDOWDISTROYED window title is:");
+                        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HSHELL_WINDOWDISTROYED window title is:");
                         OutputDebugString(wid->GetTitle());
                     }
 
@@ -178,21 +169,19 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
                     delete oldWinData;
 
                     DoClipping(1);
-                }
-                else if (strcmp(messageType, "HCBT_MINMAX") == 0) {
+                } else if (strcmp(messageType, "HCBT_MINMAX") == 0) {
                     if (OUTPUT_DEBUG_INFO == 1) {
                         OutputDebugString
-                            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HCBT_MINMAX");
+                        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HCBT_MINMAX");
                     }
 
 
                     //TODO
 
-                }
-                else if (strcmp(messageType, "HCBT_MOVESIZE") == 0) {
+                } else if (strcmp(messageType, "HCBT_MOVESIZE") == 0) {
                     if (OUTPUT_DEBUG_INFO == 1) {
                         OutputDebugString
-                            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HCBT_MOVESIZE window title is:");
+                        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type HCBT_MOVESIZE window title is:");
                         OutputDebugString(wid->GetTitle());
                     }
 
@@ -214,11 +203,10 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
                     }
 
                     delete wid;
-                }
-                else if (strcmp(messageType, "CALLWNDPROC_WM_MOVING") == 0) {
+                } else if (strcmp(messageType, "CALLWNDPROC_WM_MOVING") == 0) {
                     if (OUTPUT_DEBUG_INFO == 1) {
                         OutputDebugString
-                            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type CALLWNDPROC_WM_MOVING window title is:");
+                        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Message was of type CALLWNDPROC_WM_MOVING window title is:");
                         OutputDebugString(wid->GetTitle());
                     }
 
@@ -245,29 +233,21 @@ void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
             }
             break;
 
-        case CHANNEL_EVENT_WRITE_COMPLETE:
-            {
-            }
+        case CHANNEL_EVENT_WRITE_COMPLETE: {}
             break;
 
-        case CHANNEL_EVENT_WRITE_CANCELLED:
-            {
-            }
+        case CHANNEL_EVENT_WRITE_CANCELLED: {}
             break;
 
-        default:
-            {
-            }
+        default: {}
             break;
         }
-    }
-    else {
-    }
+    } else {}
 }
 
 
 VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
-                                           LPVOID pData, UINT dataLength)
+        LPVOID pData, UINT dataLength)
 {
     UINT ui;
 
@@ -275,13 +255,10 @@ VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
     UNREFERENCED_PARAMETER(dataLength);
 
     switch (event) {
-    case CHANNEL_EVENT_INITIALIZED:
-        {
-        }
+    case CHANNEL_EVENT_INITIALIZED: {}
         break;
 
-    case CHANNEL_EVENT_CONNECTED:
-        {
+    case CHANNEL_EVENT_CONNECTED: {
             //
             // open channel
             //
@@ -291,9 +268,7 @@ VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
                                                     (PCHANNEL_OPEN_EVENT_FN)
                                                     VirtualChannelOpenEvent);
 
-            if (ui == CHANNEL_RC_OK) {
-
-            }
+            if (ui == CHANNEL_RC_OK) {}
             else {
                 MessageBox(NULL, TEXT("Open of RDP virtual channel failed"),
                            TEXT("TS Window Clipper"), MB_OK);
@@ -305,8 +280,7 @@ VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
         }
         break;
 
-    case CHANNEL_EVENT_V1_CONNECTED:
-        {
+    case CHANNEL_EVENT_V1_CONNECTED: {
             MessageBox(NULL,
                        TEXT
                        ("Connecting to a non Windows 2000 Terminal Server"),
@@ -314,14 +288,10 @@ VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
         }
         break;
 
-    case CHANNEL_EVENT_DISCONNECTED:
-        {
-
-        }
+    case CHANNEL_EVENT_DISCONNECTED: {}
         break;
 
-    case CHANNEL_EVENT_TERMINATED:
-        {
+    case CHANNEL_EVENT_TERMINATED: {
             //
             // free the entry points table
             //
@@ -329,10 +299,7 @@ VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
         }
         break;
 
-    default:
-        {
-
-        }
+    default: {}
         break;
     }
 }
@@ -373,8 +340,7 @@ BOOL VCAPITYPE VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints)
         if (ALWAYS__CLIP) {
             DoClipping(1);
         }
-    }
-    else {
+    } else {
         MessageBox(NULL, TEXT("RDP Virtual channel Init Failed"),
                    TEXT("TS Window Clipper"), MB_OK);
     }
@@ -403,7 +369,8 @@ typedef struct _WindowFromProcessOrThreadID
         DWORD threadId;
     };
     HWND hWnd;
-} Wnd4PTID;
+}
+Wnd4PTID;
 
 // Callback procedure
 BOOL CALLBACK PrivateEnumWindowsProc(HWND hwnd, LPARAM lParam)
@@ -432,11 +399,11 @@ HWND FindProcessMainWindow(DWORD procId)
     Wnd4PTID tempWnd4ID;
     tempWnd4ID.procId = procId;
     if (!EnumWindows
-        ((WNDENUMPROC) PrivateEnumWindowsProc, (LPARAM) & tempWnd4ID)) {
+            ((WNDENUMPROC) PrivateEnumWindowsProc, (LPARAM) & tempWnd4ID)) {
 
         if (OUTPUT_DEBUG_INFO == 1) {
             OutputDebugString
-                ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Found main process window");
+            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Found main process window");
         }
 
         return tempWnd4ID.hWnd;
@@ -445,7 +412,7 @@ HWND FindProcessMainWindow(DWORD procId)
 
     if (OUTPUT_DEBUG_INFO == 1) {
         OutputDebugString
-            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Could not find main process window");
+        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Could not find main process window");
     }
 
     return NULL;
@@ -478,16 +445,16 @@ void DoClipping(int forceRedraw)
 
         if (OUTPUT_DEBUG_INFO == 1) {
             OutputDebugString
-                ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Restarting clipping...");
+            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Restarting clipping...");
         }
 
         m_regionResult = NULL;
 
         if (OUTPUT_WINDOW_TABLE_DEBUG_INFO == 1) {
             OutputDebugString
-                ("-----------------------------------------------------------------------------");
+            ("-----------------------------------------------------------------------------");
             OutputDebugString
-                ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> starting printing of window table");
+            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> starting printing of window table");
         }
 
         //enumerate though hashtable
@@ -497,16 +464,15 @@ void DoClipping(int forceRedraw)
 
         if (OUTPUT_WINDOW_TABLE_DEBUG_INFO == 1) {
             OutputDebugString
-                ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> finished printing of window table");
+            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> finished printing of window table");
             OutputDebugString
-                ("-----------------------------------------------------------------------------");
+            ("-----------------------------------------------------------------------------");
         }
 
         if (m_regionResult == NULL) {
             if (ALWAYS__CLIP) {
                 m_regionResult = CreateRectRgn(0, 0, 0, 0);
-            }
-            else {
+            } else {
                 m_regionResult =
                     CreateRectRgn(0, 0, wRect.right, wRect.bottom);
             }
@@ -519,11 +485,10 @@ void DoClipping(int forceRedraw)
             RedrawWindow(m_mainWindowHandle, NULL, NULL,
                          RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
         }
-    }
-    else {
+    } else {
         if (OUTPUT_DEBUG_INFO == 1) {
             OutputDebugString
-                ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Coulf not find window to clip");
+            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Coulf not find window to clip");
         }
     }
 }
@@ -545,7 +510,7 @@ void CreateRegionFromWindowData(char *key, void *value)
 
     if (OUTPUT_DEBUG_INFO == 1 && OUTPUT_WINDOW_TABLE_DEBUG_INFO != 1) {
         OutputDebugString
-            ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Adding this window to cliping region");
+        ("TS WINDOW CLIPPER :: CLIENT DLL :: Info --> Adding this window to cliping region");
         OutputDebugString(wd->GetTitle());
     }
     if (OUTPUT_WINDOW_TABLE_DEBUG_INFO == 1) {
@@ -572,11 +537,11 @@ void CreateRegionFromWindowData(char *key, void *value)
 
 /*
    Dummy procedure to catch when window is being maximised.
-
+ 
    Need to tell the window on the server to do the same.
  */
 LRESULT CALLBACK DummyWindowCallbackProc(HWND hwnd, UINT uMsg, WPARAM wParam,
-                                         LPARAM lParam)
+        LPARAM lParam)
 {
     //TODO
 

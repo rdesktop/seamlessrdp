@@ -20,7 +20,7 @@
 // Shared DATA
 #pragma data_seg ( "SHAREDDATA" )
 
-        // this is the total number of processes this dll is currently attached to
+// this is the total number of processes this dll is currently attached to
 int iInstanceCount = 0;
 HWND hWnd = 0;
 
@@ -41,8 +41,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call,
                       LPVOID lpReserved)
 {
     switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-        {
+    case DLL_PROCESS_ATTACH: {
             // remember our instance handle
             hInst = hinstDLL;
             ++iInstanceCount;
@@ -54,8 +53,7 @@ BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call,
         break;
     case DLL_THREAD_DETACH:
         break;
-    case DLL_PROCESS_DETACH:
-        {
+    case DLL_PROCESS_DETACH: {
             --iInstanceCount;
             CloseVirtualChannel();
         }
@@ -183,9 +181,9 @@ LRESULT CALLBACK CbtProc(int nCode, WPARAM wParam, LPARAM lParam)
         //get operation type(min,max). if max, do not clip at all,if min use window's previous coords
         //codes are:
 
-        // SW_HIDE= 0  SW_SHOWNORMAL=1  SW_NORMAL=1  SW_SHOWMINIMIZED=2  SW_SHOWMAXIMIZED=3  SW_MAXIMIZE=3 
-        // SW_SHOWNOACTIVATE=4  SW_SHOW=5  SW_MINIMIZE=6  SW_SHOWMINNOACTIVE=7  SW_SHOWNA=8  SW_RESTORE=9  
-        // SW_SHOWDEFAULT=10  SW_FORCEMINIMIZE=11  SW_MAX=11    
+        // SW_HIDE= 0  SW_SHOWNORMAL=1  SW_NORMAL=1  SW_SHOWMINIMIZED=2  SW_SHOWMAXIMIZED=3  SW_MAXIMIZE=3
+        // SW_SHOWNOACTIVATE=4  SW_SHOW=5  SW_MINIMIZE=6  SW_SHOWMINNOACTIVE=7  SW_SHOWNA=8  SW_RESTORE=9
+        // SW_SHOWDEFAULT=10  SW_FORCEMINIMIZE=11  SW_MAX=11
 
         itoa((int) lParam, type, 10);
 
@@ -464,8 +462,7 @@ int OpenVirtualChannel()
 
     if (m_vcHandle == NULL) {
         return 0;
-    }
-    else {
+    } else {
         return 1;
     }
 }
@@ -478,8 +475,7 @@ int CloseVirtualChannel()
 
     if (result) {
         return 1;
-    }
-    else {
+    } else {
         return 0;
     }
 }
@@ -488,8 +484,7 @@ int ChannelIsOpen()
 {
     if (m_vcHandle == NULL) {
         return 0;
-    }
-    else {
+    } else {
         return 1;
     }
 }
@@ -505,8 +500,7 @@ int WriteToChannel(PCHAR buffer)
 
     if (result) {
         return 1;
-    }
-    else {
+    } else {
         return 0;
     }
 }

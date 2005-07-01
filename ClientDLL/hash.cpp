@@ -15,7 +15,7 @@
 */
 
 /* HW: HenkJan Wolthuis, 1997, public domain
-
+ 
       changed functionnames, all public functions now have a 'hash_' prefix
       minor editing, marked 'm all(?) with a description
       removed a bug in hash_del and one in hash_enumerate
@@ -137,7 +137,7 @@ void *hash_insert(char *key, void *data, hash_table * table)
             return NULL;
 
         if (NULL ==
-            ((table->table)[val]->key = (char *) malloc(strlen(key) + 1))) {
+                ((table->table)[val]->key = (char *) malloc(strlen(key) + 1))) {
             free((table->table)[val]);
             (table->table)[val] = NULL;
             return NULL;
@@ -149,7 +149,7 @@ void *hash_insert(char *key, void *data, hash_table * table)
         return (table->table)[val]->data;
     }
 
-/* HW: added a #define so the hashtable can accept duplicate keys */
+    /* HW: added a #define so the hashtable can accept duplicate keys */
 #ifndef DUPLICATE_KEYS
     /*
      ** This spot in the table is already in use.  See if the current string
@@ -237,7 +237,7 @@ void *hash_del(char *key, hash_table * table)
      ** contains.
      */
     for (last = NULL, ptr = (table->table)[val];
-         NULL != ptr; last = ptr, ptr = ptr->next) {
+            NULL != ptr; last = ptr, ptr = ptr->next) {
         if (0 == strcmp(key, ptr->key)) {
             if (last != NULL) {
                 data = ptr->data;
@@ -290,8 +290,7 @@ static void free_node(char *key, void *data)
 
     if (NULL != function) {
         function(hash_del(key, the_table));
-    }
-    else
+    } else
         hash_del(key, the_table);
 }
 
@@ -344,7 +343,7 @@ void hash_enumerate(hash_table * table, void (*func) (char *, void *))
 }
 
 /*      HW: added hash_sorted_enum()
-
+ 
       hash_sorted_enum is like hash_enumerate but gives
       sorted output. This is much slower than hash_enumerate, but
       sometimes nice for printing to a file...
@@ -354,7 +353,8 @@ typedef struct sort_struct
 {
     char *key;
     void *data;
-} sort_struct;
+}
+sort_struct;
 static sort_struct *sortmap = NULL;
 
 static int counter = 0;
@@ -389,8 +389,8 @@ int hash_sorted_enum(hash_table * table, void (*func) (char *, void *))
 
     /* malloc an pointerarray for all hashkey's and datapointers */
     if (NULL ==
-        (sortmap =
-         (sort_struct *) malloc(sizeof(sort_struct) * table->count)))
+            (sortmap =
+                 (sort_struct *) malloc(sizeof(sort_struct) * table->count)))
         return 0;
 
     /* copy the pointers to the hashkey's */
@@ -445,23 +445,23 @@ int main(void)
     hash_table table;
 
     char *strings[] = {
-        "The first string",
-        "The second string",
-        "The third string",
-        "The fourth string",
-        "A much longer string than the rest in this example.",
-        "The last string",
-        NULL
-    };
+                          "The first string",
+                          "The second string",
+                          "The third string",
+                          "The fourth string",
+                          "A much longer string than the rest in this example.",
+                          "The last string",
+                          NULL
+                      };
 
     char *junk[] = {
-        "The first data",
-        "The second data",
-        "The third data",
-        "The fourth data",
-        "The fifth datum",
-        "The sixth piece of data"
-    };
+                       "The first data",
+                       "The second data",
+                       "The third data",
+                       "The fourth data",
+                       "The fifth datum",
+                       "The sixth piece of data"
+                   };
 
     int i;
     void *j;

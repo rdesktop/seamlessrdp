@@ -114,13 +114,11 @@ void DoContextMenu()
     DeleteObject(hMenu);
 
     switch (cmd) {
-    case ID_WMEXIT:
-        {
+    case ID_WMEXIT: {
             PostQuitMessage(0);
             break;
         }
-    case ID_WMABOUT:
-        {
+    case ID_WMABOUT: {
             AboutDlg();
             break;
         }
@@ -133,13 +131,11 @@ void DoContextMenu()
 LONG WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {
-    case WM_DESTROY:
-        {
+    case WM_DESTROY: {
             PostQuitMessage(0);
             return 0;
         }
-    case WM_TRAY_NOTIFY:
-        {
+    case WM_TRAY_NOTIFY: {
             if (lParam == WM_RBUTTONDOWN)
                 DoContextMenu();
             return 0;
@@ -172,7 +168,7 @@ bool InitWindow()
         return false;
     }
 
-    // create the frame 
+    // create the frame
     ghWnd = CreateWindow(szAppName, szAppName,
                          WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS |
                          WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 640,
@@ -195,7 +191,7 @@ bool Init(LPSTR lpCmdLine)
     // try to load WTSWinClipper.dll
     if (!WTSWinClipper::Init()) {
         Message
-            ("Application not installed correctly: Unable to init hookdll.dll.");
+        ("Application not installed correctly: Unable to init hookdll.dll.");
         return false;
     }
 
@@ -204,14 +200,13 @@ bool Init(LPSTR lpCmdLine)
         // hook in
         WTSWinClipper::SetCbtHook();
         return true;
-    }
-    else {
+    } else {
         // already hooked
         return false;
     }
 }
 
-// 
+//
 // our main loop
 //
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -229,8 +224,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // shell. We do this by calling SystemParametersInfo. If we don't do this, we won't get the WH_SHELL notifications.
 
         // From MSDN:
-        // Note that custom shell applications do not receive WH_SHELL messages. Therefore, any application that 
-        // registers itself as the default shell must call the SystemParametersInfo function with SPI_SETMINIMIZEDMETRICS 
+        // Note that custom shell applications do not receive WH_SHELL messages. Therefore, any application that
+        // registers itself as the default shell must call the SystemParametersInfo function with SPI_SETMINIMIZEDMETRICS
         // before it (or any other application) can receive WH_SHELL messages.
 
         MINIMIZEDMETRICS mmm;
@@ -255,7 +250,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                           &startupInfo, &procInfo);
 
         if (m_create != false) {
-            // A loop to watch the process. 
+            // A loop to watch the process.
             GetExitCodeProcess(procInfo.hProcess, &dwExitCode);
 
             while (dwExitCode == STILL_ACTIVE) {
@@ -266,13 +261,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             // Release handles
             CloseHandle(procInfo.hProcess);
             CloseHandle(procInfo.hThread);
-        }
-        else {
+        } else {
             // CreateProcess failed.
             Message("Unable to launch the requested application");
         }
-    }
-    else
+    } else
         // we are launching without an app, therefore we will show the system tray app and wait for the user to close it
     {
         // create a dummy window to receive WM_QUIT message

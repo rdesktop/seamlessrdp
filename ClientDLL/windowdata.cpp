@@ -11,10 +11,8 @@
 #include "WindowData.h"
 
 CWindowData::CWindowData(const CStdString & csId):m_csTitle(""), m_csId(""), m_iX1(0), m_iY1(0), m_iX2(0),
-m_iY2(0)
-{
-
-}
+        m_iY2(0)
+{}
 
 void CWindowData::SetId(const CStdString & csId)
 {
