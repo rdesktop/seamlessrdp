@@ -25,14 +25,13 @@ HWND hWnd = 0;
 bool bHooked = false;
 bool bHooked2 = false;
 bool bHooked3 = false;
-HHOOK hhook = 0;                //cbt
-HHOOK hhook2 = 0;               //shell
-HHOOK hhook3 = 0;               //wnd proc
+HHOOK hhook = 0; //cbt
+HHOOK hhook2 = 0; //shell
+HHOOK hhook3 = 0; //wnd proc
 HINSTANCE hInst = 0;
 HANDLE m_vcHandle = 0;
 
-BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call,
-                       LPVOID lpReserved )
+BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
 {
     switch ( ul_reason_for_call ) {
         case DLL_PROCESS_ATTACH: {
@@ -67,22 +66,65 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     char windowTitle[ 150 ] = { ""
                               };
     HWND windowHandle = NULL;
+    HWND windowHandle2 = NULL;
     char result[ 255 ] = { ""
                          };
     char strWindowId[ 25 ];
     char type[ 25 ];
     
     LONG b, t, l, r;
-    char strB[ 5 ];
-    char strT[ 5 ];
-    char strL[ 5 ];
-    char strR[ 5 ];
+    char strX[ 5 ];
+    char strY[ 5 ];
+    char strW[ 5 ];
+    char strH[ 5 ];
     RECT rect;
     
     CWPSTRUCT *details = ( CWPSTRUCT * ) lParam;
     
     switch ( details->message ) {
         case WM_SIZING:
+        windowHandle = details->hwnd;
+        //get win name
+        GetWindowText( windowHandle, windowTitle, 150 );
+        
+        //get an id for it
+        itoa( ( int ) windowHandle, strWindowId, 10 );
+        
+        //get coords
+        GetWindowRect( windowHandle, &rect );
+        b = rect.bottom;
+        t = rect.top;
+        l = rect.left;
+        r = rect.right;
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
+        
+        ////setup return string
+        strcat( result, "MSG=CALLWNDPROC_WM_SIZING;OP=6;" );
+        strcat( result, "ID=" );
+        strcat( result, strWindowId );
+        strcat( result, ";" );
+        strcat( result, "TITLE=" );
+        strcat( result, windowTitle );
+        strcat( result, ";" );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
+        
+        buffer = result;
+        
+        break;
         case WM_MOVING:
         
         windowHandle = details->hwnd;
@@ -98,28 +140,123 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         t = rect.top;
         l = rect.left;
         r = rect.right;
-        ltoa( b, strB, 10 );
-        ltoa( t, strT, 10 );
-        ltoa( r, strR, 10 );
-        ltoa( l, strL, 10 );
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
         
         ////setup return string
-        strcat( result, "MSG=CALLWNDPROC_WM_MOVING;" );
+        strcat( result, "MSG=CALLWNDPROC_WM_MOVING;OP=2;" );
         strcat( result, "ID=" );
         strcat( result, strWindowId );
         strcat( result, ";" );
         strcat( result, "TITLE=" );
         strcat( result, windowTitle );
         strcat( result, ";" );
-        strcat( result, "POS=" );
-        strcat( result, strL );
-        strcat( result, "~" );
-        strcat( result, strT );
-        strcat( result, "~" );
-        strcat( result, strR );
-        strcat( result, "~" );
-        strcat( result, strB );
+        strcat( result, "X=" );
+        strcat( result, strX );
         strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
+        
+        buffer = result;
+        
+        break;
+        
+        
+        case WM_WINDOWPOSCHANGING:
+        
+        windowHandle = details->hwnd;
+        //windowHandle2 = details->hwndInsertAfter;
+        //get win name
+        GetWindowText( windowHandle, windowTitle, 150 );
+        
+        //get an id for it
+        itoa( ( int ) windowHandle, strWindowId, 10 );
+        
+        //get coords
+        GetWindowRect( windowHandle, &rect );
+        b = rect.bottom;
+        t = rect.top;
+        l = rect.left;
+        r = rect.right;
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
+        
+        ////setup return string
+        strcat( result, "MSG=CALLWNDPROC_WM_WINDOWPOSCHANGING;OP=7;" );
+        strcat( result, "ID=" );
+        strcat( result, strWindowId );
+        strcat( result, ";" );
+        strcat( result, "TITLE=" );
+        strcat( result, windowTitle );
+        strcat( result, ";" );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
+        
+        buffer = result;
+        
+        break;
+        case WM_WINDOWPOSCHANGED:
+        
+        windowHandle = details->hwnd;
+        //windowHandle2 = details->hwndInsertAfter;
+        //get win name
+        GetWindowText( windowHandle, windowTitle, 150 );
+        
+        //get an id for it
+        itoa( ( int ) windowHandle, strWindowId, 10 );
+        
+        //get coords
+        GetWindowRect( windowHandle, &rect );
+        b = rect.bottom;
+        t = rect.top;
+        l = rect.left;
+        r = rect.right;
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
+        
+        ////setup return string
+        strcat( result, "MSG=CALLWNDPROC_WM_WINDOWPOSCHANGED;OP=8;" );
+        strcat( result, "ID=" );
+        strcat( result, strWindowId );
+        strcat( result, ";" );
+        strcat( result, "TITLE=" );
+        strcat( result, windowTitle );
+        strcat( result, ";" );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
         
         buffer = result;
         
@@ -158,13 +295,13 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
     
     
     LONG b, t, l, r;
-    char strB[ 5 ];
-    char strT[ 5 ];
-    char strL[ 5 ];
-    char strR[ 5 ];
+    char strW[ 5 ];
+    char strY[ 5 ];
+    char strX[ 5 ];
+    char strH[ 5 ];
     RECT rect;
     
-    int i = 0;                  //tmp
+    int i = 0; //tmp
     
     switch ( nCode ) {
         case HCBT_MINMAX:
@@ -191,57 +328,61 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
         t = rect.top;
         l = rect.left;
         r = rect.right;
-        ltoa( b, strB, 10 );
-        ltoa( t, strT, 10 );
-        ltoa( r, strR, 10 );
-        ltoa( l, strL, 10 );
+        ltoa( b - t, strW, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strH, 10 );
+        ltoa( l, strX, 10 );
         
         //get name
         GetWindowText( windowHandle, windowTitle, 150 );
         
         ////setup return string
-        strcat( result, "MSG=HCBT_MINMAX;" );
+        strcat( result, "MSG=HCBT_MINMAX;OP=4;" );
+        
+        // SW_SHOWNOACTIVATE=4  SW_SHOW=5  SW_MINIMIZE=6  SW_SHOWMINNOACTIVE=7  SW_SHOWNA=8  SW_RESTORE=9
+        // SW_SHOWDEFAULT=10  SW_FORCEMINIMIZE=11  SW_MAX=11
         strcat( result, "ID=" );
         strcat( result, strWindowId );
         strcat( result, ";" );
         strcat( result, "TITLE=" );
         strcat( result, windowTitle );
         strcat( result, ";" );
-        strcat( result, "POS=" );
-        strcat( result, strL );
-        strcat( result, "~" );
-        strcat( result, strT );
-        strcat( result, "~" );
-        strcat( result, strR );
-        strcat( result, "~" );
-        strcat( result, strB );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
         strcat( result, ";" );
         strcat( result, "TYPE=" );
         strcat( result, type );
-        strcat( result, ";" );
+        strcat( result, "." );
         
         //-------------------------------------------------------------------------------------------------
         // code to prevent minimising windows (can be removed once minimise has been implemented)
-        i = ( int ) lParam;
+        //i = (int)lParam;
         //if (i==0 || i==2 || i==6 || i==7 || i==8 || i==11)
-        if ( i == 2 || i == 6 ) {
-            MessageBox( 0,
-                        "Minimising windows is not allowed in this version. Sorry!",
-                        "TS Window Clipper", MB_OK );
-            return 1;
-        }
+        //if ( i==2 || i==6 )
+        //{
+        // MessageBox(0,"Minimising windows is not allowed in this version. Sorry!","TS Window Clipper", MB_OK);
+        // return 1;
+        //}
         //-----------------------------------------------------------------------------------------
         
         //-------------------------------------------------------------------------------------------------
         // code to prevent maximising windows (can be removed once maximise has been implemented)
-        i = ( int ) lParam;
+        //i = (int)lParam;
         //if (i==3 || i==9 || i==11)
-        if ( i == 3 || i == 11 ) {
-            MessageBox( 0,
-                        "Maximising windows is not allowed in this version. Sorry!",
-                        "TS Window Clipper", MB_OK );
-            return 1;
-        }
+        //if (i==3 || i==11)
+        //{
+        // MessageBox(0,"Maximising windows is not allowed in this version. Sorry!","TS Window Clipper", MB_OK);
+        // return 1;
+        //}
         //-----------------------------------------------------------------------------------------
         
         buffer = result;
@@ -263,31 +404,34 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
         t = rect.top;
         l = rect.left;
         r = rect.right;
-        ltoa( b, strB, 10 );
-        ltoa( t, strT, 10 );
-        ltoa( r, strR, 10 );
-        ltoa( l, strL, 10 );
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
         
         //get name
         GetWindowText( windowHandle, windowTitle, 150 );
         
         ////setup return string
-        strcat( result, "MSG=HCBT_MOVESIZE;" );
+        strcat( result, "MSG=HCBT_MOVESIZE;OP=5;" );
         strcat( result, "ID=" );
         strcat( result, strWindowId );
         strcat( result, ";" );
         strcat( result, "TITLE=" );
         strcat( result, windowTitle );
         strcat( result, ";" );
-        strcat( result, "POS=" );
-        strcat( result, strL );
-        strcat( result, "~" );
-        strcat( result, strT );
-        strcat( result, "~" );
-        strcat( result, strR );
-        strcat( result, "~" );
-        strcat( result, strB );
+        strcat( result, "X=" );
+        strcat( result, strX );
         strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
         
         buffer = result;
         
@@ -326,10 +470,10 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
                              };
         char strWindowId[ 25 ];
         LONG b, t, l, r;
-        char strB[ 5 ];
-        char strT[ 5 ];
-        char strL[ 5 ];
-        char strR[ 5 ];
+        char strW[ 5 ];
+        char strY[ 5 ];
+        char strX[ 5 ];
+        char strH[ 5 ];
         RECT rect;
         
         switch ( nCode ) {
@@ -345,31 +489,34 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
             t = rect.top;
             l = rect.left;
             r = rect.right;
-            ltoa( b, strB, 10 );
-            ltoa( t, strT, 10 );
-            ltoa( r, strR, 10 );
-            ltoa( l, strL, 10 );
+            ltoa( b - t, strH, 10 );
+            ltoa( t, strY, 10 );
+            ltoa( r - l, strW, 10 );
+            ltoa( l, strX, 10 );
             
             //get name
             GetWindowText( windowHandle, windowTitle, 150 );
             
             ////setup return string
-            strcat( result, "MSG=HSHELL_WINDOWCREATED;" );
+            strcat( result, "MSG=HSHELL_WINDOWCREATED;OP=0;" );
             strcat( result, "ID=" );
             strcat( result, strWindowId );
             strcat( result, ";" );
             strcat( result, "TITLE=" );
             strcat( result, windowTitle );
             strcat( result, ";" );
-            strcat( result, "POS=" );
-            strcat( result, strL );
-            strcat( result, "~" );
-            strcat( result, strT );
-            strcat( result, "~" );
-            strcat( result, strR );
-            strcat( result, "~" );
-            strcat( result, strB );
+            strcat( result, "X=" );
+            strcat( result, strX );
             strcat( result, ";" );
+            strcat( result, "Y=" );
+            strcat( result, strY );
+            strcat( result, ";" );
+            strcat( result, "H=" );
+            strcat( result, strH );
+            strcat( result, ";" );
+            strcat( result, "W=" );
+            strcat( result, strW );
+            strcat( result, "." );
             
             buffer = result;
             
@@ -381,17 +528,40 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
             windowHandle = ( HWND ) wParam;
             itoa( ( int ) windowHandle, strWindowId, 10 );
             
+            //get coords
+            GetWindowRect( windowHandle, &rect );
+            b = rect.bottom;
+            t = rect.top;
+            l = rect.left;
+            r = rect.right;
+            ltoa( b - t, strH, 10 );
+            ltoa( t, strY, 10 );
+            ltoa( r - l, strW, 10 );
+            ltoa( l, strX, 10 );
+            
             //get name
             GetWindowText( windowHandle, windowTitle, 150 );
             
             ////setup return string
-            strcat( result, "MSG=HSHELL_WINDOWDESTROYED;" );
+            strcat( result, "MSG=HSHELL_WINDOWDESTROYED;OP=1;" );
             strcat( result, "ID=" );
             strcat( result, strWindowId );
             strcat( result, ";" );
             strcat( result, "TITLE=" );
             strcat( result, windowTitle );
             strcat( result, ";" );
+            strcat( result, "X=" );
+            strcat( result, strX );
+            strcat( result, ";" );
+            strcat( result, "Y=" );
+            strcat( result, strY );
+            strcat( result, ";" );
+            strcat( result, "H=" );
+            strcat( result, strH );
+            strcat( result, ";" );
+            strcat( result, "W=" );
+            strcat( result, strW );
+            strcat( result, "." );
             
             buffer = result;
             
@@ -411,22 +581,17 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
 DLL_EXPORT void SetCbtHook( void )
 {
     if ( !bHooked ) {
-        hhook =
-            SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
+        hhook = SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
         bHooked = true;
     }
     
     if ( !bHooked2 ) {
-        hhook2 =
-            SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst,
-                              ( DWORD ) NULL );
+        hhook2 = SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst, ( DWORD ) NULL );
         bHooked2 = true;
     }
     
     if ( !bHooked3 ) {
-        hhook3 =
-            SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst,
-                              ( DWORD ) NULL );
+        hhook3 = SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst, ( DWORD ) NULL );
         bHooked3 = true;
     }
 }
@@ -456,10 +621,8 @@ DLL_EXPORT int GetInstanceCount()
 
 int OpenVirtualChannel()
 {
-    m_vcHandle =
-        WTSVirtualChannelOpen( WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION,
-                               CHANNELNAME );
-                               
+    m_vcHandle = WTSVirtualChannelOpen( WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, CHANNELNAME );
+    
     if ( m_vcHandle == NULL ) {
         return 0;
     } else {
@@ -494,10 +657,8 @@ int WriteToChannel( PCHAR buffer )
     PULONG bytesRead = 0;
     PULONG pBytesWritten = 0;
     
-    BOOL result =
-        WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ),
-                                pBytesWritten );
-                                
+    BOOL result = WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ), pBytesWritten );
+    
     if ( result ) {
         return 1;
     } else {
