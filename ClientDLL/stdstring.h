@@ -1576,7 +1576,7 @@ inline void ssadd( std::wstring & sDst, PCSTR pA )
         sDst.resize( nDst + sslen( szCvt ) );
 #else
         
-        sDst.resize( nDst + nSrc );
+sDst.resize( nDst + nSrc );
         szCvt;
 #endif
         
@@ -2550,7 +2550,7 @@ if ( !TryLoad( pA ) )
                 
 #else // otherwise make our own hackneyed version of CString's Load
                 
-// Get the resource name and module handle
+            // Get the resource name and module handle
                 
             if ( NULL == hModule )
                 hModule = GetResourceHandle();
@@ -3167,7 +3167,7 @@ void Format( UINT nId, ... )
             int nLen = ssvsprintf( szBuf, STD_BUF_SIZE - 1, szFmt, argList );
 #else
             
-            int nLen = ssnprintf( szBuf, STD_BUF_SIZE - 1, szFmt, argList );
+int nLen = ssnprintf( szBuf, STD_BUF_SIZE - 1, szFmt, argList );
 #endif
             
             if ( 0 < nLen )

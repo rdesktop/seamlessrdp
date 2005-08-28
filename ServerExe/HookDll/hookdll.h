@@ -12,14 +12,14 @@
 #pragma once
 
 //Hooking
-typedef void (*SETHOOKS) ();
-typedef void (*REMOVEHOOKS) ();
-typedef int (*GETINSTANCECOUNT) ();
+typedef void ( *SETHOOKS ) ();
+typedef void ( *REMOVEHOOKS ) ();
+typedef int ( *GETINSTANCECOUNT ) ();
 
 //Terminal Server
 int OpenVirtualChannel();
 int CloseVirtualChannel();
 int ChannelIsOpen();
-int WriteToChannel(PCHAR buffer);
+int WriteToChannel( PCHAR buffer );
 
 #endif

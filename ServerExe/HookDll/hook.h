@@ -18,30 +18,30 @@ class WTSWinClipper
         static SETHOOKS mSetCbtHook;
         static REMOVEHOOKS mRemoveCbtHook;
         static GETINSTANCECOUNT mGetInstanceCount;
-
+        
     public:
         static bool Init();
         static void Done()
         {
-            if (mCbtDllHinst)
-                FreeLibrary(mCbtDllHinst);
+            if ( mCbtDllHinst )
+                FreeLibrary( mCbtDllHinst );
         }
-
+        
         static void SetCbtHook()
         {
-            if (mCbtDllHinst)
+            if ( mCbtDllHinst )
                 mSetCbtHook();
         }
-
+        
         static void RemoveCbtHook()
         {
-            if (mCbtDllHinst)
+            if ( mCbtDllHinst )
                 mRemoveCbtHook();
         }
-
+        
         static int GetInstanceCount()
         {
-            if (mCbtDllHinst)
+            if ( mCbtDllHinst )
                 return mGetInstanceCount();
             else
                 return 0;

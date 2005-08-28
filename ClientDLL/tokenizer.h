@@ -17,18 +17,18 @@
 #endif // _MSC_VER >= 1000
 
 #if !defined(_BITSET_)
-#	include <bitset>
+# include <bitset>
 #endif // !defined(_BITSET_)
 
 class CTokenizer
 {
     public:
-        CTokenizer(const CStdString & cs, const CStdString & csDelim);
-        void SetDelimiters(const CStdString & csDelim);
-
-        bool Next(CStdString & cs);
+        CTokenizer( const CStdString & cs, const CStdString & csDelim );
+        void SetDelimiters( const CStdString & csDelim );
+        
+        bool Next( CStdString & cs );
         CStdString Tail() const;
-
+        
     private:
         CStdString m_cs;
         std::bitset < 256 > m_delim;

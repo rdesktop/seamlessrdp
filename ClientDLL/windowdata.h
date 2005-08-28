@@ -10,23 +10,23 @@
 class CWindowData
 {
     public:
-        CWindowData(const CStdString & csId);
-
-        void CWindowData::SetId(const CStdString & csId);
-        void CWindowData::SetTitle(const CStdString & csTitle);
-        void CWindowData::SetX1(int iX1);
-        void CWindowData::SetY1(int iY1);
-        void CWindowData::SetX2(int iX2);
-        void CWindowData::SetY2(int iY2);
+        CWindowData( const CStdString & csId );
+        
+        void CWindowData::SetId( const CStdString & csId );
+        void CWindowData::SetTitle( const CStdString & csTitle );
+        void CWindowData::SetX1( int iX1 );
+        void CWindowData::SetY1( int iY1 );
+        void CWindowData::SetX2( int iX2 );
+        void CWindowData::SetY2( int iY2 );
         HWND CWindowData::TaskbarWindowHandle;
-
+        
         CStdString CWindowData::GetId();
         CStdString CWindowData::GetTitle();
         int CWindowData::GetX1();
         int CWindowData::GetY1();
         int CWindowData::GetX2();
         int CWindowData::GetY2();
-
+        
     private:
         CStdString m_csTitle;
         CStdString m_csId;
