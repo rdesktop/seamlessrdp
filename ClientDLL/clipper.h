@@ -61,15 +61,15 @@ int const OUTPUT_WINDOW_TABLE_DEBUG_INFO = 0;
 //
 // declarations
 //
-void WINAPI VirtualChannelOpenEvent(DWORD openHandle, UINT event,
-                                    LPVOID pdata, UINT32 dataLength,
-                                    UINT32 totalLength, UINT32 dataFlags);
-VOID VCAPITYPE VirtualChannelInitEventProc(LPVOID pInitHandle, UINT event,
-        LPVOID pData, UINT dataLength);
-BOOL VCAPITYPE VirtualChannelEntry(PCHANNEL_ENTRY_POINTS pEntryPoints);
+void WINAPI VirtualChannelOpenEvent( DWORD openHandle, UINT event,
+                                     LPVOID pdata, UINT32 dataLength,
+                                     UINT32 totalLength, UINT32 dataFlags );
+VOID VCAPITYPE VirtualChannelInitEventProc( LPVOID pInitHandle, UINT event,
+        LPVOID pData, UINT dataLength );
+BOOL VCAPITYPE VirtualChannelEntry( PCHANNEL_ENTRY_POINTS pEntryPoints );
 
-void DoClipping(int forceRedraw);
-void CreateRegionFromWindowData(char *, void *);
+void DoClipping( int forceRedraw );
+void CreateRegionFromWindowData( char *, void * );
 
-void CreateAndShowWindow(CWindowData * wd);
-void DestroyTaskbarWindow(CWindowData * wd);
+void CreateAndShowWindow( CWindowData * wd );
+void DestroyTaskbarWindow( CWindowData * wd );

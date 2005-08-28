@@ -2,7 +2,7 @@
 #ifndef HASH__H
 #define HASH__H
 
-#include <stddef.h>             /* For size_t   */
+#include <stddef.h>             /* For size_t   */ 
 /*
 ** A hash table consists of an array of these buckets.      Each bucket
 ** holds a copy of the key, a pointer to the data associated with the
@@ -38,9 +38,9 @@ hash_table;
 /*
 ** This is used to construct the table.  If it doesn't succeed, it sets
 ** the table's size to 0, and the pointer to the table to NULL.
-*/
+*/ 
 /* HW: returns NULL if it fails */
-hash_table *hash_construct_table(hash_table * table, size_t size);
+hash_table *hash_construct_table( hash_table * table, size_t size );
 
 /*
 ** Inserts a pointer to 'data' in the table, with a copy of 'key' as its
@@ -48,14 +48,14 @@ hash_table *hash_construct_table(hash_table * table, size_t size);
 ** associated data.
 */
 
-void *hash_insert(char *key, void *data, struct hash_table *table);
+void *hash_insert( char *key, void *data, struct hash_table *table );
 
 /*
 ** Returns a pointer to the data associated with a key.  If the key has
 ** not been inserted in the table, returns NULL.
 */
 
-void *hash_lookup(char *key, struct hash_table *table);
+void *hash_lookup( char *key, struct hash_table *table );
 
 /*
 ** Deletes an entry from the table.  Returns a pointer to the data that
@@ -63,7 +63,7 @@ void *hash_lookup(char *key, struct hash_table *table);
 ** properly.
 */
 
-void *hash_del(char *key, struct hash_table *table);
+void *hash_del( char *key, struct hash_table *table );
 
 /*
 ** Goes through a hash table and calls the function passed to it
@@ -72,10 +72,10 @@ void *hash_del(char *key, struct hash_table *table);
 ** with it.
 */
 
-void hash_enumerate(hash_table * table, void (*func) (char *, void *));
+void hash_enumerate( hash_table * table, void ( *func ) ( char *, void * ) );
 
 /* HW: same as above, but sorted output ( sorted on 'key') */
-int hash_sorted_enum(hash_table * table, void (*func) (char *, void *));
+int hash_sorted_enum( hash_table * table, void ( *func ) ( char *, void * ) );
 
 /*
 ** Frees a hash table.  For each node that was inserted in the table,
@@ -89,6 +89,6 @@ int hash_sorted_enum(hash_table * table, void (*func) (char *, void *));
 ** any function with the data. )
 */
 
-void hash_free_table(hash_table * table, void (*func) (void *));
+void hash_free_table( hash_table * table, void ( *func ) ( void * ) );
 
 #endif /* HASH__H */

@@ -337,7 +337,7 @@
 // Borland warnings to turn off
 
 #ifdef __BORLANDC__
-#pragma option push -w-inl
+#pragma option push -w-inl 
 //      #pragma warn -inl   // Turn off inline function warnings
 #endif
 
@@ -534,11 +534,11 @@
 
 #ifdef _MSC_VER
 #if defined (_UNICODE) && !defined (UNICODE)
-#error UNICODE defined  but not UNICODE
+#error UNICODE defined  but not UNICODE 
 //      #define UNICODE  // no longer silently fix this
 #endif
 #if defined (UNICODE) && !defined (_UNICODE)
-#error Warning, UNICODE defined  but not _UNICODE
+#error Warning, UNICODE defined  but not _UNICODE 
 //      #define _UNICODE  // no longer silently fix this
 #endif
 #endif
@@ -549,12 +549,12 @@
 // at least in the MS implementation) that you never know what's available
 // -----------------------------------------------------------------------------
 template < class Type >
-inline const Type & SSMIN(const Type & arg1, const Type & arg2)
+inline const Type & SSMIN( const Type & arg1, const Type & arg2 )
 {
     return arg2 < arg1 ? arg2 : arg1;
 }
 template < class Type >
-inline const Type & SSMAX(const Type & arg1, const Type & arg2)
+inline const Type & SSMAX( const Type & arg1, const Type & arg2 )
 {
     return arg2 > arg1 ? arg2 : arg1;
 }
@@ -720,8 +720,8 @@ typedef void *LPCVOID;
 // of the Standard C++ Library, you can define your own version of SS_USE_FACET.
 
 #ifndef schMSG
-#define schSTR(x)	   #x
-#define schSTR2(x)	schSTR(x)
+#define schSTR(x)    #x
+#define schSTR2(x) schSTR(x)
 #define schMSG(desc) message(__FILE__ "(" schSTR2(__LINE__) "):" #desc)
 #endif
 
@@ -789,112 +789,112 @@ typedef void *LPCVOID;
 
 typedef std::codecvt < wchar_t, char, mbstate_t > SSCodeCvt;
 
-inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc,
-                        const std::locale & loc = std::locale())
+inline PWSTR StdCodeCvt( PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc,
+                         const std::locale & loc = std::locale() )
 {
-    ASSERT(0 != pSrcA);
-    ASSERT(0 != pDstW);
-
-    pDstW[0] = '\0';
-
-    if (nSrc > 0) {
+    ASSERT( 0 != pSrcA );
+    ASSERT( 0 != pDstW );
+    
+    pDstW[ 0 ] = '\0';
+    
+    if ( nSrc > 0 ) {
         PCSTR pNextSrcA = pSrcA;
         PWSTR pNextDstW = pDstW;
         SSCodeCvt::result res = SSCodeCvt::ok;
-        const SSCodeCvt & conv = SS_USE_FACET(loc, SSCodeCvt);
+        const SSCodeCvt & conv = SS_USE_FACET( loc, SSCodeCvt );
         SSCodeCvt::state_type st = {
                                        0};
-        res = conv.in(st,
-                      pSrcA, pSrcA + nSrc, pNextSrcA,
-                      pDstW, pDstW + nDst, pNextDstW);
-
-        ASSERT(SSCodeCvt::ok == res);
-        ASSERT(SSCodeCvt::error != res);
-        ASSERT(pNextDstW >= pDstW);
-        ASSERT(pNextSrcA >= pSrcA);
-
+        res = conv.in( st,
+                       pSrcA, pSrcA + nSrc, pNextSrcA,
+                       pDstW, pDstW + nDst, pNextDstW );
+                       
+        ASSERT( SSCodeCvt::ok == res );
+        ASSERT( SSCodeCvt::error != res );
+        ASSERT( pNextDstW >= pDstW );
+        ASSERT( pNextSrcA >= pSrcA );
+        
         // Null terminate the converted string
-
-        if (pNextDstW - pDstW > nDst)
-            *(pDstW + nDst) = '\0';
+        
+        if ( pNextDstW - pDstW > nDst )
+            * ( pDstW + nDst ) = '\0';
         else
             *pNextDstW = '\0';
     }
     return pDstW;
 }
-inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCUSTR pSrcA, int nSrc,
-                        const std::locale & loc = std::locale())
+inline PWSTR StdCodeCvt( PWSTR pDstW, int nDst, PCUSTR pSrcA, int nSrc,
+                         const std::locale & loc = std::locale() )
 {
-    return StdCodeCvt(pDstW, nDst, (PCSTR) pSrcA, nSrc, loc);
+    return StdCodeCvt( pDstW, nDst, ( PCSTR ) pSrcA, nSrc, loc );
 }
 
-inline PSTR StdCodeCvt(PSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
-                       const std::locale & loc = std::locale())
+inline PSTR StdCodeCvt( PSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
+                        const std::locale & loc = std::locale() )
 {
-    ASSERT(0 != pDstA);
-    ASSERT(0 != pSrcW);
-
-    pDstA[0] = '\0';
-
-    if (nSrc > 0) {
+    ASSERT( 0 != pDstA );
+    ASSERT( 0 != pSrcW );
+    
+    pDstA[ 0 ] = '\0';
+    
+    if ( nSrc > 0 ) {
         PSTR pNextDstA = pDstA;
         PCWSTR pNextSrcW = pSrcW;
         SSCodeCvt::result res = SSCodeCvt::ok;
-        const SSCodeCvt & conv = SS_USE_FACET(loc, SSCodeCvt);
+        const SSCodeCvt & conv = SS_USE_FACET( loc, SSCodeCvt );
         SSCodeCvt::state_type st = {
                                        0};
-        res = conv.out(st,
-                       pSrcW, pSrcW + nSrc, pNextSrcW,
-                       pDstA, pDstA + nDst, pNextDstA);
-
-        ASSERT(SSCodeCvt::error != res);
-        ASSERT(SSCodeCvt::ok == res);   // strict, comment out for sanity
-        ASSERT(pNextDstA >= pDstA);
-        ASSERT(pNextSrcW >= pSrcW);
-
+        res = conv.out( st,
+                        pSrcW, pSrcW + nSrc, pNextSrcW,
+                        pDstA, pDstA + nDst, pNextDstA );
+                        
+        ASSERT( SSCodeCvt::error != res );
+        ASSERT( SSCodeCvt::ok == res );   // strict, comment out for sanity
+        ASSERT( pNextDstA >= pDstA );
+        ASSERT( pNextSrcW >= pSrcW );
+        
         // Null terminate the converted string
-
-        if (pNextDstA - pDstA > nDst)
-            *(pDstA + nDst) = '\0';
+        
+        if ( pNextDstA - pDstA > nDst )
+            * ( pDstA + nDst ) = '\0';
         else
             *pNextDstA = '\0';
     }
     return pDstA;
 }
-inline PUSTR StdCodeCvt(PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
-                        const std::locale & loc = std::locale())
+inline PUSTR StdCodeCvt( PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
+                         const std::locale & loc = std::locale() )
 {
-    return (PUSTR) StdCodeCvt((PSTR) pDstA, nDst, pSrcW, nSrc, loc);
+    return ( PUSTR ) StdCodeCvt( ( PSTR ) pDstA, nDst, pSrcW, nSrc, loc );
 }
 
 /*
 #else   // ...or are we doing things assuming win32 and Visual C++?
  
-	inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc, UINT acp=CP_ACP)
-	{
-		ASSERT(0 != pSrcA);
-		ASSERT(0 != pDstW);
-		pW[0] = '\0';
-		MultiByteToWideChar(acp, 0, pSrcA, nSrc, pDstW, nDst);
-		return pW;
-	}
-	inline PWSTR StdCodeCvt(PWSTR pDstW, nDst, PCUSTR pSrcA, int nSrc, UINT acp=CP_ACP)
-	{
-		return StdCodeCvt(pDstW, nDst, (PCSTR)pSrcA, nSrc, acp);
-	}
+ inline PWSTR StdCodeCvt(PWSTR pDstW, int nDst, PCSTR pSrcA, int nSrc, UINT acp=CP_ACP)
+ {
+  ASSERT(0 != pSrcA);
+  ASSERT(0 != pDstW);
+  pW[0] = '\0';
+  MultiByteToWideChar(acp, 0, pSrcA, nSrc, pDstW, nDst);
+  return pW;
+ }
+ inline PWSTR StdCodeCvt(PWSTR pDstW, nDst, PCUSTR pSrcA, int nSrc, UINT acp=CP_ACP)
+ {
+  return StdCodeCvt(pDstW, nDst, (PCSTR)pSrcA, nSrc, acp);
+ }
  
-	inline PSTR StdCodeCvt(PSTR pDstA, nDst PCWSTR pSrcW, int nSrc, UINT acp=CP_ACP)
-	{
-		ASSERT(0 != pDstA);
-		ASSERT(0 != pSrcW);
-		pA[0] = '\0';
-		WideCharToMultiByte(acp, 0, pSrcW, nSrc, pDstA, nDst, 0, 0);
-		return pA;
-	}
-	inline PUSTR StdCodeCvt(PUSTR pDstA, nDst, PCWSTR pSrcW, int nSrc, UINT acp=CP_ACP)
-	{
-		return (PUSTR)StdCodeCvt((PSTR)pDstA, nDst, pSrcW, nSrc, acp);
-	}
+ inline PSTR StdCodeCvt(PSTR pDstA, nDst PCWSTR pSrcW, int nSrc, UINT acp=CP_ACP)
+ {
+  ASSERT(0 != pDstA);
+  ASSERT(0 != pSrcW);
+  pA[0] = '\0';
+  WideCharToMultiByte(acp, 0, pSrcW, nSrc, pDstA, nDst, 0, 0);
+  return pA;
+ }
+ inline PUSTR StdCodeCvt(PUSTR pDstA, nDst, PCWSTR pSrcW, int nSrc, UINT acp=CP_ACP)
+ {
+  return (PUSTR)StdCodeCvt((PSTR)pDstA, nDst, pSrcW, nSrc, acp);
+ }
  
 #endif
 */
@@ -915,175 +915,175 @@ inline PUSTR StdCodeCvt(PUSTR pDstA, int nDst, PCWSTR pSrcW, int nSrc,
 
 #ifndef _DEBUG
 #define SSCVT int _cvt; _cvt; UINT _acp=GetACP(); \
-			    _acp; PCWSTR _pw; _pw; PCSTR _pa; _pa
+       _acp; PCWSTR _pw; _pw; PCSTR _pa; _pa
 #else
 #define SSCVT int _cvt = 0; _cvt; UINT _acp=GetACP();\
-			     _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
+        _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
 #endif
 #define SSA2W(pa) (\
-		    ((_pa = pa) == 0) ? 0 : (\
-			    _cvt = (sslen(_pa)),\
-			    StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
-							_pa, _cvt, _acp)))
+      ((_pa = pa) == 0) ? 0 : (\
+       _cvt = (sslen(_pa)),\
+       StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+       _pa, _cvt, _acp)))
 #define SSW2A(pw) (\
-		    ((_pw = pw) == 0) ? 0 : (\
-			    _cvt = sslen(_pw), \
-			    StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
-					_pw, _cvt, _acp)))
+      ((_pw = pw) == 0) ? 0 : (\
+       _cvt = sslen(_pw), \
+       StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+     _pw, _cvt, _acp)))
 #else
 
 #ifndef _DEBUG
 #define SSCVT int _cvt; _cvt; UINT _acp=CP_ACP; _acp;\
-			     PCWSTR _pw; _pw; PCSTR _pa; _pa
+        PCWSTR _pw; _pw; PCSTR _pa; _pa
 #else
 #define SSCVT int _cvt = 0; _cvt; UINT _acp=CP_ACP; \
-			    _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
+       _acp; PCWSTR _pw=0; _pw; PCSTR _pa=0; _pa
 #endif
 #define SSA2W(pa) (\
-		    ((_pa = pa) == 0) ? 0 : (\
-			    _cvt = (sslen(_pa)),\
-			    StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
-					_pa, _cvt)))
+      ((_pa = pa) == 0) ? 0 : (\
+       _cvt = (sslen(_pa)),\
+       StdCodeCvt((PWSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+     _pa, _cvt)))
 #define SSW2A(pw) (\
-		    ((_pw = pw) == 0) ? 0 : (\
-			    _cvt = (sslen(_pw)),\
-			    StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
-					_pw, _cvt)))
+      ((_pw = pw) == 0) ? 0 : (\
+       _cvt = (sslen(_pw)),\
+       StdCodeCvt((LPSTR) _alloca((_cvt+1)*2), (_cvt+1)*2, \
+     _pw, _cvt)))
 #endif
 
 #define SSA2CW(pa) ((PCWSTR)SSA2W((pa)))
 #define SSW2CA(pw) ((PCSTR)SSW2A((pw)))
 
 #ifdef UNICODE
-#define SST2A	SSW2A
-#define SSA2T	SSA2W
-#define SST2CA	SSW2CA
-#define SSA2CT	SSA2CW
+#define SST2A SSW2A
+#define SSA2T SSA2W
+#define SST2CA SSW2CA
+#define SSA2CT SSA2CW 
 // (Did you get a compiler error here about not being able to convert
 // PTSTR into PWSTR?  Then your _UNICODE and UNICODE flags are messed
 // up.  Best bet: #define BOTH macros before including any MS headers.)
-inline PWSTR SST2W(PTSTR p)
+inline PWSTR SST2W( PTSTR p )
 {
     return p;
 }
-inline PTSTR SSW2T(PWSTR p)
+inline PTSTR SSW2T( PWSTR p )
 {
     return p;
 }
-inline PCWSTR SST2CW(PCTSTR p)
+inline PCWSTR SST2CW( PCTSTR p )
 {
     return p;
 }
-inline PCTSTR SSW2CT(PCWSTR p)
+inline PCTSTR SSW2CT( PCWSTR p )
 {
     return p;
 }
 #else
-#define SST2W	SSA2W
-#define SSW2T	SSW2A
-#define SST2CW	SSA2CW
-#define SSW2CT	SSW2CA
-inline PSTR SST2A(PTSTR p)
+#define SST2W SSA2W
+#define SSW2T SSW2A
+#define SST2CW SSA2CW
+#define SSW2CT SSW2CA
+inline PSTR SST2A( PTSTR p )
 {
     return p;
 }
-inline PTSTR SSA2T(PSTR p)
+inline PTSTR SSA2T( PSTR p )
 {
     return p;
 }
-inline PCSTR SST2CA(PCTSTR p)
+inline PCSTR SST2CA( PCTSTR p )
 {
     return p;
 }
-inline PCTSTR SSA2CT(PCSTR p)
+inline PCTSTR SSA2CT( PCSTR p )
 {
     return p;
 }
 #endif // #ifdef UNICODE
 
-#if defined(UNICODE)
+#if defined(UNICODE) 
 // in these cases the default (TCHAR) is the same as OLECHAR
-inline PCOLESTR SST2COLE(PCTSTR p)
+inline PCOLESTR SST2COLE( PCTSTR p )
 {
     return p;
 }
-inline PCTSTR SSOLE2CT(PCOLESTR p)
+inline PCTSTR SSOLE2CT( PCOLESTR p )
 {
     return p;
 }
-inline POLESTR SST2OLE(PTSTR p)
+inline POLESTR SST2OLE( PTSTR p )
 {
     return p;
 }
-inline PTSTR SSOLE2T(POLESTR p)
+inline PTSTR SSOLE2T( POLESTR p )
 {
     return p;
 }
-#elif defined(OLE2ANSI)
+#elif defined(OLE2ANSI) 
 // in these cases the default (TCHAR) is the same as OLECHAR
-inline PCOLESTR SST2COLE(PCTSTR p)
+inline PCOLESTR SST2COLE( PCTSTR p )
 {
     return p;
 }
-inline PCTSTR SSOLE2CT(PCOLESTR p)
+inline PCTSTR SSOLE2CT( PCOLESTR p )
 {
     return p;
 }
-inline POLESTR SST2OLE(PTSTR p)
+inline POLESTR SST2OLE( PTSTR p )
 {
     return p;
 }
-inline PTSTR SSOLE2T(POLESTR p)
+inline PTSTR SSOLE2T( POLESTR p )
 {
     return p;
 }
-#else
+#else 
 //CharNextW doesn't work on Win95 so we use this
-#define SST2COLE(pa)	SSA2CW((pa))
-#define SST2OLE(pa)		SSA2W((pa))
-#define SSOLE2CT(po)	SSW2CA((po))
-#define SSOLE2T(po)		SSW2A((po))
+#define SST2COLE(pa) SSA2CW((pa))
+#define SST2OLE(pa)  SSA2W((pa))
+#define SSOLE2CT(po) SSW2CA((po))
+#define SSOLE2T(po)  SSW2A((po))
 #endif
 
 #ifdef OLE2ANSI
-#define SSW2OLE		SSW2A
-#define SSOLE2W		SSA2W
-#define SSW2COLE	SSW2CA
-#define SSOLE2CW	SSA2CW
-inline POLESTR SSA2OLE(PSTR p)
+#define SSW2OLE  SSW2A
+#define SSOLE2W  SSA2W
+#define SSW2COLE SSW2CA
+#define SSOLE2CW SSA2CW
+inline POLESTR SSA2OLE( PSTR p )
 {
     return p;
 }
-inline PSTR SSOLE2A(POLESTR p)
+inline PSTR SSOLE2A( POLESTR p )
 {
     return p;
 }
-inline PCOLESTR SSA2COLE(PCSTR p)
+inline PCOLESTR SSA2COLE( PCSTR p )
 {
     return p;
 }
-inline PCSTR SSOLE2CA(PCOLESTR p)
+inline PCSTR SSOLE2CA( PCOLESTR p )
 {
     return p;
 }
 #else
-#define SSA2OLE		SSA2W
-#define SSOLE2A		SSW2A
-#define SSA2COLE	SSA2CW
-#define SSOLE2CA	SSW2CA
-inline POLESTR SSW2OLE(PWSTR p)
+#define SSA2OLE  SSA2W
+#define SSOLE2A  SSW2A
+#define SSA2COLE SSA2CW
+#define SSOLE2CA SSW2CA
+inline POLESTR SSW2OLE( PWSTR p )
 {
     return p;
 }
-inline PWSTR SSOLE2W(POLESTR p)
+inline PWSTR SSOLE2W( POLESTR p )
 {
     return p;
 }
-inline PCOLESTR SSW2COLE(PCWSTR p)
+inline PCOLESTR SSW2COLE( PCWSTR p )
 {
     return p;
 }
-inline PCWSTR SSOLE2CW(PCOLESTR p)
+inline PCWSTR SSOLE2CW( PCOLESTR p )
 {
     return p;
 }
@@ -1107,30 +1107,30 @@ inline PCWSTR SSOLE2CW(PCOLESTR p)
 #else
 
 #define USES_CONVERSION SSCVT
-#define A2CW			SSA2CW
-#define W2CA			SSW2CA
-#define T2A				SST2A
-#define A2T				SSA2T
-#define T2W				SST2W
-#define W2T				SSW2T
-#define T2CA			SST2CA
-#define A2CT			SSA2CT
-#define T2CW			SST2CW
-#define W2CT			SSW2CT
-#define ocslen			sslen
-#define ocscpy			sscpy
-#define T2COLE			SST2COLE
-#define OLE2CT			SSOLE2CT
-#define T2OLE			SST2COLE
-#define OLE2T			SSOLE2CT
-#define A2OLE			SSA2OLE
-#define OLE2A			SSOLE2A
-#define W2OLE			SSW2OLE
-#define OLE2W			SSOLE2W
-#define A2COLE			SSA2COLE
-#define OLE2CA			SSOLE2CA
-#define W2COLE			SSW2COLE
-#define OLE2CW			SSOLE2CW
+#define A2CW   SSA2CW
+#define W2CA   SSW2CA
+#define T2A    SST2A
+#define A2T    SSA2T
+#define T2W    SST2W
+#define W2T    SSW2T
+#define T2CA   SST2CA
+#define A2CT   SSA2CT
+#define T2CW   SST2CW
+#define W2CT   SSW2CT
+#define ocslen   sslen
+#define ocscpy   sscpy
+#define T2COLE   SST2COLE
+#define OLE2CT   SSOLE2CT
+#define T2OLE   SST2COLE
+#define OLE2T   SSOLE2CT
+#define A2OLE   SSA2OLE
+#define OLE2A   SSOLE2A
+#define W2OLE   SSW2OLE
+#define OLE2W   SSOLE2W
+#define A2COLE   SSA2COLE
+#define OLE2CA   SSOLE2CA
+#define W2COLE   SSW2COLE
+#define OLE2CW   SSOLE2CW
 
 #endif // #ifdef _MFC_VER
 #endif // #ifndef USES_CONVERSION
@@ -1144,39 +1144,39 @@ typedef std::basic_string < OLECHAR > ostring;
 #endif
 
 // StdCodeCvt when there's no conversion to be done
-inline PSTR StdCodeCvt(PSTR pDst, int nDst, PCSTR pSrc, int nSrc)
+inline PSTR StdCodeCvt( PSTR pDst, int nDst, PCSTR pSrc, int nSrc )
 {
-    int nChars = SSMIN(nSrc, nDst);
-
-    if (nChars > 0) {
-        pDst[0] = '\0';
-        std::basic_string < char >::traits_type::copy(pDst, pSrc, nChars);
+    int nChars = SSMIN( nSrc, nDst );
+    
+    if ( nChars > 0 ) {
+        pDst[ 0 ] = '\0';
+        std::basic_string < char >::traits_type::copy( pDst, pSrc, nChars );
         //              std::char_traits<char>::copy(pDst, pSrc, nChars);
-        pDst[nChars] = '\0';
+        pDst[ nChars ] = '\0';
     }
-
+    
     return pDst;
 }
-inline PSTR StdCodeCvt(PSTR pDst, int nDst, PCUSTR pSrc, int nSrc)
+inline PSTR StdCodeCvt( PSTR pDst, int nDst, PCUSTR pSrc, int nSrc )
 {
-    return StdCodeCvt(pDst, nDst, (PCSTR) pSrc, nSrc);
+    return StdCodeCvt( pDst, nDst, ( PCSTR ) pSrc, nSrc );
 }
-inline PUSTR StdCodeCvt(PUSTR pDst, int nDst, PCSTR pSrc, int nSrc)
+inline PUSTR StdCodeCvt( PUSTR pDst, int nDst, PCSTR pSrc, int nSrc )
 {
-    return (PUSTR) StdCodeCvt((PSTR) pDst, nDst, pSrc, nSrc);
+    return ( PUSTR ) StdCodeCvt( ( PSTR ) pDst, nDst, pSrc, nSrc );
 }
 
-inline PWSTR StdCodeCvt(PWSTR pDst, int nDst, PCWSTR pSrc, int nSrc)
+inline PWSTR StdCodeCvt( PWSTR pDst, int nDst, PCWSTR pSrc, int nSrc )
 {
-    int nChars = SSMIN(nSrc, nDst);
-
-    if (nChars > 0) {
-        pDst[0] = '\0';
-        std::basic_string < wchar_t >::traits_type::copy(pDst, pSrc, nChars);
+    int nChars = SSMIN( nSrc, nDst );
+    
+    if ( nChars > 0 ) {
+        pDst[ 0 ] = '\0';
+        std::basic_string < wchar_t >::traits_type::copy( pDst, pSrc, nChars );
         //              std::char_traits<wchar_t>::copy(pDst, pSrc, nChars);
-        pDst[nChars] = '\0';
+        pDst[ nChars ] = '\0';
     }
-
+    
     return pDst;
 }
 
@@ -1234,34 +1234,34 @@ typedef std::basic_string < TCHAR > tstring;
 // sslen: strlen/wcslen wrappers
 // -----------------------------------------------------------------------------
 template < typename CT >
-inline int sslen(const CT * pT)
+inline int sslen( const CT * pT )
 {
-    return 0 == pT ? 0 : (int) std::basic_string <
-           CT >::traits_type::length(pT);
+    return 0 == pT ? 0 : ( int ) std::basic_string <
+           CT > ::traits_type::length( pT );
     //      return 0 == pT ? 0 : std::char_traits<CT>::length(pT);
 }
-inline SS_NOTHROW int sslen(const std::string & s)
+inline SS_NOTHROW int sslen( const std::string & s )
 {
-    return static_cast < int >(s.length());
+    return static_cast < int >( s.length() );
 }
-inline SS_NOTHROW int sslen(const std::wstring & s)
+inline SS_NOTHROW int sslen( const std::wstring & s )
 {
-    return static_cast < int >(s.length());
+    return static_cast < int >( s.length() );
 }
 
 // -----------------------------------------------------------------------------
 // sstolower/sstoupper -- convert characters to upper/lower case
 // -----------------------------------------------------------------------------
 template < typename CT >
-inline CT sstolower(const CT & t, const std::locale & loc = std::locale())
+inline CT sstolower( const CT & t, const std::locale & loc = std::locale() )
 {
-    return std::tolower < CT > (t, loc);
+    return std::tolower < CT > ( t, loc );
 }
 
 template < typename CT >
-inline CT sstoupper(const CT & t, const std::locale & loc = std::locale())
+inline CT sstoupper( const CT & t, const std::locale & loc = std::locale() )
 {
-    return std::toupper < CT > (t, loc);
+    return std::toupper < CT > ( t, loc );
 }
 
 // -----------------------------------------------------------------------------
@@ -1272,331 +1272,331 @@ typedef std::string::pointer SS_PTRTYPE;
 typedef std::wstring::size_type SW_SIZETYPE;
 typedef std::wstring::pointer SW_PTRTYPE;
 
-inline void ssasn(std::string & sDst, const std::string & sSrc)
+inline void ssasn( std::string & sDst, const std::string & sSrc )
 {
-    if (sDst.c_str() != sSrc.c_str()) {
+    if ( sDst.c_str() != sSrc.c_str() ) {
         sDst.erase();
-        sDst.assign(SSREF(sSrc));
+        sDst.assign( SSREF( sSrc ) );
     }
 }
-inline void ssasn(std::string & sDst, PCSTR pA)
+inline void ssasn( std::string & sDst, PCSTR pA )
 {
     // Watch out for NULLs, as always.
-
-    if (0 == pA) {
+    
+    if ( 0 == pA ) {
         sDst.erase();
     }
-
+    
     // If pA actually points to part of sDst, we must NOT erase(), but
     // rather take a substring
-
-    else if (pA >= sDst.c_str() && pA <= sDst.c_str() + sDst.size()) {
-        sDst = sDst.substr(static_cast < SS_SIZETYPE > (pA - sDst.c_str()));
+    
+    else if ( pA >= sDst.c_str() && pA <= sDst.c_str() + sDst.size() ) {
+        sDst = sDst.substr( static_cast < SS_SIZETYPE > ( pA - sDst.c_str() ) );
     }
-
+    
     // Otherwise (most cases) apply the assignment bug fix, if applicable
     // and do the assignment
-
+    
     else {
-        Q172398(sDst);
-        sDst.assign(pA);
+        Q172398( sDst );
+        sDst.assign( pA );
     }
 }
-inline void ssasn(std::string & sDst, const std::wstring & sSrc)
+inline void ssasn( std::string & sDst, const std::wstring & sSrc )
 {
-    if (sSrc.empty()) {
+    if ( sSrc.empty() ) {
         sDst.erase();
     } else {
-        int nDst = static_cast < int >(sSrc.size());
-
+        int nDst = static_cast < int >( sSrc.size() );
+        
         // In MBCS builds, pad the buffer to account for the possibility of
         // some 3 byte characters.  Not perfect but should get most cases.
-
+        
 #ifdef SS_MBCS
-
-        nDst = static_cast < int >(static_cast < double >(nDst) * 1.3);
+        
+        nDst = static_cast < int >( static_cast < double >( nDst ) * 1.3 );
 #endif
-
-        sDst.resize(nDst + 1);
+        
+        sDst.resize( nDst + 1 );
         PCSTR szCvt =
-            StdCodeCvt(const_cast < SS_PTRTYPE > (sDst.data()), nDst,
-                       sSrc.c_str(), static_cast < int >(sSrc.size()));
-
+            StdCodeCvt( const_cast < SS_PTRTYPE > ( sDst.data() ), nDst,
+                        sSrc.c_str(), static_cast < int >( sSrc.size() ) );
+                        
         // In MBCS builds, we don't know how long the destination string will be.
-
+        
 #ifdef SS_MBCS
-
-        sDst.resize(sslen(szCvt));
+        
+        sDst.resize( sslen( szCvt ) );
 #else
-
-        szCvt;
-        sDst.resize(sSrc.size());
+        
+szCvt;
+        sDst.resize( sSrc.size() );
 #endif
-
+        
     }
 }
-inline void ssasn(std::string & sDst, PCWSTR pW)
+inline void ssasn( std::string & sDst, PCWSTR pW )
 {
-    int nSrc = sslen(pW);
-    if (nSrc > 0) {
-        int nSrc = sslen(pW);
+    int nSrc = sslen( pW );
+    if ( nSrc > 0 ) {
+        int nSrc = sslen( pW );
         int nDst = nSrc;
-
+        
         // In MBCS builds, pad the buffer to account for the possibility of
         // some 3 byte characters.  Not perfect but should get most cases.
-
+        
 #ifdef SS_MBCS
-
-        nDst = static_cast < int >(static_cast < double >(nDst) * 1.3);
+        
+        nDst = static_cast < int >( static_cast < double >( nDst ) * 1.3 );
 #endif
-
-        sDst.resize(nDst + 1);
+        
+        sDst.resize( nDst + 1 );
         PCSTR szCvt =
-            StdCodeCvt(const_cast < SS_PTRTYPE > (sDst.data()), nDst,
-                       pW, nSrc);
-
+            StdCodeCvt( const_cast < SS_PTRTYPE > ( sDst.data() ), nDst,
+                        pW, nSrc );
+                        
         // In MBCS builds, we don't know how long the destination string will be.
-
+        
 #ifdef SS_MBCS
-
-        sDst.resize(sslen(szCvt));
+        
+        sDst.resize( sslen( szCvt ) );
 #else
-
-        sDst.resize(nDst);
+        
+sDst.resize( nDst );
         szCvt;
 #endif
-
+        
     } else {
         sDst.erase();
     }
 }
-inline void ssasn(std::string & sDst, const int nNull)
+inline void ssasn( std::string & sDst, const int nNull )
 {
-    UNUSED(nNull);
-    ASSERT(nNull == 0);
-    sDst.assign("");
+    UNUSED( nNull );
+    ASSERT( nNull == 0 );
+    sDst.assign( "" );
 }
-inline void ssasn(std::wstring & sDst, const std::wstring & sSrc)
+inline void ssasn( std::wstring & sDst, const std::wstring & sSrc )
 {
-    if (sDst.c_str() != sSrc.c_str()) {
+    if ( sDst.c_str() != sSrc.c_str() ) {
         sDst.erase();
-        sDst.assign(SSREF(sSrc));
+        sDst.assign( SSREF( sSrc ) );
     }
 }
-inline void ssasn(std::wstring & sDst, PCWSTR pW)
+inline void ssasn( std::wstring & sDst, PCWSTR pW )
 {
     // Watch out for NULLs, as always.
-
-    if (0 == pW) {
+    
+    if ( 0 == pW ) {
         sDst.erase();
     }
-
+    
     // If pW actually points to part of sDst, we must NOT erase(), but
     // rather take a substring
-
-    else if (pW >= sDst.c_str() && pW <= sDst.c_str() + sDst.size()) {
-        sDst = sDst.substr(static_cast < SW_SIZETYPE > (pW - sDst.c_str()));
+    
+    else if ( pW >= sDst.c_str() && pW <= sDst.c_str() + sDst.size() ) {
+        sDst = sDst.substr( static_cast < SW_SIZETYPE > ( pW - sDst.c_str() ) );
     }
-
+    
     // Otherwise (most cases) apply the assignment bug fix, if applicable
     // and do the assignment
-
+    
     else {
-        Q172398(sDst);
-        sDst.assign(pW);
+        Q172398( sDst );
+        sDst.assign( pW );
     }
 }
 
 #undef StrSizeType
-inline void ssasn(std::wstring & sDst, const std::string & sSrc)
+inline void ssasn( std::wstring & sDst, const std::string & sSrc )
 {
-    if (sSrc.empty()) {
+    if ( sSrc.empty() ) {
         sDst.erase();
     } else {
-        int nSrc = static_cast < int >(sSrc.size());
+        int nSrc = static_cast < int >( sSrc.size() );
         int nDst = nSrc;
-
-        sDst.resize(nSrc + 1);
+        
+        sDst.resize( nSrc + 1 );
         PCWSTR szCvt =
-            StdCodeCvt(const_cast < SW_PTRTYPE > (sDst.data()), nDst,
-                       sSrc.c_str(), nSrc);
-
-        sDst.resize(sslen(szCvt));
+            StdCodeCvt( const_cast < SW_PTRTYPE > ( sDst.data() ), nDst,
+                        sSrc.c_str(), nSrc );
+                        
+        sDst.resize( sslen( szCvt ) );
     }
 }
-inline void ssasn(std::wstring & sDst, PCSTR pA)
+inline void ssasn( std::wstring & sDst, PCSTR pA )
 {
-    int nSrc = sslen(pA);
-
-    if (0 == nSrc) {
+    int nSrc = sslen( pA );
+    
+    if ( 0 == nSrc ) {
         sDst.erase();
     } else {
         int nDst = nSrc;
-        sDst.resize(nDst + 1);
+        sDst.resize( nDst + 1 );
         PCWSTR szCvt =
-            StdCodeCvt(const_cast < SW_PTRTYPE > (sDst.data()), nDst, pA,
-                       nSrc);
-
-        sDst.resize(sslen(szCvt));
+            StdCodeCvt( const_cast < SW_PTRTYPE > ( sDst.data() ), nDst, pA,
+                        nSrc );
+                        
+        sDst.resize( sslen( szCvt ) );
     }
 }
-inline void ssasn(std::wstring & sDst, const int nNull)
+inline void ssasn( std::wstring & sDst, const int nNull )
 {
-    UNUSED(nNull);
-    ASSERT(nNull == 0);
-    sDst.assign(L"");
+    UNUSED( nNull );
+    ASSERT( nNull == 0 );
+    sDst.assign( L"" );
 }
 
 
 // -----------------------------------------------------------------------------
 // ssadd: string object concatenation -- add second argument to first
 // -----------------------------------------------------------------------------
-inline void ssadd(std::string & sDst, const std::wstring & sSrc)
+inline void ssadd( std::string & sDst, const std::wstring & sSrc )
 {
-    int nSrc = static_cast < int >(sSrc.size());
-
-    if (nSrc > 0) {
-        int nDst = static_cast < int >(sDst.size());
+    int nSrc = static_cast < int >( sSrc.size() );
+    
+    if ( nSrc > 0 ) {
+        int nDst = static_cast < int >( sDst.size() );
         int nAdd = nSrc;
-
+        
         // In MBCS builds, pad the buffer to account for the possibility of
         // some 3 byte characters.  Not perfect but should get most cases.
-
+        
 #ifdef SS_MBCS
-
-        nAdd = static_cast < int >(static_cast < double >(nAdd) * 1.3);
+        
+        nAdd = static_cast < int >( static_cast < double >( nAdd ) * 1.3 );
 #endif
-
-        sDst.resize(nDst + nAdd + 1);
+        
+        sDst.resize( nDst + nAdd + 1 );
         PCSTR szCvt =
-            StdCodeCvt(const_cast < SS_PTRTYPE > (sDst.data() + nDst),
-                       nAdd, sSrc.c_str(), nSrc);
-
+            StdCodeCvt( const_cast < SS_PTRTYPE > ( sDst.data() + nDst ),
+                        nAdd, sSrc.c_str(), nSrc );
+                        
 #ifdef SS_MBCS
-
-        sDst.resize(nDst + sslen(szCvt));
+                        
+        sDst.resize( nDst + sslen( szCvt ) );
 #else
-
-        sDst.resize(nDst + nAdd);
+        
+sDst.resize( nDst + nAdd );
         szCvt;
 #endif
-
+        
     }
 }
-inline void ssadd(std::string & sDst, const std::string & sSrc)
+inline void ssadd( std::string & sDst, const std::string & sSrc )
 {
     sDst += sSrc;
 }
-inline void ssadd(std::string & sDst, PCWSTR pW)
+inline void ssadd( std::string & sDst, PCWSTR pW )
 {
-    int nSrc = sslen(pW);
-    if (nSrc > 0) {
-        int nDst = static_cast < int >(sDst.size());
+    int nSrc = sslen( pW );
+    if ( nSrc > 0 ) {
+        int nDst = static_cast < int >( sDst.size() );
         int nAdd = nSrc;
-
+        
 #ifdef SS_MBCS
-
-        nAdd = static_cast < int >(static_cast < double >(nAdd) * 1.3);
+        
+        nAdd = static_cast < int >( static_cast < double >( nAdd ) * 1.3 );
 #endif
-
-        sDst.resize(nDst + nAdd + 1);
+        
+        sDst.resize( nDst + nAdd + 1 );
         PCSTR szCvt =
-            StdCodeCvt(const_cast < SS_PTRTYPE > (sDst.data() + nDst),
-                       nAdd, pW, nSrc);
-
+            StdCodeCvt( const_cast < SS_PTRTYPE > ( sDst.data() + nDst ),
+                        nAdd, pW, nSrc );
+                        
 #ifdef SS_MBCS
-
-        sDst.resize(nDst + sslen(szCvt));
+                        
+        sDst.resize( nDst + sslen( szCvt ) );
 #else
-
-        sDst.resize(nDst + nSrc);
+        
+sDst.resize( nDst + nSrc );
         szCvt;
 #endif
-
+        
     }
 }
-inline void ssadd(std::string & sDst, PCSTR pA)
+inline void ssadd( std::string & sDst, PCSTR pA )
 {
-    if (pA) {
+    if ( pA ) {
         // If the string being added is our internal string or a part of our
         // internal string, then we must NOT do any reallocation without
         // first copying that string to another object (since we're using a
         // direct pointer)
-
-        if (pA >= sDst.c_str() && pA <= sDst.c_str() + sDst.length()) {
-            if (sDst.capacity() <= sDst.size() + sslen(pA))
-                sDst.append(std::string(pA));
+        
+        if ( pA >= sDst.c_str() && pA <= sDst.c_str() + sDst.length() ) {
+            if ( sDst.capacity() <= sDst.size() + sslen( pA ) )
+                sDst.append( std::string( pA ) );
             else
-                sDst.append(pA);
+                sDst.append( pA );
         } else {
-            sDst.append(pA);
+            sDst.append( pA );
         }
     }
 }
-inline void ssadd(std::wstring & sDst, const std::wstring & sSrc)
+inline void ssadd( std::wstring & sDst, const std::wstring & sSrc )
 {
     sDst += sSrc;
 }
-inline void ssadd(std::wstring & sDst, const std::string & sSrc)
+inline void ssadd( std::wstring & sDst, const std::string & sSrc )
 {
-    if (!sSrc.empty()) {
-        int nSrc = static_cast < int >(sSrc.size());
-        int nDst = static_cast < int >(sDst.size());
-
-        sDst.resize(nDst + nSrc + 1);
+    if ( !sSrc.empty() ) {
+        int nSrc = static_cast < int >( sSrc.size() );
+        int nDst = static_cast < int >( sDst.size() );
+        
+        sDst.resize( nDst + nSrc + 1 );
         PCWSTR szCvt =
-            StdCodeCvt(const_cast < SW_PTRTYPE > (sDst.data() + nDst),
-                       nSrc, sSrc.c_str(), nSrc + 1);
-
+            StdCodeCvt( const_cast < SW_PTRTYPE > ( sDst.data() + nDst ),
+                        nSrc, sSrc.c_str(), nSrc + 1 );
+                        
 #ifdef SS_MBCS
-
-        sDst.resize(nDst + sslen(szCvt));
+                        
+        sDst.resize( nDst + sslen( szCvt ) );
 #else
-
-        sDst.resize(nDst + nSrc);
+        
+sDst.resize( nDst + nSrc );
         szCvt;
 #endif
-
+        
     }
 }
-inline void ssadd(std::wstring & sDst, PCSTR pA)
+inline void ssadd( std::wstring & sDst, PCSTR pA )
 {
-    int nSrc = sslen(pA);
-
-    if (nSrc > 0) {
-        int nDst = static_cast < int >(sDst.size());
-
-        sDst.resize(nDst + nSrc + 1);
+    int nSrc = sslen( pA );
+    
+    if ( nSrc > 0 ) {
+        int nDst = static_cast < int >( sDst.size() );
+        
+        sDst.resize( nDst + nSrc + 1 );
         PCWSTR szCvt =
-            StdCodeCvt(const_cast < SW_PTRTYPE > (sDst.data() + nDst),
-                       nSrc, pA, nSrc + 1);
-
+            StdCodeCvt( const_cast < SW_PTRTYPE > ( sDst.data() + nDst ),
+                        nSrc, pA, nSrc + 1 );
+                        
 #ifdef SS_MBCS
-
-        sDst.resize(nDst + sslen(szCvt));
+                        
+        sDst.resize( nDst + sslen( szCvt ) );
 #else
-
-        sDst.resize(nDst + nSrc);
+        
+        sDst.resize( nDst + nSrc );
         szCvt;
 #endif
-
+        
     }
 }
-inline void ssadd(std::wstring & sDst, PCWSTR pW)
+inline void ssadd( std::wstring & sDst, PCWSTR pW )
 {
-    if (pW) {
+    if ( pW ) {
         // If the string being added is our internal string or a part of our
         // internal string, then we must NOT do any reallocation without
         // first copying that string to another object (since we're using a
         // direct pointer)
-
-        if (pW >= sDst.c_str() && pW <= sDst.c_str() + sDst.length()) {
-            if (sDst.capacity() <= sDst.size() + sslen(pW))
-                sDst.append(std::wstring(pW));
+        
+        if ( pW >= sDst.c_str() && pW <= sDst.c_str() + sDst.length() ) {
+            if ( sDst.capacity() <= sDst.size() + sslen( pW ) )
+                sDst.append( std::wstring( pW ) );
             else
-                sDst.append(pW);
+                sDst.append( pW );
         } else {
-            sDst.append(pW);
+            sDst.append( pW );
         }
     }
 }
@@ -1606,38 +1606,38 @@ inline void ssadd(std::wstring & sDst, PCWSTR pW)
 // sscmp: comparison (case sensitive, not affected by locale)
 // -----------------------------------------------------------------------------
 template < typename CT >
-inline int sscmp(const CT * pA1, const CT * pA2)
+inline int sscmp( const CT * pA1, const CT * pA2 )
 {
     CT f;
     CT l;
-
+    
     do {
-        f = *(pA1++);
-        l = *(pA2++);
-    } while ((f) && (f == l));
-
-    return (int) (f - l);
+        f = *( pA1++ );
+        l = *( pA2++ );
+    } while ( ( f ) && ( f == l ) );
+    
+    return ( int ) ( f - l );
 }
 
 // -----------------------------------------------------------------------------
 // ssicmp: comparison (case INsensitive, not affected by locale)
 // -----------------------------------------------------------------------------
 template < typename CT >
-inline int ssicmp(const CT * pA1, const CT * pA2)
+inline int ssicmp( const CT * pA1, const CT * pA2 )
 {
     // Using the "C" locale = "not affected by locale"
-
+    
     std::locale loc = std::locale::classic();
-    const std::ctype < CT > &ct = SS_USE_FACET(loc, std::ctype < CT >);
+    const std::ctype < CT > &ct = SS_USE_FACET( loc, std::ctype < CT > );
     CT f;
     CT l;
-
+    
     do {
-        f = ct.tolower(*(pA1++));
-        l = ct.tolower(*(pA2++));
-    } while ((f) && (f == l));
-
-    return (int) (f - l);
+        f = ct.tolower( *( pA1++ ) );
+        l = ct.tolower( *( pA2++ ) );
+    } while ( ( f ) && ( f == l ) );
+    
+    return ( int ) ( f - l );
 }
 
 // -----------------------------------------------------------------------------
@@ -1645,16 +1645,16 @@ inline int ssicmp(const CT * pA1, const CT * pA2)
 // -----------------------------------------------------------------------------
 
 template < typename CT >
-inline void sslwr(CT * pT, size_t nLen, const std::locale & loc =
-                      std::locale())
+inline void sslwr( CT * pT, size_t nLen, const std::locale & loc =
+                       std::locale() )
 {
-    SS_USE_FACET(loc, std::ctype < CT >).tolower(pT, pT + nLen);
+    SS_USE_FACET( loc, std::ctype < CT > ).tolower( pT, pT + nLen );
 }
 template < typename CT >
-inline void ssupr(CT * pT, size_t nLen, const std::locale & loc =
-                      std::locale())
+inline void ssupr( CT * pT, size_t nLen, const std::locale & loc =
+                       std::locale() )
 {
-    SS_USE_FACET(loc, std::ctype < CT >).toupper(pT, pT + nLen);
+    SS_USE_FACET( loc, std::ctype < CT > ).toupper( pT, pT + nLen );
 }
 
 // -----------------------------------------------------------------------------
@@ -1675,25 +1675,25 @@ using std::vswprintf;
 
 #if defined(__GNUC__)
 
-inline int ssvsprintf(PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl)
+inline int ssvsprintf( PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl )
 {
-    return vsnprintf(pA, nCount, pFmtA, vl);
+    return vsnprintf( pA, nCount, pFmtA, vl );
 }
-inline int ssvsprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
+inline int ssvsprintf( PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl )
 {
-    return vswprintf(pW, nCount, pFmtW, vl);
+    return vswprintf( pW, nCount, pFmtW, vl );
 }
 
 // Microsofties can use
 #elif defined(_MSC_VER) && !defined(SS_ANSI)
 
-inline int ssnprintf(PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl)
+inline int ssnprintf( PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl )
 {
-    return _vsnprintf(pA, nCount, pFmtA, vl);
+    return _vsnprintf( pA, nCount, pFmtA, vl );
 }
-inline int ssnprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
+inline int ssnprintf( PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl )
 {
-    return _vsnwprintf(pW, nCount, pFmtW, vl);
+    return _vsnwprintf( pW, nCount, pFmtW, vl );
 }
 
 #elif !defined (SS_DANGEROUS_FORMAT)
@@ -1715,23 +1715,23 @@ inline int ssnprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
 // Even THEN you might not be all the way home due to some non-conforming
 // distributions.  More on this in the comments below.
 
-inline int ssnprintf(PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl)
+inline int ssnprintf( PSTR pA, size_t nCount, PCSTR pFmtA, va_list vl )
 {
-    return vsnprintf(pA, nCount, pFmtA, vl);
+    return vsnprintf( pA, nCount, pFmtA, vl );
 }
-inline int ssnprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
+inline int ssnprintf( PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl )
 {
-    return vsnwprintf(pW, nCount, pFmtW, vl);
+    return vsnwprintf( pW, nCount, pFmtW, vl );
 }
 
 #else
 
-inline int ssvsprintf(PSTR pA, size_t /*nCount */ , PCSTR pFmtA, va_list vl)
+inline int ssvsprintf( PSTR pA, size_t /*nCount */ , PCSTR pFmtA, va_list vl )
 {
-    return vsprintf(pA, pFmtA, vl);
+    return vsprintf( pA, pFmtA, vl );
 }
 
-inline int ssvsprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
+inline int ssvsprintf( PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl )
 {
     // JMO: Some distributions of the "C" have a version of vswprintf that
     // takes 3 arguments (e.g. Microsoft, Borland, GNU).  Others have a
@@ -1756,7 +1756,7 @@ inline int ssvsprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
         && !defined(__GNUC__) \
         && !defined(__sgi)
 
-    return vswprintf(pW, nCount, pFmtW, vl);
+    return vswprintf( pW, nCount, pFmtW, vl );
 
     // suddenly with the current SGI 7.3 compiler there is no such function as
     // vswprintf and the substitute needs explicit casts to compile
@@ -1764,12 +1764,12 @@ inline int ssvsprintf(PWSTR pW, size_t nCount, PCWSTR pFmtW, va_list vl)
 #elif defined(__sgi)
 
 nCount;
-return vsprintf((char *) pW, (char *) pFmtW, vl);
+return vsprintf( ( char * ) pW, ( char * ) pFmtW, vl );
 
 #else
 
 nCount;
-return vswprintf(pW, pFmtW, vl);
+return vswprintf( pW, pFmtW, vl );
 
 #endif
 
@@ -1785,13 +1785,13 @@ return vswprintf(pW, pFmtW, vl);
 // thinking that with the message facet, there might eventually be one
 // -----------------------------------------------------------------------------
 #if defined (SS_WIN32) && !defined(SS_ANSI)
-inline int ssload(HMODULE hInst, UINT uId, PSTR pBuf, int nMax)
+inline int ssload( HMODULE hInst, UINT uId, PSTR pBuf, int nMax )
 {
-    return::LoadStringA(hInst, uId, pBuf, nMax);
+    return ::LoadStringA( hInst, uId, pBuf, nMax );
 }
-inline int ssload(HMODULE hInst, UINT uId, PWSTR pBuf, int nMax)
+inline int ssload( HMODULE hInst, UINT uId, PWSTR pBuf, int nMax )
 {
-    return::LoadStringW(hInst, uId, pBuf, nMax);
+    return ::LoadStringW( hInst, uId, pBuf, nMax );
 }
 #endif
 
@@ -1802,33 +1802,33 @@ inline int ssload(HMODULE hInst, UINT uId, PWSTR pBuf, int nMax)
 //              functions appear to return the opposite of what they should
 // -----------------------------------------------------------------------------
 template < typename CT >
-inline int sscoll(const CT * sz1, int nLen1, const CT * sz2, int nLen2)
+inline int sscoll( const CT * sz1, int nLen1, const CT * sz2, int nLen2 )
 {
     const std::collate < CT > &coll =
-        SS_USE_FACET(std::locale(), std::collate < CT >);
-
-    return coll.compare(sz2, sz2 + nLen2, sz1, sz1 + nLen1);
+        SS_USE_FACET( std::locale(), std::collate < CT > );
+        
+    return coll.compare( sz2, sz2 + nLen2, sz1, sz1 + nLen1 );
 }
 template < typename CT >
-inline int ssicoll(const CT * sz1, int nLen1, const CT * sz2, int nLen2)
+inline int ssicoll( const CT * sz1, int nLen1, const CT * sz2, int nLen2 )
 {
     const std::locale loc;
-    const std::collate < CT > &coll = SS_USE_FACET(loc, std::collate < CT >);
-
+    const std::collate < CT > &coll = SS_USE_FACET( loc, std::collate < CT > );
+    
     // Some implementations seem to have trouble using the collate<>
     // facet typedefs so we'll just default to basic_string and hope
     // that's what the collate facet uses (which it generally should)
-
+    
     //      std::collate<CT>::string_type s1(sz1);
     //      std::collate<CT>::string_type s2(sz2);
     const std::basic_string < CT > sEmpty;
-    std::basic_string < CT > s1(sz1 ? sz1 : sEmpty.c_str());
-    std::basic_string < CT > s2(sz2 ? sz2 : sEmpty.c_str());
-
-    sslwr(const_cast < CT * >(s1.c_str()), nLen1, loc);
-    sslwr(const_cast < CT * >(s2.c_str()), nLen2, loc);
-    return coll.compare(s2.c_str(), s2.c_str() + nLen2,
-                        s1.c_str(), s1.c_str() + nLen1);
+    std::basic_string < CT > s1( sz1 ? sz1 : sEmpty.c_str() );
+    std::basic_string < CT > s2( sz2 ? sz2 : sEmpty.c_str() );
+    
+    sslwr( const_cast < CT * >( s1.c_str() ), nLen1, loc );
+    sslwr( const_cast < CT * >( s2.c_str() ), nLen2, loc );
+    return coll.compare( s2.c_str(), s2.c_str() + nLen2,
+                         s1.c_str(), s1.c_str() + nLen1 );
 }
 
 
@@ -1839,19 +1839,19 @@ inline int ssicoll(const CT * sz1, int nLen1, const CT * sz2, int nLen2)
 // be one if the message facet gets implemented
 // -----------------------------------------------------------------------------
 #if defined (SS_WIN32) && !defined(SS_ANSI)
-inline DWORD ssfmtmsg(DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
-                      DWORD dwLangId, PSTR pBuf, DWORD nSize,
-                      va_list * vlArgs)
+inline DWORD ssfmtmsg( DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
+                       DWORD dwLangId, PSTR pBuf, DWORD nSize,
+                       va_list * vlArgs )
 {
-    return FormatMessageA(dwFlags, pSrc, dwMsgId, dwLangId,
-                          pBuf, nSize, vlArgs);
+    return FormatMessageA( dwFlags, pSrc, dwMsgId, dwLangId,
+                           pBuf, nSize, vlArgs );
 }
-inline DWORD ssfmtmsg(DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
-                      DWORD dwLangId, PWSTR pBuf, DWORD nSize,
-                      va_list * vlArgs)
+inline DWORD ssfmtmsg( DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
+                       DWORD dwLangId, PWSTR pBuf, DWORD nSize,
+                       va_list * vlArgs )
 {
-    return FormatMessageW(dwFlags, pSrc, dwMsgId, dwLangId,
-                          pBuf, nSize, vlArgs);
+    return FormatMessageW( dwFlags, pSrc, dwMsgId, dwLangId,
+                           pBuf, nSize, vlArgs );
 }
 #else
 #endif
@@ -1897,89 +1897,89 @@ inline DWORD ssfmtmsg(DWORD dwFlags, LPCVOID pSrc, DWORD dwMsgId,
 // RETURN VALUE: none
 // -----------------------------------------------------------------------------
 template < typename CT1, typename CT2 >
-inline int sscpycvt(CT1 * pDst, const CT2 * pSrc, int nMax)
+inline int sscpycvt( CT1 * pDst, const CT2 * pSrc, int nMax )
 {
     // Note -- we assume pDst is big enough to hold pSrc.  If not, we're in
     // big trouble.  No bounds checking.  Caveat emptor.
-
-    int nSrc = sslen(pSrc);
-
-    const CT1 *szCvt = StdCodeCvt(pDst, nMax, pSrc, nSrc);
-
+    
+    int nSrc = sslen( pSrc );
+    
+    const CT1 *szCvt = StdCodeCvt( pDst, nMax, pSrc, nSrc );
+    
     // If we're copying the same size characters, then all the "code convert"
     // just did was basically memcpy so the #of characters copied is the same
     // as the number requested.  I should probably specialize this function
     // template to achieve this purpose as it is silly to do a runtime check
     // of a fact known at compile time.  I'll get around to it.
-
-    return sslen(szCvt);
+    
+    return sslen( szCvt );
 }
 
-inline int sscpycvt(PSTR pDst, PCSTR pSrc, int nMax)
+inline int sscpycvt( PSTR pDst, PCSTR pSrc, int nMax )
 {
     int nCount = nMax;
-    for (; nCount > 0 && *pSrc; ++pSrc, ++pDst, --nCount)
-        std::basic_string < char >::traits_type::assign(*pDst, *pSrc);
-
+    for ( ; nCount > 0 && *pSrc; ++pSrc, ++pDst, --nCount )
+        std::basic_string < char >::traits_type::assign( *pDst, *pSrc );
+        
     *pDst = '\0';
     return nMax - nCount;
 }
-inline int sscpycvt(PWSTR pDst, PCWSTR pSrc, int nMax)
+inline int sscpycvt( PWSTR pDst, PCWSTR pSrc, int nMax )
 {
     int nCount = nMax;
-    for (; nCount > 0 && *pSrc; ++pSrc, ++pDst, --nCount)
-        std::basic_string < wchar_t >::traits_type::assign(*pDst, *pSrc);
-
+    for ( ; nCount > 0 && *pSrc; ++pSrc, ++pDst, --nCount )
+        std::basic_string < wchar_t >::traits_type::assign( *pDst, *pSrc );
+        
     *pDst = L'\0';
     return nMax - nCount;
 }
-inline int sscpycvt(PWSTR pDst, PCSTR pSrc, int nMax)
+inline int sscpycvt( PWSTR pDst, PCSTR pSrc, int nMax )
 {
     // Note -- we assume pDst is big enough to hold pSrc.  If not, we're in
     // big trouble.  No bounds checking.  Caveat emptor.
-
-    const PWSTR szCvt = StdCodeCvt(pDst, nMax, pSrc, nMax);
-    return sslen(szCvt);
+    
+    const PWSTR szCvt = StdCodeCvt( pDst, nMax, pSrc, nMax );
+    return sslen( szCvt );
 }
 
 template < typename CT1, typename CT2 >
-inline int sscpy(CT1 * pDst, const CT2 * pSrc, int nMax, int nLen)
+inline int sscpy( CT1 * pDst, const CT2 * pSrc, int nMax, int nLen )
 {
-    return sscpycvt(pDst, pSrc, SSMIN(nMax, nLen));
+    return sscpycvt( pDst, pSrc, SSMIN( nMax, nLen ) );
 }
 template < typename CT1, typename CT2 >
-inline int sscpy(CT1 * pDst, const CT2 * pSrc, int nMax)
+inline int sscpy( CT1 * pDst, const CT2 * pSrc, int nMax )
 {
-    return sscpycvt(pDst, pSrc, SSMIN(nMax, sslen(pSrc)));
+    return sscpycvt( pDst, pSrc, SSMIN( nMax, sslen( pSrc ) ) );
 }
 template < typename CT1, typename CT2 >
-inline int sscpy(CT1 * pDst, const CT2 * pSrc)
+inline int sscpy( CT1 * pDst, const CT2 * pSrc )
 {
-    return sscpycvt(pDst, pSrc, sslen(pSrc));
+    return sscpycvt( pDst, pSrc, sslen( pSrc ) );
 }
 template < typename CT1, typename CT2 >
-inline int sscpy(CT1 * pDst, const std::basic_string < CT2 > &sSrc,
-                 int nMax)
+inline int sscpy( CT1 * pDst, const std::basic_string < CT2 > &sSrc,
+                  int nMax )
 {
-    return sscpycvt(pDst, sSrc.c_str(), SSMIN(nMax, (int) sSrc.length()));
+    return sscpycvt( pDst, sSrc.c_str(), SSMIN( nMax, ( int ) sSrc.length() ) );
 }
 template < typename CT1, typename CT2 >
-inline int sscpy(CT1 * pDst, const std::basic_string < CT2 > &sSrc)
+inline int sscpy( CT1 * pDst, const std::basic_string < CT2 > &sSrc )
 {
-    return sscpycvt(pDst, sSrc.c_str(), (int) sSrc.length());
+    return sscpycvt( pDst, sSrc.c_str(), ( int ) sSrc.length() );
 }
 
 #ifdef SS_INC_COMDEF
 template < typename CT1 >
-inline int sscpy(CT1 * pDst, const _bstr_t & bs, int nMax)
+inline int sscpy( CT1 * pDst, const _bstr_t & bs, int nMax )
 {
-    return sscpycvt(pDst, static_cast < PCOLESTR > (bs),
-                    SSMIN(nMax, static_cast < int >(bs.length())));
+    return sscpycvt( pDst, static_cast < PCOLESTR > ( bs ),
+                     SSMIN( nMax, static_cast < int >( bs.length() ) ) );
 }
 template < typename CT1 >
-inline int sscpy(CT1 * pDst, const _bstr_t & bs)
+inline int sscpy( CT1 * pDst, const _bstr_t & bs )
 {
-    return sscpy(pDst, bs, static_cast < int >(bs.length()));
+    return sscpy( pDst, bs, static_cast < int >( bs.length() ) );
 }
 #endif
 
@@ -1989,19 +1989,19 @@ inline int sscpy(CT1 * pDst, const _bstr_t & bs)
 // -----------------------------------------------------------------------------
 
 template < typename CT >
-struct SSToUpper:public std::binary_function < CT, std::locale, CT >
+struct SSToUpper: public std::binary_function < CT, std::locale, CT >
 {
-    inline CT operator() (const CT & t, const std::locale & loc) const
+    inline CT operator() ( const CT & t, const std::locale & loc ) const
     {
-        return sstoupper < CT > (t, loc);
+        return sstoupper < CT > ( t, loc );
     }
 };
 template < typename CT >
-struct SSToLower:public std::binary_function < CT, std::locale, CT >
+struct SSToLower: public std::binary_function < CT, std::locale, CT >
 {
-    inline CT operator() (const CT & t, const std::locale & loc) const
+    inline CT operator() ( const CT & t, const std::locale & loc ) const
     {
-        return sstolower < CT > (t, loc);
+        return sstolower < CT > ( t, loc );
     }
 };
 
@@ -2014,7 +2014,7 @@ struct SSToLower:public std::binary_function < CT, std::locale, CT >
 //      inline bool operator() (CT t) { return !std::isspace(t, loc); }
 //};
 template < typename CT >
-struct NotSpace:public std::unary_function < CT, bool >
+struct NotSpace: public std::unary_function < CT, bool >
 {
     // DINKUMWARE BUG:
     // Note -- using std::isspace in a COM DLL gives us access violations
@@ -2027,13 +2027,13 @@ struct NotSpace:public std::unary_function < CT, bool >
     // This is DinkumWare's implementation problem.  If you encounter this
     // problem, you may replace the calls here with good old isspace() and
     // iswspace() from the CRT unless they specify SS_ANSI
-
+    
     const std::locale loc;
-    NotSpace(const std::locale & locArg = std::locale()):loc(locArg)
+    NotSpace( const std::locale & locArg = std::locale() ) : loc( locArg )
     {}
-    bool operator() (CT t) const
+    bool operator() ( CT t ) const
     {
-        return !std::isspace(t, loc);
+        return !std::isspace( t, loc );
     }
 };
 
@@ -2065,7 +2065,7 @@ struct NotSpace:public std::unary_function < CT, bool >
 template < typename ARG >
 struct FmtArg
 {
-    explicit FmtArg(const ARG & arg):a_(arg)
+    explicit FmtArg( const ARG & arg ) : a_( arg )
     {}
     const ARG & operator() () const
     {
@@ -2073,18 +2073,18 @@ struct FmtArg
     }
     const ARG & a_;
 private:
-    FmtArg & operator=(const FmtArg &)
+    FmtArg & operator=( const FmtArg & )
     {
-        return *this;
+        return * this;
     }
 };
 
 template < typename CT >
-class CStdStr:public std::basic_string < CT >
+class CStdStr: public std::basic_string < CT >
 {
         // Typedefs for shorter names.  Using these names also appears to help
         // us avoid some ambiguities that otherwise arise on some platforms
-
+        
 #define MYBASE std::basic_string<CT>    // my base class
         //typedef typename std::basic_string<CT>                MYBASE;  // my base class
         typedef CStdStr < CT > MYTYPE;      // myself
@@ -2096,151 +2096,151 @@ class CStdStr:public std::basic_string < CT >
         typedef typename MYBASE::size_type MYSIZE;
         typedef typename MYBASE::value_type MYVAL;
         typedef typename MYBASE::allocator_type MYALLOC;
-
+        
     public:
         // shorthand conversion from PCTSTR to string resource ID
 #define SSRES(pctstr)  LOWORD(reinterpret_cast<unsigned long>(pctstr))
-
-        bool TryLoad(const void *pT)
+        
+        bool TryLoad( const void *pT )
         {
             bool bLoaded = false;
-
+            
 #if defined(SS_WIN32) && !defined(SS_ANSI)
-
-            if ((pT != NULL) && SS_IS_INTRESOURCE(pT)) {
-                UINT nId = LOWORD(reinterpret_cast < unsigned long >(pT));
-                if (!LoadString(nId)) {
-                    TRACE(_T("Can't load string %u\n"), SSRES(pT));
+            
+            if ( ( pT != NULL ) && SS_IS_INTRESOURCE( pT ) ) {
+                UINT nId = LOWORD( reinterpret_cast < unsigned long >( pT ) );
+                if ( !LoadString( nId ) ) {
+                    TRACE( _T( "Can't load string %u\n" ), SSRES( pT ) );
                 }
                 bLoaded = true;
             }
 #endif
-
+            
             return bLoaded;
         }
-
-
+        
+        
         // CStdStr inline constructors
         CStdStr()
         {}
-
-        CStdStr(const MYTYPE & str):MYBASE(SSREF(str))
+        
+        CStdStr( const MYTYPE & str ) : MYBASE( SSREF( str ) )
         {}
-
-        CStdStr(const std::string & str)
+        
+        CStdStr( const std::string & str )
         {
-            ssasn(*this, SSREF(str));
+            ssasn( *this, SSREF( str ) );
         }
-
-        CStdStr(const std::wstring & str)
+        
+        CStdStr( const std::wstring & str )
         {
-            ssasn(*this, SSREF(str));
+            ssasn( *this, SSREF( str ) );
         }
-
-        CStdStr(PCMYSTR pT, MYSIZE n):MYBASE(pT, n)
+        
+        CStdStr( PCMYSTR pT, MYSIZE n ) : MYBASE( pT, n )
         {}
-
+        
 #ifdef SS_UNSIGNED
-
-        CStdStr(PCUSTR pU)
+        
+        CStdStr( PCUSTR pU )
         {
-            *this = reinterpret_cast < PCSTR > (pU);
+            *this = reinterpret_cast < PCSTR > ( pU );
         }
 #endif
-
-        CStdStr(PCSTR pA)
-        {
-#ifdef SS_ANSI
-            *this = pA;
-#else
-
-            if (!TryLoad(pA))
-                *this = pA;
-#endif
-
-        }
-
-        CStdStr(PCWSTR pW)
+        
+        CStdStr( PCSTR pA )
         {
 #ifdef SS_ANSI
-            *this = pW;
+            * this = pA;
 #else
-
-            if (!TryLoad(pW))
-                *this = pW;
+            
+if ( !TryLoad( pA ) )
+                * this = pA;
 #endif
-
+            
         }
-
-        CStdStr(MYCITER first, MYCITER last)
-                :    MYBASE(first, last)
+        
+        CStdStr( PCWSTR pW )
+        {
+#ifdef SS_ANSI
+            * this = pW;
+#else
+            
+            if ( !TryLoad( pW ) )
+                * this = pW;
+#endif
+            
+        }
+        
+        CStdStr( MYCITER first, MYCITER last )
+                : MYBASE( first, last )
         {}
-
-        CStdStr(MYSIZE nSize, MYVAL ch, const MYALLOC & al = MYALLOC())
-                :    MYBASE(nSize, ch, al)
+        
+        CStdStr( MYSIZE nSize, MYVAL ch, const MYALLOC & al = MYALLOC() )
+                : MYBASE( nSize, ch, al )
         {}
-
+        
 #ifdef SS_INC_COMDEF
-
-        CStdStr(const _bstr_t & bstr)
+        
+        CStdStr( const _bstr_t & bstr )
         {
-            if (bstr.length() > 0)
-                this->append(static_cast < PCMYSTR > (bstr), bstr.length());
+            if ( bstr.length() > 0 )
+                this->append( static_cast < PCMYSTR > ( bstr ), bstr.length() );
         }
 #endif
-
+        
         // CStdStr inline assignment operators -- the ssasn function now takes care
         // of fixing  the MSVC assignment bug (see knowledge base article Q172398).
-        MYTYPE & operator=(const MYTYPE & str)
+        MYTYPE & operator=( const MYTYPE & str )
         {
-            ssasn(*this, str);
+            ssasn( *this, str );
             return *this;
         }
-
-        MYTYPE & operator=(const std::string & str)
+        
+        MYTYPE & operator=( const std::string & str )
         {
-            ssasn(*this, str);
+            ssasn( *this, str );
             return *this;
         }
-
-        MYTYPE & operator=(const std::wstring & str)
+        
+        MYTYPE & operator=( const std::wstring & str )
         {
-            ssasn(*this, str);
+            ssasn( *this, str );
             return *this;
         }
-
-        MYTYPE & operator=(PCSTR pA)
+        
+        MYTYPE & operator=( PCSTR pA )
         {
-            ssasn(*this, pA);
+            ssasn( *this, pA );
             return *this;
         }
-
-        MYTYPE & operator=(PCWSTR pW)
+        
+        MYTYPE & operator=( PCWSTR pW )
         {
-            ssasn(*this, pW);
+            ssasn( *this, pW );
             return *this;
         }
-
+        
 #ifdef SS_UNSIGNED
-        MYTYPE & operator=(PCUSTR pU)
+        MYTYPE & operator=( PCUSTR pU )
         {
-            ssasn(*this, reinterpret_cast < PCSTR > (pU));
+            ssasn( *this, reinterpret_cast < PCSTR > ( pU ) );
             return *this;
         }
 #endif
-
-        MYTYPE & operator=(CT t)
+        
+        MYTYPE & operator=( CT t )
         {
-            Q172398(*this);
-            this->assign(1, t);
+            Q172398( *this );
+            this->assign( 1, t );
             return *this;
         }
-
+        
 #ifdef SS_INC_COMDEF
-        MYTYPE & operator=(const _bstr_t & bstr)
+        MYTYPE & operator=( const _bstr_t & bstr )
         {
-            if (bstr.length() > 0) {
-                this->assign(static_cast < PCMYSTR > (bstr), bstr.length());
+            if ( bstr.length() > 0 ) {
+                this->assign( static_cast < PCMYSTR > ( bstr ), bstr.length() );
                 return *this;
             } else {
                 this->erase();
@@ -2248,195 +2248,195 @@ class CStdStr:public std::basic_string < CT >
             }
         }
 #endif
-
-
+        
+        
         // Overloads  also needed to fix the MSVC assignment bug (KB: Q172398)
         //  *** Thanks to Pete The Plumber for catching this one ***
         // They also are compiled if you have explicitly turned off refcounting
 #if ( defined(_MSC_VER) && ( _MSC_VER < 1200 ) ) || defined(SS_NO_REFCOUNT)
-
-        MYTYPE & assign(const MYTYPE & str)
+        
+        MYTYPE & assign( const MYTYPE & str )
         {
-            Q172398(*this);
-            sscpy(GetBuffer(str.size() + 1), SSREF(str));
-            this->ReleaseBuffer(str.size());
+            Q172398( *this );
+            sscpy( GetBuffer( str.size() + 1 ), SSREF( str ) );
+            this->ReleaseBuffer( str.size() );
             return *this;
         }
-
-        MYTYPE & assign(const MYTYPE & str, MYSIZE nStart, MYSIZE nChars)
+        
+        MYTYPE & assign( const MYTYPE & str, MYSIZE nStart, MYSIZE nChars )
         {
             // This overload of basic_string::assign is supposed to assign up to
             // <nChars> or the NULL terminator, whichever comes first.  Since we
             // are about to call a less forgiving overload (in which <nChars>
             // must be a valid length), we must adjust the length here to a safe
             // value.  Thanks to Ullrich Pollähne for catching this bug
-
-            nChars = SSMIN(nChars, str.length() - nStart);
-            MYTYPE strTemp(str.c_str() + nStart, nChars);
-            Q172398(*this);
-            this->assign(strTemp);
+            
+            nChars = SSMIN( nChars, str.length() - nStart );
+            MYTYPE strTemp( str.c_str() + nStart, nChars );
+            Q172398( *this );
+            this->assign( strTemp );
             return *this;
         }
-
-        MYTYPE & assign(const MYBASE & str)
+        
+        MYTYPE & assign( const MYBASE & str )
         {
-            ssasn(*this, str);
+            ssasn( *this, str );
             return *this;
         }
-
-        MYTYPE & assign(const MYBASE & str, MYSIZE nStart, MYSIZE nChars)
+        
+        MYTYPE & assign( const MYBASE & str, MYSIZE nStart, MYSIZE nChars )
         {
             // This overload of basic_string::assign is supposed to assign up to
             // <nChars> or the NULL terminator, whichever comes first.  Since we
             // are about to call a less forgiving overload (in which <nChars>
             // must be a valid length), we must adjust the length here to a safe
             // value. Thanks to Ullrich Pollähne for catching this bug
-
-            nChars = SSMIN(nChars, str.length() - nStart);
-
+            
+            nChars = SSMIN( nChars, str.length() - nStart );
+            
             // Watch out for assignment to self
-
-            if (this == &str) {
-                MYTYPE strTemp(str.c_str() + nStart, nChars);
-                static_cast < MYBASE * >(this)->assign(strTemp);
+            
+            if ( this == &str ) {
+                MYTYPE strTemp( str.c_str() + nStart, nChars );
+                static_cast < MYBASE * >( this ) ->assign( strTemp );
             } else {
-                Q172398(*this);
-                static_cast < MYBASE * >(this)->assign(str.c_str() + nStart,
-                                                       nChars);
+                Q172398( *this );
+                static_cast < MYBASE * >( this ) ->assign( str.c_str() + nStart,
+                        nChars );
             }
             return *this;
         }
-
-        MYTYPE & assign(const CT * pC, MYSIZE nChars)
+        
+        MYTYPE & assign( const CT * pC, MYSIZE nChars )
         {
             // Q172398 only fix -- erase before assigning, but not if we're
             // assigning from our own buffer
-
+            
 #if defined ( _MSC_VER ) && ( _MSC_VER < 1200 )
-            if (!this->empty() &&
-                    (pC < this->data() || pC > this->data() + this->capacity())) {
+            if ( !this->empty() &&
+                    ( pC < this->data() || pC > this->data() + this->capacity() ) ) {
                 this->erase();
             }
 #endif
-            Q172398(*this);
-            static_cast < MYBASE * >(this)->assign(pC, nChars);
+            Q172398( *this );
+            static_cast < MYBASE * >( this ) ->assign( pC, nChars );
             return *this;
         }
-
-        MYTYPE & assign(MYSIZE nChars, MYVAL val)
+        
+        MYTYPE & assign( MYSIZE nChars, MYVAL val )
         {
-            Q172398(*this);
-            static_cast < MYBASE * >(this)->assign(nChars, val);
+            Q172398( *this );
+            static_cast < MYBASE * >( this ) ->assign( nChars, val );
             return *this;
         }
-
-        MYTYPE & assign(const CT * pT)
+        
+        MYTYPE & assign( const CT * pT )
         {
-            return this->assign(pT, MYBASE::traits_type::length(pT));
+            return this->assign( pT, MYBASE::traits_type::length( pT ) );
         }
-
-        MYTYPE & assign(MYCITER iterFirst, MYCITER iterLast)
+        
+        MYTYPE & assign( MYCITER iterFirst, MYCITER iterLast )
         {
 #if defined ( _MSC_VER ) && ( _MSC_VER < 1200 )
             // Q172398 fix.  don't call erase() if we're assigning from ourself
-            if (iterFirst < this->begin() ||
-                    iterFirst > this->begin() + this->size()) {
+            if ( iterFirst < this->begin() ||
+                    iterFirst > this->begin() + this->size() ) {
                 this->erase()
             }
 #endif
-            this->replace(this->begin(), this->end(), iterFirst, iterLast);
+            this->replace( this->begin(), this->end(), iterFirst, iterLast );
             return *this;
         }
 #endif
-
-
+        
+        
         // -------------------------------------------------------------------------
         // CStdStr inline concatenation.
         // -------------------------------------------------------------------------
-        MYTYPE & operator+=(const MYTYPE & str)
+        MYTYPE & operator+=( const MYTYPE & str )
         {
-            ssadd(*this, str);
+            ssadd( *this, str );
             return *this;
         }
-
-        MYTYPE & operator+=(const std::string & str)
+        
+        MYTYPE & operator+=( const std::string & str )
         {
-            ssadd(*this, str);
+            ssadd( *this, str );
             return *this;
         }
-
-        MYTYPE & operator+=(const std::wstring & str)
+        
+        MYTYPE & operator+=( const std::wstring & str )
         {
-            ssadd(*this, str);
+            ssadd( *this, str );
             return *this;
         }
-
-        MYTYPE & operator+=(PCSTR pA)
+        
+        MYTYPE & operator+=( PCSTR pA )
         {
-            ssadd(*this, pA);
+            ssadd( *this, pA );
             return *this;
         }
-
-        MYTYPE & operator+=(PCWSTR pW)
+        
+        MYTYPE & operator+=( PCWSTR pW )
         {
-            ssadd(*this, pW);
+            ssadd( *this, pW );
             return *this;
         }
-
-        MYTYPE & operator+=(CT t)
+        
+        MYTYPE & operator+=( CT t )
         {
-            this->append(1, t);
+            this->append( 1, t );
             return *this;
         }
 #ifdef SS_INC_COMDEF            // if we have _bstr_t, define a += for it too.
-        MYTYPE & operator+=(const _bstr_t & bstr)
+        MYTYPE & operator+=( const _bstr_t & bstr )
         {
-            return this->operator+=(static_cast < PCMYSTR > (bstr));
+            return this->operator+=( static_cast < PCMYSTR > ( bstr ) );
         }
 #endif
-
-
+        
+        
         // -------------------------------------------------------------------------
         // Case changing functions
         // -------------------------------------------------------------------------
-
-        MYTYPE & ToUpper(const std::locale & loc = std::locale())
+        
+        MYTYPE & ToUpper( const std::locale & loc = std::locale() )
         {
             // Note -- if there are any MBCS character sets in which the lowercase
             // form a character takes up a different number of bytes than the
             // uppercase form, this would probably not work...
-
-            std::transform(this->begin(),
-                           this->end(),
-                           this->begin(), std::bind2nd(SSToUpper < CT > (), loc));
-
+            
+            std::transform( this->begin(),
+                            this->end(),
+                            this->begin(), std::bind2nd( SSToUpper < CT > (), loc ) );
+                            
             // ...but if it were, this would probably work better.  Also, this way
             // seems to be a bit faster when anything other then the "C" locale is
             // used...
-
+            
             //              if ( !empty() )
             //              {
             //                      ssupr(this->GetBuf(), this->size(), loc);
             //                      this->RelBuf();
             //              }
-
+            
             return *this;
         }
-
-        MYTYPE & ToLower(const std::locale & loc = std::locale())
+        
+        MYTYPE & ToLower( const std::locale & loc = std::locale() )
         {
             // Note -- if there are any MBCS character sets in which the lowercase
             // form a character takes up a different number of bytes than the
             // uppercase form, this would probably not work...
-
-            std::transform(this->begin(),
-                           this->end(),
-                           this->begin(), std::bind2nd(SSToLower < CT > (), loc));
-
+            
+            std::transform( this->begin(),
+                            this->end(),
+                            this->begin(), std::bind2nd( SSToLower < CT > (), loc ) );
+                            
             // ...but if it were, this would probably work better.  Also, this way
             // seems to be a bit faster when anything other then the "C" locale is
             // used...
-
+            
             //              if ( !empty() )
             //              {
             //                      sslwr(this->GetBuf(), this->size(), loc);
@@ -2444,46 +2444,46 @@ class CStdStr:public std::basic_string < CT >
             //              }
             return *this;
         }
-
-
+        
+        
         MYTYPE & Normalize()
         {
             return Trim().ToLower();
         }
-
-
+        
+        
         // -------------------------------------------------------------------------
         // CStdStr -- Direct access to character buffer.  In the MS' implementation,
         // the at() function that we use here also calls _Freeze() providing us some
         // protection from multithreading problems associated with ref-counting.
         // In VC 7 and later, of course, the ref-counting stuff is gone.
         // -------------------------------------------------------------------------
-
-        CT *GetBuf(int nMinLen = -1)
+        
+        CT *GetBuf( int nMinLen = -1 )
         {
-            if (static_cast < int >(this->size())
-                    < nMinLen)
-                this->resize(static_cast < MYSIZE > (nMinLen));
-
-            return this->empty()? const_cast <
-                   CT * >(this->data()) : &(this->at(0));
+            if ( static_cast < int >( this->size() )
+                    < nMinLen )
+                this->resize( static_cast < MYSIZE > ( nMinLen ) );
+                
+            return this->empty() ? const_cast <
+                   CT * >( this->data() ) : &( this->at( 0 ) );
         }
-
-        CT *SetBuf(int nLen)
+        
+        CT *SetBuf( int nLen )
         {
-            nLen = (nLen > 0 ? nLen : 0);
-            if (this->capacity() < 1 && nLen == 0)
-                this->resize(1);
-
-            this->resize(static_cast < MYSIZE > (nLen));
-            return const_cast < CT * >(this->data());
+            nLen = ( nLen > 0 ? nLen : 0 );
+            if ( this->capacity() < 1 && nLen == 0 )
+                this->resize( 1 );
+                
+            this->resize( static_cast < MYSIZE > ( nLen ) );
+            return const_cast < CT * >( this->data() );
         }
-        void RelBuf(int nNewLen = -1)
+        void RelBuf( int nNewLen = -1 )
         {
-            this->resize(static_cast < MYSIZE > (nNewLen > -1 ? nNewLen :
-                                                 sslen(this->c_str())));
+            this->resize( static_cast < MYSIZE > ( nNewLen > -1 ? nNewLen :
+                                                   sslen( this->c_str() ) ) );
         }
-
+        
         void BufferRel()
         {
             RelBuf();
@@ -2492,17 +2492,17 @@ class CStdStr:public std::basic_string < CT >
         {
             return GetBuf();
         }                           // backwards compatability
-        CT *BufferSet(int nLen)
+        CT *BufferSet( int nLen )
         {
-            return SetBuf(nLen);
+            return SetBuf( nLen );
         }                           // backwards compatability
-
-        bool Equals(const CT * pT, bool bUseCase = false) const
+        
+        bool Equals( const CT * pT, bool bUseCase = false ) const
         {
             return 0 ==
-                   (bUseCase ? this->compare(pT) : ssicmp(this->c_str(), pT));
+                   ( bUseCase ? this->compare( pT ) : ssicmp( this->c_str(), pT ) );
         }
-
+        
         // -------------------------------------------------------------------------
         // FUNCTION:  CStdStr::Load
         // REMARKS:
@@ -2514,74 +2514,74 @@ class CStdStr:public std::basic_string < CT >
         // RETURN VALUE:
         //              true if successful, false otherwise
         // -------------------------------------------------------------------------
-
+        
 #ifndef SS_ANSI
-
-        bool Load(UINT nId, HMODULE hModule = NULL)
+        
+        bool Load( UINT nId, HMODULE hModule = NULL )
         {
             bool bLoaded = false;   // set to true of we succeed.
-
+            
 #ifdef _MFC_VER                 // When in Rome (or MFC land)...
-
+            
             // If they gave a resource handle, use it.  Note - this is archaic
             // and not really what I would recommend.  But then again, in MFC
             // land, you ought to be using CString for resources anyway since
             // it walks the resource chain for you.
-
+            
             HMODULE hModuleOld = NULL;
-
-            if (NULL != hModule) {
+            
+            if ( NULL != hModule ) {
                 hModuleOld = AfxGetResourceHandle();
-                AfxSetResourceHandle(hModule);
+                AfxSetResourceHandle( hModule );
             }
-
+            
             // ...load the string
-
+            
             CString strRes;
-            bLoaded = FALSE != strRes.LoadString(nId);
-
+            bLoaded = FALSE != strRes.LoadString( nId );
+            
             // ...and if we set the resource handle, restore it.
-
-            if (NULL != hModuleOld)
-                AfxSetResourceHandle(hModule);
-
-            if (bLoaded)
-                *this = strRes;
-
+            
+            if ( NULL != hModuleOld )
+                AfxSetResourceHandle( hModule );
+                
+            if ( bLoaded )
+                * this = strRes;
+                
 #else // otherwise make our own hackneyed version of CString's Load
-
-            // Get the resource name and module handle
-
-            if (NULL == hModule)
+                
+// Get the resource name and module handle
+                
+            if ( NULL == hModule )
                 hModule = GetResourceHandle();
-
-            PCTSTR szName = MAKEINTRESOURCE((nId >> 4) + 1);        // lifted
+                
+            PCTSTR szName = MAKEINTRESOURCE( ( nId >> 4 ) + 1 );        // lifted
             DWORD dwSize = 0;
-
+                
             // No sense continuing if we can't find the resource
-
-            HRSRC hrsrc =::FindResource(hModule, szName, RT_STRING);
-
-            if (NULL == hrsrc) {
-                TRACE(_T("Cannot find resource %d: 0x%X"), nId,::GetLastError());
-            } else if (0 == (dwSize =::SizeofResource(hModule, hrsrc) / sizeof(CT))) {
-                TRACE(_T("Cant get size of resource %d 0x%X\n"), nId,
-                      GetLastError());
+                
+            HRSRC hrsrc = ::FindResource( hModule, szName, RT_STRING );
+                
+            if ( NULL == hrsrc ) {
+                TRACE( _T( "Cannot find resource %d: 0x%X" ), nId, ::GetLastError() );
+            } else if ( 0 == ( dwSize = ::SizeofResource( hModule, hrsrc ) / sizeof( CT ) ) ) {
+                TRACE( _T( "Cant get size of resource %d 0x%X\n" ), nId,
+                       GetLastError() );
             } else {
-                bLoaded = 0 != ssload(hModule, nId, GetBuf(dwSize), dwSize);
+                bLoaded = 0 != ssload( hModule, nId, GetBuf( dwSize ), dwSize );
                 ReleaseBuffer();
             }
-
+                
 #endif // #ifdef _MFC_VER
-
-            if (!bLoaded)
-                TRACE(_T("String not loaded 0x%X\n"),::GetLastError());
-
+                
+            if ( !bLoaded )
+                TRACE( _T( "String not loaded 0x%X\n" ), ::GetLastError() );
+                
             return bLoaded;
         }
-
+        
 #endif // #ifdef SS_ANSI
-
+        
         // -------------------------------------------------------------------------
         // FUNCTION:  CStdStr::Format
         //              void _cdecl Formst(CStdStringA& PCSTR szFormat, ...)
@@ -2601,12 +2601,12 @@ class CStdStr:public std::basic_string < CT >
         // RETURN VALUE:  None.
         // -------------------------------------------------------------------------
         // formatting (using wsprintf style formatting)
-
+        
         // If they want a Format() function that safely handles string objects
         // without casting
-
+        
 #ifdef SS_SAFE_FORMAT
-
+        
         // Question:  Joe, you wacky coder you, why do you have so many overloads
         //      of the Format() function
         // Answer:  One reason only - CString compatability.  In short, by making
@@ -2623,557 +2623,557 @@ class CStdStr:public std::basic_string < CT >
         //      themselves.  Why am I doing this?  Well, if you had any idea the
         //      number of times I've been emailed by people about this
         //      "incompatability" in my code, you wouldn't ask.
-
-        void Fmt(const CT * szFmt, ...)
+        
+        void Fmt( const CT * szFmt, ... )
         {
             va_list argList;
-            va_start(argList, szFmt);
-            FormatV(szFmt, argList);
-            va_end(argList);
+            va_start( argList, szFmt );
+            FormatV( szFmt, argList );
+            va_end( argList );
         }
-
+        
 #ifndef SS_ANSI
-
-        void Format(UINT nId)
+        
+        void Format( UINT nId )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId))
-                this->swap(strFmt);
+            if ( strFmt.Load( nId ) )
+                this->swap( strFmt );
         }
         template < class A1 >
-        void Format(UINT nId, const A1 & v)
+        void Format( UINT nId, const A1 & v )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId))
-                Fmt(strFmt, FmtArg < A1 > (v) ());
+            if ( strFmt.Load( nId ) )
+                Fmt( strFmt, FmtArg < A1 > ( v ) () );
         }
         template < class A1, class A2 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2)
+        void Format( UINT nId, const A1 & v1, const A2 & v2 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId))
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) ());
+            if ( strFmt.Load( nId ) )
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) () );
         }
         template < class A1, class A2, class A3 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12,
-                    const A13 & v13)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12,
+                     const A13 & v13 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                    FmtArg < A13 > (v13) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                     FmtArg < A13 > ( v13 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12,
-                    const A13 & v13, const A14 & v14)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12,
+                     const A13 & v13, const A14 & v14 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                    FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                     FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12,
-                    const A13 & v13, const A14 & v14, const A15 & v15)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12,
+                     const A13 & v13, const A14 & v14, const A15 & v15 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                    FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                    FmtArg < A15 > (v15) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                     FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                     FmtArg < A15 > ( v15 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15, class A16 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12,
-                    const A13 & v13, const A14 & v14, const A15 & v15,
-                    const A16 & v16)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12,
+                     const A13 & v13, const A14 & v14, const A15 & v15,
+                     const A16 & v16 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                    FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                    FmtArg < A15 > (v15) (), FmtArg < A16 > (v16) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                     FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                     FmtArg < A15 > ( v15 ) (), FmtArg < A16 > ( v16 ) () );
             }
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15, class A16, class A17 >
-        void Format(UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
-                    const A4 & v4, const A5 & v5, const A6 & v6,
-                    const A7 & v7, const A8 & v8, const A9 & v9,
-                    const A10 & v10, const A11 & v11, const A12 & v12,
-                    const A13 & v13, const A14 & v14, const A15 & v15,
-                    const A16 & v16, const A17 & v17)
+        void Format( UINT nId, const A1 & v1, const A2 & v2, const A3 & v3,
+                     const A4 & v4, const A5 & v5, const A6 & v6,
+                     const A7 & v7, const A8 & v8, const A9 & v9,
+                     const A10 & v10, const A11 & v11, const A12 & v12,
+                     const A13 & v13, const A14 & v14, const A15 & v15,
+                     const A16 & v16, const A17 & v17 )
         {
             MYTYPE strFmt;
-            if (strFmt.Load(nId)) {
-                Fmt(strFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                    FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                    FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                    FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                    FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                    FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                    FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                    FmtArg < A15 > (v15) (), FmtArg < A16 > (v16) (),
-                    FmtArg < A17 > (v17) ());
+            if ( strFmt.Load( nId ) ) {
+                Fmt( strFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                     FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                     FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                     FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                     FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                     FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                     FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                     FmtArg < A15 > ( v15 ) (), FmtArg < A16 > ( v16 ) (),
+                     FmtArg < A17 > ( v17 ) () );
             }
         }
-
+        
 #endif // #ifndef SS_ANSI
-
+        
         // ...now the other overload of Format: the one that takes a string literal
-
-        void Format(const CT * szFmt)
+        
+        void Format( const CT * szFmt )
         {
             *this = szFmt;
         }
         template < class A1 >
-        void Format(const CT * szFmt, const A1 & v)
+        void Format( const CT * szFmt, const A1 & v )
         {
-            Fmt(szFmt, FmtArg < A1 > (v) ());
+            Fmt( szFmt, FmtArg < A1 > ( v ) () );
         }
         template < class A1, class A2 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) () );
         }
         template < class A1, class A2, class A3 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) () );
         }
         template < class A1, class A2, class A3, class A4 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12, const A13 & v13)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12, const A13 & v13 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                FmtArg < A13 > (v13) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                 FmtArg < A13 > ( v13 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12, const A13 & v13, const A14 & v14)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12, const A13 & v13, const A14 & v14 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                 FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12, const A13 & v13, const A14 & v14,
-                    const A15 & v15)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12, const A13 & v13, const A14 & v14,
+                     const A15 & v15 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                FmtArg < A15 > (v15) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                 FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                 FmtArg < A15 > ( v15 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15, class A16 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12, const A13 & v13, const A14 & v14,
-                    const A15 & v15, const A16 & v16)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12, const A13 & v13, const A14 & v14,
+                     const A15 & v15, const A16 & v16 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                FmtArg < A15 > (v15) (), FmtArg < A16 > (v16) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                 FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                 FmtArg < A15 > ( v15 ) (), FmtArg < A16 > ( v16 ) () );
         }
         template < class A1, class A2, class A3, class A4, class A5, class A6,
         class A7, class A8, class A9, class A10, class A11, class A12,
         class A13, class A14, class A15, class A16, class A17 >
-        void Format(const CT * szFmt, const A1 & v1, const A2 & v2,
-                    const A3 & v3, const A4 & v4, const A5 & v5,
-                    const A6 & v6, const A7 & v7, const A8 & v8,
-                    const A9 & v9, const A10 & v10, const A11 & v11,
-                    const A12 & v12, const A13 & v13, const A14 & v14,
-                    const A15 & v15, const A16 & v16, const A17 & v17)
+        void Format( const CT * szFmt, const A1 & v1, const A2 & v2,
+                     const A3 & v3, const A4 & v4, const A5 & v5,
+                     const A6 & v6, const A7 & v7, const A8 & v8,
+                     const A9 & v9, const A10 & v10, const A11 & v11,
+                     const A12 & v12, const A13 & v13, const A14 & v14,
+                     const A15 & v15, const A16 & v16, const A17 & v17 )
         {
-            Fmt(szFmt, FmtArg < A1 > (v1) (), FmtArg < A2 > (v2) (),
-                FmtArg < A3 > (v3) (), FmtArg < A4 > (v4) (),
-                FmtArg < A5 > (v5) (), FmtArg < A6 > (v6) (),
-                FmtArg < A7 > (v7) (), FmtArg < A8 > (v8) (),
-                FmtArg < A9 > (v9) (), FmtArg < A10 > (v10) (),
-                FmtArg < A11 > (v11) (), FmtArg < A12 > (v12) (),
-                FmtArg < A13 > (v13) (), FmtArg < A14 > (v14) (),
-                FmtArg < A15 > (v15) (), FmtArg < A16 > (v16) (),
-                FmtArg < A17 > (v17) ());
+            Fmt( szFmt, FmtArg < A1 > ( v1 ) (), FmtArg < A2 > ( v2 ) (),
+                 FmtArg < A3 > ( v3 ) (), FmtArg < A4 > ( v4 ) (),
+                 FmtArg < A5 > ( v5 ) (), FmtArg < A6 > ( v6 ) (),
+                 FmtArg < A7 > ( v7 ) (), FmtArg < A8 > ( v8 ) (),
+                 FmtArg < A9 > ( v9 ) (), FmtArg < A10 > ( v10 ) (),
+                 FmtArg < A11 > ( v11 ) (), FmtArg < A12 > ( v12 ) (),
+                 FmtArg < A13 > ( v13 ) (), FmtArg < A14 > ( v14 ) (),
+                 FmtArg < A15 > ( v15 ) (), FmtArg < A16 > ( v16 ) (),
+                 FmtArg < A17 > ( v17 ) () );
         }
-
+        
 #else // #ifdef SS_SAFE_FORMAT
-
-
+        
+        
 #ifndef SS_ANSI
-
-        void Format(UINT nId, ...)
+        
+void Format( UINT nId, ... )
         {
             va_list argList;
-            va_start(argList, nId);
-
+            va_start( argList, nId );
+        
             MYTYPE strFmt;
-            if (strFmt.Load(nId))
-                FormatV(strFmt, argList);
-
-            va_end(argList);
+            if ( strFmt.Load( nId ) )
+                FormatV( strFmt, argList );
+        
+            va_end( argList );
         }
-
+        
 #endif // #ifdef SS_ANSI
-
-        void Format(const CT * szFmt, ...)
+        
+        void Format( const CT * szFmt, ... )
         {
             va_list argList;
-            va_start(argList, szFmt);
-            FormatV(szFmt, argList);
-            va_end(argList);
+            va_start( argList, szFmt );
+            FormatV( szFmt, argList );
+            va_end( argList );
         }
-
+        
 #endif // #ifdef SS_SAFE_FORMAT
-
-        void AppendFormat(const CT * szFmt, ...)
+        
+        void AppendFormat( const CT * szFmt, ... )
         {
             va_list argList;
-            va_start(argList, szFmt);
-            AppendFormatV(szFmt, argList);
-            va_end(argList);
+            va_start( argList, szFmt );
+            AppendFormatV( szFmt, argList );
+            va_end( argList );
         }
-
-#define MAX_FMT_TRIES		5       // #of times we try
-#define FMT_BLOCK_SIZE		2048    // # of bytes to increment per try
-#define BUFSIZE_1ST	256
+        
+#define MAX_FMT_TRIES  5       // #of times we try
+#define FMT_BLOCK_SIZE  2048    // # of bytes to increment per try
+#define BUFSIZE_1ST 256
 #define BUFSIZE_2ND 512
-#define STD_BUF_SIZE		1024
-
+#define STD_BUF_SIZE  1024
+        
         // an efficient way to add formatted characters to the string.  You may only
         // add up to STD_BUF_SIZE characters at a time, though
-        void AppendFormatV(const CT * szFmt, va_list argList)
+        void AppendFormatV( const CT * szFmt, va_list argList )
         {
-            CT szBuf[STD_BUF_SIZE];
+            CT szBuf[ STD_BUF_SIZE ];
 #ifdef SS_ANSI
-
-            int nLen = ssvsprintf(szBuf, STD_BUF_SIZE - 1, szFmt, argList);
+            
+            int nLen = ssvsprintf( szBuf, STD_BUF_SIZE - 1, szFmt, argList );
 #else
-
-            int nLen = ssnprintf(szBuf, STD_BUF_SIZE - 1, szFmt, argList);
+            
+            int nLen = ssnprintf( szBuf, STD_BUF_SIZE - 1, szFmt, argList );
 #endif
-
-            if (0 < nLen)
-                this->append(szBuf, nLen);
+            
+            if ( 0 < nLen )
+                this->append( szBuf, nLen );
         }
-
+        
         // -------------------------------------------------------------------------
         // FUNCTION:  FormatV
         //              void FormatV(PCSTR szFormat, va_list, argList);
@@ -3190,46 +3190,46 @@ class CStdStr:public std::basic_string < CT >
         //
         // RETURN VALUE:
         // -------------------------------------------------------------------------
-
-        void FormatV(const CT * szFormat, va_list argList)
+        
+        void FormatV( const CT * szFormat, va_list argList )
         {
 #ifdef SS_ANSI
-
-            int nLen = sslen(szFormat) + STD_BUF_SIZE;
-            ssvsprintf(GetBuffer(nLen), nLen - 1, szFormat, argList);
+        
+            int nLen = sslen( szFormat ) + STD_BUF_SIZE;
+            ssvsprintf( GetBuffer( nLen ), nLen - 1, szFormat, argList );
             ReleaseBuffer();
-
+            
 #else
-
-            CT *pBuf = NULL;
+            
+CT *pBuf = NULL;
             int nChars = 1;
             int nUsed = 0;
             size_type nActual = 0;
             int nTry = 0;
-
+            
             do {
                 // Grow more than linearly (e.g. 512, 1536, 3072, etc)
-
-                nChars += ((nTry + 1) * FMT_BLOCK_SIZE);
-                pBuf = reinterpret_cast < CT * >(_alloca(sizeof(CT) * nChars));
-                nUsed = ssnprintf(pBuf, nChars - 1, szFormat, argList);
-
+            
+                nChars += ( ( nTry + 1 ) * FMT_BLOCK_SIZE );
+                pBuf = reinterpret_cast < CT * >( _alloca( sizeof( CT ) * nChars ) );
+                nUsed = ssnprintf( pBuf, nChars - 1, szFormat, argList );
+            
                 // Ensure proper NULL termination.
-
-                nActual = nUsed == -1 ? nChars - 1 : SSMIN(nUsed, nChars - 1);
-                pBuf[nActual] = '\0';
-
-
-            } while (nUsed < 0 && nTry++ < MAX_FMT_TRIES);
-
+            
+                nActual = nUsed == -1 ? nChars - 1 : SSMIN( nUsed, nChars - 1 );
+                pBuf[ nActual ] = '\0';
+            
+            
+            } while ( nUsed < 0 && nTry++ < MAX_FMT_TRIES );
+            
             // assign whatever we managed to format
-
-            this->assign(pBuf, nActual);
-
+            
+            this->assign( pBuf, nActual );
+            
 #endif
-
+            
         }
-
+        
         // -------------------------------------------------------------------------
         // CString Facade Functions:
         //
@@ -3240,393 +3240,393 @@ class CStdStr:public std::basic_string < CT >
         BSTR AllocSysString() const
         {
             ostring os;
-            ssasn(os, *this);
-            return::SysAllocString(os.c_str());
+            ssasn( os, *this );
+            return ::SysAllocString( os.c_str() );
         }
 #endif
-
-        int Collate(PCMYSTR szThat) const
+        
+        int Collate( PCMYSTR szThat ) const
         {
-            return sscoll(this->c_str(), this->length(), szThat, sslen(szThat));
+            return sscoll( this->c_str(), this->length(), szThat, sslen( szThat ) );
         }
-
-        int CollateNoCase(PCMYSTR szThat) const
+        
+        int CollateNoCase( PCMYSTR szThat ) const
         {
-            return ssicoll(this->c_str(), this->length(), szThat, sslen(szThat));
+            return ssicoll( this->c_str(), this->length(), szThat, sslen( szThat ) );
         }
-
-        int Compare(PCMYSTR szThat) const
+        
+        int Compare( PCMYSTR szThat ) const
         {
-            return this->compare(szThat);
+            return this->compare( szThat );
         }
-
-        int CompareNoCase(PCMYSTR szThat) const
+        
+        int CompareNoCase( PCMYSTR szThat ) const
         {
-            return ssicmp(this->c_str(), szThat);
+            return ssicmp( this->c_str(), szThat );
         }
-
-        int Delete(int nIdx, int nCount = 1)
+        
+        int Delete( int nIdx, int nCount = 1 )
         {
-            if (nIdx < 0)
+            if ( nIdx < 0 )
                 nIdx = 0;
-
-            if (nIdx < this->GetLength())
-                this->erase(static_cast < MYSIZE > (nIdx),
-                            static_cast < MYSIZE > (nCount));
-
+                
+            if ( nIdx < this->GetLength() )
+                this->erase( static_cast < MYSIZE > ( nIdx ),
+                             static_cast < MYSIZE > ( nCount ) );
+                             
             return GetLength();
         }
-
+        
         void Empty()
         {
             this->erase();
         }
-
-        int Find(CT ch) const
+        
+        int Find( CT ch ) const
         {
-            MYSIZE nIdx = this->find_first_of(ch);
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            MYSIZE nIdx = this->find_first_of( ch );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
-        int Find(PCMYSTR szSub) const
+        
+        int Find( PCMYSTR szSub ) const
         {
-            MYSIZE nIdx = this->find(szSub);
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            MYSIZE nIdx = this->find( szSub );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
-        int Find(CT ch, int nStart) const
+        
+        int Find( CT ch, int nStart ) const
         {
             // CString::Find docs say add 1 to nStart when it's not zero
             // CString::Find code doesn't do that however.  We'll stick
             // with what the code does
-
+            
             MYSIZE nIdx =
-                this->find_first_of(ch, static_cast < MYSIZE > (nStart));
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+                this->find_first_of( ch, static_cast < MYSIZE > ( nStart ) );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
-        int Find(PCMYSTR szSub, int nStart) const
+        
+        int Find( PCMYSTR szSub, int nStart ) const
         {
             // CString::Find docs say add 1 to nStart when it's not zero
             // CString::Find code doesn't do that however.  We'll stick
             // with what the code does
-
-            MYSIZE nIdx = this->find(szSub, static_cast < MYSIZE > (nStart));
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            
+            MYSIZE nIdx = this->find( szSub, static_cast < MYSIZE > ( nStart ) );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
-        int FindOneOf(PCMYSTR szCharSet) const
+        
+        int FindOneOf( PCMYSTR szCharSet ) const
         {
-            MYSIZE nIdx = this->find_first_of(szCharSet);
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            MYSIZE nIdx = this->find_first_of( szCharSet );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
+        
 #ifndef SS_ANSI
-        void FormatMessage(PCMYSTR szFormat, ...) throw(std::exception)
+        void FormatMessage( PCMYSTR szFormat, ... ) throw( std::exception )
         {
             va_list argList;
-            va_start(argList, szFormat);
+            va_start( argList, szFormat );
             PMYSTR szTemp;
-            if (ssfmtmsg
-                    (FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                     szFormat, 0, 0, reinterpret_cast < PMYSTR > (&szTemp), 0,
-                     &argList) == 0 || szTemp == 0) {
-                throw std::runtime_error("out of memory");
+            if ( ssfmtmsg
+                    ( FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                      szFormat, 0, 0, reinterpret_cast < PMYSTR > ( &szTemp ), 0,
+                      &argList ) == 0 || szTemp == 0 ) {
+                throw std::runtime_error( "out of memory" );
             }
             *this = szTemp;
-            LocalFree(szTemp);
-            va_end(argList);
+            LocalFree( szTemp );
+            va_end( argList );
         }
-
-        void FormatMessage(UINT nFormatId, ...) throw(std::exception)
+        
+        void FormatMessage( UINT nFormatId, ... ) throw( std::exception )
         {
             MYTYPE sFormat;
-            VERIFY(sFormat.LoadString(nFormatId));
+            VERIFY( sFormat.LoadString( nFormatId ) );
             va_list argList;
-            va_start(argList, nFormatId);
+            va_start( argList, nFormatId );
             PMYSTR szTemp;
-            if (ssfmtmsg
-                    (FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                     sFormat, 0, 0, reinterpret_cast < PMYSTR > (&szTemp), 0,
-                     &argList) == 0 || szTemp == 0) {
-                throw std::runtime_error("out of memory");
+            if ( ssfmtmsg
+                    ( FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                      sFormat, 0, 0, reinterpret_cast < PMYSTR > ( &szTemp ), 0,
+                      &argList ) == 0 || szTemp == 0 ) {
+                throw std::runtime_error( "out of memory" );
             }
             *this = szTemp;
-            LocalFree(szTemp);
-            va_end(argList);
+            LocalFree( szTemp );
+            va_end( argList );
         }
 #endif
-
+        
         // GetAllocLength -- an MSVC7 function but it costs us nothing to add it.
-
+        
         int GetAllocLength()
         {
-            return static_cast < int >(this->capacity());
+            return static_cast < int >( this->capacity() );
         }
-
+        
         // -------------------------------------------------------------------------
         // GetXXXX -- Direct access to character buffer
         // -------------------------------------------------------------------------
-        CT GetAt(int nIdx) const
+        CT GetAt( int nIdx ) const
         {
-            return this->at(static_cast < MYSIZE > (nIdx));
+            return this->at( static_cast < MYSIZE > ( nIdx ) );
         }
-
-        CT *GetBuffer(int nMinLen = -1)
+        
+        CT *GetBuffer( int nMinLen = -1 )
         {
-            return GetBuf(nMinLen);
+            return GetBuf( nMinLen );
         }
-
-        CT *GetBufferSetLength(int nLen)
+        
+        CT *GetBufferSetLength( int nLen )
         {
-            return BufferSet(nLen);
+            return BufferSet( nLen );
         }
-
+        
         // GetLength() -- MFC docs say this is the # of BYTES but
         // in truth it is the number of CHARACTERs (chars or wchar_ts)
         int GetLength() const
         {
-            return static_cast < int >(this->length());
+            return static_cast < int >( this->length() );
         }
-
-        int Insert(int nIdx, CT ch)
+        
+        int Insert( int nIdx, CT ch )
         {
-            if (static_cast < MYSIZE > (nIdx) >
-                    this->size() - 1)
-                this->append(1, ch);
+            if ( static_cast < MYSIZE > ( nIdx ) >
+                    this->size() - 1 )
+                this->append( 1, ch );
             else
-                this->insert(static_cast < MYSIZE > (nIdx), 1, ch);
-
+                this->insert( static_cast < MYSIZE > ( nIdx ), 1, ch );
+                
             return GetLength();
         }
-        int Insert(int nIdx, PCMYSTR sz)
+        int Insert( int nIdx, PCMYSTR sz )
         {
-            if (static_cast < MYSIZE > (nIdx) >
-                    = this->size())
-                this->append(sz, static_cast < MYSIZE > (sslen(sz)));
+            if ( static_cast < MYSIZE > ( nIdx ) >
+                    = this->size() )
+                this->append( sz, static_cast < MYSIZE > ( sslen( sz ) ) );
             else
-                this->insert(static_cast < MYSIZE > (nIdx), sz);
-
+                this->insert( static_cast < MYSIZE > ( nIdx ), sz );
+                
             return GetLength();
         }
-
+        
         bool IsEmpty() const
         {
             return this->empty();
         }
-
-        MYTYPE Left(int nCount) const
+        
+        MYTYPE Left( int nCount ) const
         {
             // Range check the count.
-
-            nCount = SSMAX(0, SSMIN(nCount, static_cast < int >(this->size())));
-            return this->substr(0, static_cast < MYSIZE > (nCount));
+            
+            nCount = SSMAX( 0, SSMIN( nCount, static_cast < int >( this->size() ) ) );
+            return this->substr( 0, static_cast < MYSIZE > ( nCount ) );
         }
-
+        
 #ifndef SS_ANSI
-        bool LoadString(UINT nId)
+        bool LoadString( UINT nId )
         {
-            return this->Load(nId);
+            return this->Load( nId );
         }
 #endif
-
+        
         void MakeLower()
         {
             ToLower();
         }
-
+        
         void MakeReverse()
         {
-            std::reverse(this->begin(), this->end());
+            std::reverse( this->begin(), this->end() );
         }
-
+        
         void MakeUpper()
         {
             ToUpper();
         }
-
-        MYTYPE Mid(int nFirst) const
+        
+        MYTYPE Mid( int nFirst ) const
         {
-            return Mid(nFirst, this->GetLength() - nFirst);
+            return Mid( nFirst, this->GetLength() - nFirst );
         }
-
-        MYTYPE Mid(int nFirst, int nCount) const
+        
+        MYTYPE Mid( int nFirst, int nCount ) const
         {
             // CString does range checking here.  Since we're trying to emulate it,
             // we must check too.
-
-            if (nFirst < 0)
+            
+            if ( nFirst < 0 )
                 nFirst = 0;
-            if (nCount < 0)
+            if ( nCount < 0 )
                 nCount = 0;
-
-            int nSize = static_cast < int >(this->size());
-
-            if (nFirst + nCount > nSize)
+                
+            int nSize = static_cast < int >( this->size() );
+            
+            if ( nFirst + nCount > nSize )
                 nCount = nSize - nFirst;
-
-            if (nFirst > nSize)
+                
+            if ( nFirst > nSize )
                 return MYTYPE();
-
-            ASSERT(nFirst >= 0);
-            ASSERT(nFirst + nCount <= nSize);
-
-            return this->substr(static_cast < MYSIZE > (nFirst),
-                                static_cast < MYSIZE > (nCount));
+                
+            ASSERT( nFirst >= 0 );
+            ASSERT( nFirst + nCount <= nSize );
+            
+            return this->substr( static_cast < MYSIZE > ( nFirst ),
+                                 static_cast < MYSIZE > ( nCount ) );
         }
-
-        void ReleaseBuffer(int nNewLen = -1)
+        
+        void ReleaseBuffer( int nNewLen = -1 )
         {
-            RelBuf(nNewLen);
+            RelBuf( nNewLen );
         }
-
-        int Remove(CT ch)
+        
+        int Remove( CT ch )
         {
             MYSIZE nIdx = 0;
             int nRemoved = 0;
-            while ((nIdx = this->find_first_of(ch)) != MYBASE::npos) {
-                this->erase(nIdx, 1);
+            while ( ( nIdx = this->find_first_of( ch ) ) != MYBASE::npos ) {
+                this->erase( nIdx, 1 );
                 nRemoved++;
             }
             return nRemoved;
         }
-
-        int Replace(CT chOld, CT chNew)
+        
+        int Replace( CT chOld, CT chNew )
         {
             int nReplaced = 0;
-
-            for (MYITER iter = this->begin(); iter != this->end(); iter++) {
-                if (*iter == chOld) {
+            
+            for ( MYITER iter = this->begin(); iter != this->end(); iter++ ) {
+                if ( *iter == chOld ) {
                     *iter = chNew;
                     nReplaced++;
                 }
             }
-
+            
             return nReplaced;
         }
-
-        int Replace(PCMYSTR szOld, PCMYSTR szNew)
+        
+        int Replace( PCMYSTR szOld, PCMYSTR szNew )
         {
             int nReplaced = 0;
             MYSIZE nIdx = 0;
-            MYSIZE nOldLen = sslen(szOld);
-
-            if (0 != nOldLen) {
+            MYSIZE nOldLen = sslen( szOld );
+            
+            if ( 0 != nOldLen ) {
                 // If the replacement string is longer than the one it replaces, this
                 // string is going to have to grow in size,  Figure out how much
                 // and grow it all the way now, rather than incrementally
-
-                MYSIZE nNewLen = sslen(szNew);
-                if (nNewLen > nOldLen) {
+                
+                MYSIZE nNewLen = sslen( szNew );
+                if ( nNewLen > nOldLen ) {
                     int nFound = 0;
-                    while (nIdx < this->length() &&
-                            (nIdx = this->find(szOld, nIdx)) != MYBASE::npos) {
+                    while ( nIdx < this->length() &&
+                            ( nIdx = this->find( szOld, nIdx ) ) != MYBASE::npos ) {
                         nFound++;
                         nIdx += nOldLen;
                     }
-                    this->reserve(this->size() + nFound * (nNewLen - nOldLen));
+                    this->reserve( this->size() + nFound * ( nNewLen - nOldLen ) );
                 }
-
-
-                static const CT ch = CT(0);
+                
+                
+                static const CT ch = CT( 0 );
                 PCMYSTR szRealNew = szNew == 0 ? &ch : szNew;
                 nIdx = 0;
-
-                while (nIdx < this->length() &&
-                        (nIdx = this->find(szOld, nIdx)) != MYBASE::npos) {
-                    this->replace(this->begin() + nIdx,
-                                  this->begin() + nIdx + nOldLen, szRealNew);
-
+                
+                while ( nIdx < this->length() &&
+                        ( nIdx = this->find( szOld, nIdx ) ) != MYBASE::npos ) {
+                    this->replace( this->begin() + nIdx,
+                                   this->begin() + nIdx + nOldLen, szRealNew );
+                                   
                     nReplaced++;
                     nIdx += nNewLen;
                 }
             }
-
+            
             return nReplaced;
         }
-
-        int ReverseFind(CT ch) const
+        
+        int ReverseFind( CT ch ) const
         {
-            MYSIZE nIdx = this->find_last_of(ch);
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            MYSIZE nIdx = this->find_last_of( ch );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
+        
         // ReverseFind overload that's not in CString but might be useful
-        int ReverseFind(PCMYSTR szFind, MYSIZE pos = MYBASE::npos) const
+        int ReverseFind( PCMYSTR szFind, MYSIZE pos = MYBASE::npos ) const
         {
-            MYSIZE nIdx = this->rfind(0 == szFind ? MYTYPE() : szFind, pos);
-            return static_cast < int >(MYBASE::npos == nIdx ? -1 : nIdx);
+            MYSIZE nIdx = this->rfind( 0 == szFind ? MYTYPE() : szFind, pos );
+            return static_cast < int >( MYBASE::npos == nIdx ? -1 : nIdx );
         }
-
-        MYTYPE Right(int nCount) const
+        
+        MYTYPE Right( int nCount ) const
         {
             // Range check the count.
-
-            nCount = SSMAX(0, SSMIN(nCount, static_cast < int >(this->size())));
-            return this->substr(this->size() - static_cast < MYSIZE > (nCount));
+            
+            nCount = SSMAX( 0, SSMIN( nCount, static_cast < int >( this->size() ) ) );
+            return this->substr( this->size() - static_cast < MYSIZE > ( nCount ) );
         }
-
-        void SetAt(int nIndex, CT ch)
+        
+        void SetAt( int nIndex, CT ch )
         {
-            ASSERT(this->size() > static_cast < MYSIZE > (nIndex));
-            this->at(static_cast < MYSIZE > (nIndex)) = ch;
+            ASSERT( this->size() > static_cast < MYSIZE > ( nIndex ) );
+            this->at( static_cast < MYSIZE > ( nIndex ) ) = ch;
         }
-
+        
 #ifndef SS_ANSI
-        BSTR SetSysString(BSTR * pbstr) const
+        BSTR SetSysString( BSTR * pbstr ) const
         {
             ostring os;
-            ssasn(os, *this);
-            if (!::SysReAllocStringLen(pbstr, os.c_str(), os.length()))
-                throw std::runtime_error("out of memory");
-
-            ASSERT(*pbstr != 0);
+            ssasn( os, *this );
+            if ( !::SysReAllocStringLen( pbstr, os.c_str(), os.length() ) )
+                throw std::runtime_error( "out of memory" );
+                
+            ASSERT( *pbstr != 0 );
             return *pbstr;
         }
 #endif
-
-        MYTYPE SpanExcluding(PCMYSTR szCharSet) const
+        
+        MYTYPE SpanExcluding( PCMYSTR szCharSet ) const
         {
-            MYSIZE pos = this->find_first_of(szCharSet);
-            return pos == MYBASE::npos ? *this : Left(pos);
+            MYSIZE pos = this->find_first_of( szCharSet );
+            return pos == MYBASE::npos ? *this : Left( pos );
         }
-
-        MYTYPE SpanIncluding(PCMYSTR szCharSet) const
+        
+        MYTYPE SpanIncluding( PCMYSTR szCharSet ) const
         {
-            MYSIZE pos = this->find_first_not_of(szCharSet);
-            return pos == MYBASE::npos ? *this : Left(pos);
+            MYSIZE pos = this->find_first_not_of( szCharSet );
+            return pos == MYBASE::npos ? *this : Left( pos );
         }
-
+        
 #if defined SS_WIN32 && !defined(UNICODE) && !defined(SS_ANSI)
-
+        
         // CString's OemToAnsi and AnsiToOem functions are available only in
         // Unicode builds.  However since we're a template we also need a
         // runtime check of CT and a reinterpret_cast to account for the fact
         // that CStdStringW gets instantiated even in non-Unicode builds.
-
+        
         void AnsiToOem()
         {
-            if (sizeof(CT) == sizeof(char) && !empty()) {
-                ::CharToOem(reinterpret_cast < PCSTR > (this->c_str()),
-                            reinterpret_cast < PSTR > (GetBuf()));
+            if ( sizeof( CT ) == sizeof( char ) && !empty() ) {
+                ::CharToOem( reinterpret_cast < PCSTR > ( this->c_str() ),
+                             reinterpret_cast < PSTR > ( GetBuf() ) );
             } else {
-                ASSERT(false);
+                ASSERT( false );
             }
         }
-
+        
         void OemToAnsi()
         {
-            if (sizeof(CT) == sizeof(char) && !empty()) {
-                ::OemToChar(reinterpret_cast < PCSTR > (this->c_str()),
-                            reinterpret_cast < PSTR > (GetBuf()));
+            if ( sizeof( CT ) == sizeof( char ) && !empty() ) {
+                ::OemToChar( reinterpret_cast < PCSTR > ( this->c_str() ),
+                             reinterpret_cast < PSTR > ( GetBuf() ) );
             } else {
-                ASSERT(false);
+                ASSERT( false );
             }
         }
-
+        
 #endif
-
-
+        
+        
         // -------------------------------------------------------------------------
         // Trim and its variants
         // -------------------------------------------------------------------------
@@ -3634,28 +3634,28 @@ class CStdStr:public std::basic_string < CT >
         {
             return TrimLeft().TrimRight();
         }
-
+        
         MYTYPE & TrimLeft()
         {
-            this->erase(this->begin(),
-                        std::find_if(this->begin(), this->end(),
-                                     NotSpace < CT > ()));
-
+            this->erase( this->begin(),
+                         std::find_if( this->begin(), this->end(),
+                                       NotSpace < CT > () ) );
+                                       
             return *this;
         }
-
-        MYTYPE & TrimLeft(CT tTrim)
+        
+        MYTYPE & TrimLeft( CT tTrim )
         {
-            this->erase(0, this->find_first_not_of(tTrim));
+            this->erase( 0, this->find_first_not_of( tTrim ) );
             return *this;
         }
-
-        MYTYPE & TrimLeft(PCMYSTR szTrimChars)
+        
+        MYTYPE & TrimLeft( PCMYSTR szTrimChars )
         {
-            this->erase(0, this->find_first_not_of(szTrimChars));
+            this->erase( 0, this->find_first_not_of( szTrimChars ) );
             return *this;
         }
-
+        
         MYTYPE & TrimRight()
         {
             // NOTE:  When comparing reverse_iterators here (MYRITER), I avoid using
@@ -3663,87 +3663,87 @@ class CStdStr:public std::basic_string < CT >
             // operator!= which conflicts with the global operator!= already defined
             // for reverse_iterator in the header <utility>.
             // Thanks to John James for alerting me to this.
-
+            
             MYRITER it =
-                std::find_if(this->rbegin(), this->rend(), NotSpace < CT > ());
-            if (!(this->rend() == it))
-                this->erase(this->rend() - it);
-
-            this->erase(!(it == this->rend())? this->find_last_of(*it) + 1 : 0);
+                std::find_if( this->rbegin(), this->rend(), NotSpace < CT > () );
+            if ( !( this->rend() == it ) )
+                this->erase( this->rend() - it );
+                
+            this->erase( !( it == this->rend() ) ? this->find_last_of( *it ) + 1 : 0 );
             return *this;
         }
-
-        MYTYPE & TrimRight(CT tTrim)
+        
+        MYTYPE & TrimRight( CT tTrim )
         {
-            MYSIZE nIdx = this->find_last_not_of(tTrim);
-            this->erase(MYBASE::npos == nIdx ? 0 : ++nIdx);
+            MYSIZE nIdx = this->find_last_not_of( tTrim );
+            this->erase( MYBASE::npos == nIdx ? 0 : ++nIdx );
             return *this;
         }
-
-        MYTYPE & TrimRight(PCMYSTR szTrimChars)
+        
+        MYTYPE & TrimRight( PCMYSTR szTrimChars )
         {
-            MYSIZE nIdx = this->find_last_not_of(szTrimChars);
-            this->erase(MYBASE::npos == nIdx ? 0 : ++nIdx);
+            MYSIZE nIdx = this->find_last_not_of( szTrimChars );
+            this->erase( MYBASE::npos == nIdx ? 0 : ++nIdx );
             return *this;
         }
-
+        
         void FreeExtra()
         {
             MYTYPE mt;
-            this->swap(mt);
-            if (!mt.empty())
-                this->assign(mt.c_str(), mt.size());
+            this->swap( mt );
+            if ( !mt.empty() )
+                this->assign( mt.c_str(), mt.size() );
         }
-
+        
         // I have intentionally not implemented the following CString
         // functions.   You cannot make them work without taking advantage
         // of implementation specific behavior.  However if you absolutely
         // MUST have them, uncomment out these lines for "sort-of-like"
         // their behavior.  You're on your own.
-
+        
         //      CT*                             LockBuffer()    { return GetBuf(); }// won't really lock
         //      void                    UnlockBuffer(); { }     // why have UnlockBuffer w/o LockBuffer?
-
+        
         // Array-indexing operators.  Required because we defined an implicit cast
         // to operator const CT* (Thanks to Julian Selman for pointing this out)
-
-        CT & operator[](int nIdx)
+        
+        CT & operator[] ( int nIdx )
         {
-            return static_cast < MYBASE * >(this)->operator[](static_cast <
-                    MYSIZE > (nIdx));
+            return static_cast < MYBASE * >( this ) ->operator[] ( static_cast <
+                    MYSIZE > ( nIdx ) );
         }
-
-        const CT & operator[] (int nIdx) const
+        
+        const CT & operator[] ( int nIdx ) const
         {
-            return static_cast < const MYBASE *>(this)->operator[] (static_cast <
+            return static_cast < const MYBASE *>( this ) ->operator[] ( static_cast <
                     MYSIZE >
-                    (nIdx));
+                    ( nIdx ) );
         }
-
-        CT & operator[] (unsigned int nIdx)
+        
+        CT & operator[] ( unsigned int nIdx )
         {
-            return static_cast < MYBASE * >(this)->operator[](static_cast <
-                    MYSIZE > (nIdx));
+            return static_cast < MYBASE * >( this ) ->operator[] ( static_cast <
+                    MYSIZE > ( nIdx ) );
         }
-
-        const CT & operator[] (unsigned int nIdx) const
+        
+        const CT & operator[] ( unsigned int nIdx ) const
         {
-            return static_cast < const MYBASE *>(this)->operator[] (static_cast <
+            return static_cast < const MYBASE *>( this ) ->operator[] ( static_cast <
                     MYSIZE >
-                    (nIdx));
+                    ( nIdx ) );
         }
-
+        
 #ifndef SS_NO_IMPLICIT_CAST
-        operator     const CT *() const
+        operator const CT *() const
         {
             return this->c_str();
         }
 #endif
-
+        
         // IStream related functions.  Useful in IPersistStream implementations
-
+        
 #ifdef SS_INC_COMDEF
-
+        
         // struct SSSHDR - useful for non Std C++ persistence schemes.
         typedef struct SSSHDR
         {
@@ -3751,10 +3751,10 @@ class CStdStr:public std::basic_string < CT >
             ULONG nChars;
         }
         SSSHDR;                   // as in "Standard String Stream Header"
-
-#define SSSO_UNICODE	0x01    // the string is a wide string
-#define SSSO_COMPRESS	0x02    // the string is compressed
-
+        
+#define SSSO_UNICODE 0x01    // the string is a wide string
+#define SSSO_COMPRESS 0x02    // the string is compressed
+        
         // -------------------------------------------------------------------------
         // FUNCTION: StreamSize
         // REMARKS:
@@ -3764,89 +3764,89 @@ class CStdStr:public std::basic_string < CT >
         ULONG StreamSize() const
         {
             // Control header plus string
-            ASSERT(this->size() * sizeof(CT) < 0xffffffffUL - sizeof(SSSHDR));
-            return (this->size() * sizeof(CT)) + sizeof(SSSHDR);
+            ASSERT( this->size() * sizeof( CT ) < 0xffffffffUL - sizeof( SSSHDR ) );
+            return ( this->size() * sizeof( CT ) ) + sizeof( SSSHDR );
         }
-
+        
         // -------------------------------------------------------------------------
         // FUNCTION: StreamSave
         // REMARKS:
         //              Saves this CStdString object to a COM IStream.
         // -------------------------------------------------------------------------
-        HRESULT StreamSave(IStream * pStream) const
+        HRESULT StreamSave( IStream * pStream ) const
         {
-            ASSERT(this->size() * sizeof(CT) < 0xffffffffUL - sizeof(SSSHDR));
+            ASSERT( this->size() * sizeof( CT ) < 0xffffffffUL - sizeof( SSSHDR ) );
             HRESULT hr = E_FAIL;
-            ASSERT(pStream != 0);
+            ASSERT( pStream != 0 );
             SSSHDR hdr;
-            hdr.byCtrl = sizeof(CT) == 2 ? SSSO_UNICODE : 0;
+            hdr.byCtrl = sizeof( CT ) == 2 ? SSSO_UNICODE : 0;
             hdr.nChars = this->size();
-
-
-            if (FAILED(hr = pStream->Write(&hdr, sizeof(SSSHDR), 0))) {
-                TRACE(_T("StreamSave: Cannot write control header, ERR=0x%X\n"),
-                      hr);
-            } else if (empty()) {
+            
+            
+            if ( FAILED( hr = pStream->Write( &hdr, sizeof( SSSHDR ), 0 ) ) ) {
+                TRACE( _T( "StreamSave: Cannot write control header, ERR=0x%X\n" ),
+                       hr );
+            } else if ( empty() ) {
                 ;                   // nothing to write
-            } else if (FAILED(hr = pStream->Write(this->c_str(),
-                                                  this->size() * sizeof(CT), 0))) {
-                TRACE(_T("StreamSave: Cannot write string to stream 0x%X\n"), hr);
+            } else if ( FAILED( hr = pStream->Write( this->c_str(),
+                                     this->size() * sizeof( CT ), 0 ) ) ) {
+                TRACE( _T( "StreamSave: Cannot write string to stream 0x%X\n" ), hr );
             }
-
+            
             return hr;
         }
-
-
+        
+        
         // -------------------------------------------------------------------------
         // FUNCTION: StreamLoad
         // REMARKS:
         //              This method loads the object from an IStream.
         // -------------------------------------------------------------------------
-        HRESULT StreamLoad(IStream * pStream)
+        HRESULT StreamLoad( IStream * pStream )
         {
-            ASSERT(pStream != 0);
+            ASSERT( pStream != 0 );
             SSSHDR hdr;
             HRESULT hr = E_FAIL;
-
-            if (FAILED(hr = pStream->Read(&hdr, sizeof(SSSHDR), 0))) {
-                TRACE(_T("StreamLoad: Cant read control header, ERR=0x%X\n"), hr);
-            } else if (hdr.nChars > 0) {
+            
+            if ( FAILED( hr = pStream->Read( &hdr, sizeof( SSSHDR ), 0 ) ) ) {
+                TRACE( _T( "StreamLoad: Cant read control header, ERR=0x%X\n" ), hr );
+            } else if ( hdr.nChars > 0 ) {
                 ULONG nRead = 0;
-                PMYSTR pMyBuf = BufferSet(hdr.nChars);
-
+                PMYSTR pMyBuf = BufferSet( hdr.nChars );
+                
                 // If our character size matches the character size of the string
                 // we're trying to read, then we can read it directly into our
                 // buffer. Otherwise, we have to read into an intermediate buffer
                 // and convert.
-
-                if ((hdr.byCtrl & SSSO_UNICODE) != 0) {
-                    ULONG nBytes = hdr.nChars * sizeof(wchar_t);
-                    if (sizeof(CT) == sizeof(wchar_t)) {
-                        if (FAILED(hr = pStream->Read(pMyBuf, nBytes, &nRead)))
-                            TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"),
-                                  hr);
+                
+                if ( ( hdr.byCtrl & SSSO_UNICODE ) != 0 ) {
+                    ULONG nBytes = hdr.nChars * sizeof( wchar_t );
+                    if ( sizeof( CT ) == sizeof( wchar_t ) ) {
+                        if ( FAILED( hr = pStream->Read( pMyBuf, nBytes, &nRead ) ) )
+                            TRACE( _T( "StreamLoad: Cannot read string: 0x%X\n" ),
+                                   hr );
                     } else {
                         PWSTR pBufW =
-                            reinterpret_cast < PWSTR > (_alloca((nBytes) + 1));
-                        if (FAILED(hr = pStream->Read(pBufW, nBytes, &nRead)))
-                            TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"),
-                                  hr);
+                            reinterpret_cast < PWSTR > ( _alloca( ( nBytes ) + 1 ) );
+                        if ( FAILED( hr = pStream->Read( pBufW, nBytes, &nRead ) ) )
+                            TRACE( _T( "StreamLoad: Cannot read string: 0x%X\n" ),
+                                   hr );
                         else
-                            sscpy(pMyBuf, pBufW, hdr.nChars);
+                            sscpy( pMyBuf, pBufW, hdr.nChars );
                     }
                 } else {
-                    ULONG nBytes = hdr.nChars * sizeof(char);
-                    if (sizeof(CT) == sizeof(char)) {
-                        if (FAILED(hr = pStream->Read(pMyBuf, nBytes, &nRead)))
-                            TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"),
-                                  hr);
+                    ULONG nBytes = hdr.nChars * sizeof( char );
+                    if ( sizeof( CT ) == sizeof( char ) ) {
+                        if ( FAILED( hr = pStream->Read( pMyBuf, nBytes, &nRead ) ) )
+                            TRACE( _T( "StreamLoad: Cannot read string: 0x%X\n" ),
+                                   hr );
                     } else {
-                        PSTR pBufA = reinterpret_cast < PSTR > (_alloca(nBytes));
-                        if (FAILED(hr = pStream->Read(pBufA, hdr.nChars, &nRead)))
-                            TRACE(_T("StreamLoad: Cannot read string: 0x%X\n"),
-                                  hr);
+                        PSTR pBufA = reinterpret_cast < PSTR > ( _alloca( nBytes ) );
+                        if ( FAILED( hr = pStream->Read( pBufA, hdr.nChars, &nRead ) ) )
+                            TRACE( _T( "StreamLoad: Cannot read string: 0x%X\n" ),
+                                   hr );
                         else
-                            sscpy(pMyBuf, pBufA, hdr.nChars);
+                            sscpy( pMyBuf, pBufA, hdr.nChars );
                     }
                 }
             } else {
@@ -3855,27 +3855,27 @@ class CStdStr:public std::basic_string < CT >
             return hr;
         }
 #endif // #ifdef SS_INC_COMDEF
-
+        
 #ifndef SS_ANSI
-
+        
         // SetResourceHandle/GetResourceHandle.  In MFC builds, these map directly
         // to AfxSetResourceHandle and AfxGetResourceHandle.  In non-MFC builds they
         // point to a single static HINST so that those who call the member
         // functions that take resource IDs can provide an alternate HINST of a DLL
         // to search.  This is not exactly the list of HMODULES that MFC provides
         // but it's better than nothing.
-
+        
 #ifdef _MFC_VER
-        static void SetResourceHandle(HMODULE hNew)
+        static void SetResourceHandle( HMODULE hNew )
         {
-            AfxSetResourceHandle(hNew);
+            AfxSetResourceHandle( hNew );
         }
         static HMODULE GetResourceHandle()
         {
             return AfxGetResourceHandle();
         }
 #else
-        static void SetResourceHandle(HMODULE hNew)
+static void SetResourceHandle( HMODULE hNew )
         {
             SSResourceHandle() = hNew;
         }
@@ -3884,7 +3884,7 @@ class CStdStr:public std::basic_string < CT >
             return SSResourceHandle();
         }
 #endif
-
+        
 #endif
 };
 
@@ -3948,108 +3948,108 @@ typedef CStdStr < OLECHAR > CStdStringO;        // almost always CStdStringW
 // -----------------------------------------------------------------------------
 
 
-inline CStdStringA operator+(const CStdStringA & s1, const CStdStringA & s2)
+inline CStdStringA operator+( const CStdStringA & s1, const CStdStringA & s2 )
 {
-    CStdStringA sRet(SSREF(s1));
-    sRet.append(s2);
+    CStdStringA sRet( SSREF( s1 ) );
+    sRet.append( s2 );
     return sRet;
 }
-inline CStdStringA operator+(const CStdStringA & s1,
-                             CStdStringA::value_type t)
+inline CStdStringA operator+( const CStdStringA & s1,
+                              CStdStringA::value_type t )
 {
-    CStdStringA sRet(SSREF(s1));
-    sRet.append(1, t);
+    CStdStringA sRet( SSREF( s1 ) );
+    sRet.append( 1, t );
     return sRet;
 }
-inline CStdStringA operator+(const CStdStringA & s1, PCSTR pA)
+inline CStdStringA operator+( const CStdStringA & s1, PCSTR pA )
 {
-    CStdStringA sRet(SSREF(s1));
-    sRet.append(pA);
+    CStdStringA sRet( SSREF( s1 ) );
+    sRet.append( pA );
     return sRet;
 }
-inline CStdStringA operator+(PCSTR pA, const CStdStringA & sA)
+inline CStdStringA operator+( PCSTR pA, const CStdStringA & sA )
 {
     CStdStringA sRet;
     CStdStringA::size_type nObjSize = sA.size();
     CStdStringA::size_type nLitSize =
-        static_cast < CStdStringA::size_type > (sslen(pA));
-
-    sRet.reserve(nLitSize + nObjSize);
-    sRet.assign(pA);
-    sRet.append(sA);
+        static_cast < CStdStringA::size_type > ( sslen( pA ) );
+        
+    sRet.reserve( nLitSize + nObjSize );
+    sRet.assign( pA );
+    sRet.append( sA );
     return sRet;
 }
 
 
-inline CStdStringA operator+(const CStdStringA & s1, const CStdStringW & s2)
+inline CStdStringA operator+( const CStdStringA & s1, const CStdStringW & s2 )
 {
-    return s1 + CStdStringA(s2);
+    return s1 + CStdStringA( s2 );
 }
-inline CStdStringW operator+(const CStdStringW & s1, const CStdStringW & s2)
+inline CStdStringW operator+( const CStdStringW & s1, const CStdStringW & s2 )
 {
-    CStdStringW sRet(SSREF(s1));
-    sRet.append(s2);
+    CStdStringW sRet( SSREF( s1 ) );
+    sRet.append( s2 );
     return sRet;
 }
-inline CStdStringA operator+(const CStdStringA & s1, PCWSTR pW)
+inline CStdStringA operator+( const CStdStringA & s1, PCWSTR pW )
 {
-    return s1 + CStdStringA(pW);
+    return s1 + CStdStringA( pW );
 }
 
 #ifdef UNICODE
-inline CStdStringW operator+(PCWSTR pW, const CStdStringA & sA)
+inline CStdStringW operator+( PCWSTR pW, const CStdStringA & sA )
 {
-    return CStdStringW(pW) + CStdStringW(SSREF(sA));
+    return CStdStringW( pW ) + CStdStringW( SSREF( sA ) );
 }
-inline CStdStringW operator+(PCSTR pA, const CStdStringW & sW)
+inline CStdStringW operator+( PCSTR pA, const CStdStringW & sW )
 {
-    return CStdStringW(pA) + sW;
+    return CStdStringW( pA ) + sW;
 }
 #else
-inline CStdStringA operator+(PCWSTR pW, const CStdStringA & sA)
+inline CStdStringA operator+( PCWSTR pW, const CStdStringA & sA )
 {
-    return CStdStringA(pW) + sA;
+    return CStdStringA( pW ) + sA;
 }
-inline CStdStringA operator+(PCSTR pA, const CStdStringW & sW)
+inline CStdStringA operator+( PCSTR pA, const CStdStringW & sW )
 {
-    return pA + CStdStringA(sW);
+    return pA + CStdStringA( sW );
 }
 #endif
 
 // ...Now the wide string versions.
-inline CStdStringW operator+(const CStdStringW & s1,
-                             CStdStringW::value_type t)
+inline CStdStringW operator+( const CStdStringW & s1,
+                              CStdStringW::value_type t )
 {
-    CStdStringW sRet(SSREF(s1));
-    sRet.append(1, t);
+    CStdStringW sRet( SSREF( s1 ) );
+    sRet.append( 1, t );
     return sRet;
 }
-inline CStdStringW operator+(const CStdStringW & s1, PCWSTR pW)
+inline CStdStringW operator+( const CStdStringW & s1, PCWSTR pW )
 {
-    CStdStringW sRet(SSREF(s1));
-    sRet.append(pW);
+    CStdStringW sRet( SSREF( s1 ) );
+    sRet.append( pW );
     return sRet;
 }
-inline CStdStringW operator+(PCWSTR pW, const CStdStringW & sW)
+inline CStdStringW operator+( PCWSTR pW, const CStdStringW & sW )
 {
     CStdStringW sRet;
     CStdStringW::size_type nObjSize = sW.size();
     CStdStringA::size_type nLitSize =
-        static_cast < CStdStringW::size_type > (sslen(pW));
-
-    sRet.reserve(nLitSize + nObjSize);
-    sRet.assign(pW);
-    sRet.append(sW);
+        static_cast < CStdStringW::size_type > ( sslen( pW ) );
+        
+    sRet.reserve( nLitSize + nObjSize );
+    sRet.assign( pW );
+    sRet.append( sW );
     return sRet;
 }
 
-inline CStdStringW operator+(const CStdStringW & s1, const CStdStringA & s2)
+inline CStdStringW operator+( const CStdStringW & s1, const CStdStringA & s2 )
 {
-    return s1 + CStdStringW(s2);
+    return s1 + CStdStringW( s2 );
 }
-inline CStdStringW operator+(const CStdStringW & s1, PCSTR pA)
+inline CStdStringW operator+( const CStdStringW & s1, PCSTR pA )
 {
-    return s1 + CStdStringW(pA);
+    return s1 + CStdStringW( pA );
 }
 
 
@@ -4060,7 +4060,7 @@ inline CStdStringW operator+(const CStdStringW & s1, PCSTR pA)
 template <>
 struct FmtArg <CStdStringA >
 {
-    explicit FmtArg(const CStdStringA & arg):a_(arg)
+    explicit FmtArg( const CStdStringA & arg ) : a_( arg )
     {}
     PCSTR operator() () const
     {
@@ -4068,15 +4068,15 @@ struct FmtArg <CStdStringA >
     }
     const CStdStringA & a_;
 private:
-    FmtArg < CStdStringA > &operator=(const FmtArg < CStdStringA > &)
+    FmtArg < CStdStringA > &operator=( const FmtArg < CStdStringA > & )
     {
-        return *this;
+        return * this;
     }
 };
 template <>
 struct FmtArg <CStdStringW >
 {
-    explicit FmtArg(const CStdStringW & arg):a_(arg)
+    explicit FmtArg( const CStdStringW & arg ) : a_( arg )
     {}
     PCWSTR operator() () const
     {
@@ -4084,16 +4084,16 @@ struct FmtArg <CStdStringW >
     }
     const CStdStringW & a_;
 private:
-    FmtArg < CStdStringW > &operator=(const FmtArg < CStdStringW > &)
+    FmtArg < CStdStringW > &operator=( const FmtArg < CStdStringW > & )
     {
-        return *this;
+        return * this;
     }
 };
 
 template <>
 struct FmtArg <std::string >
 {
-    explicit FmtArg(const std::string & arg):a_(arg)
+    explicit FmtArg( const std::string & arg ) : a_( arg )
     {}
     PCSTR operator() () const
     {
@@ -4101,15 +4101,15 @@ struct FmtArg <std::string >
     }
     const std::string & a_;
 private:
-    FmtArg < std::string > &operator=(const FmtArg < std::string > &)
+    FmtArg < std::string > &operator=( const FmtArg < std::string > & )
     {
-        return *this;
+        return * this;
     }
 };
 template <>
 struct FmtArg <std::wstring >
 {
-    explicit FmtArg(const std::wstring & arg):a_(arg)
+    explicit FmtArg( const std::wstring & arg ) : a_( arg )
     {}
     PCWSTR operator() () const
     {
@@ -4117,18 +4117,18 @@ struct FmtArg <std::wstring >
     }
     const std::wstring & a_;
 private:
-    FmtArg < std::wstring > &operator=(const FmtArg < std::wstring > &)
+    FmtArg < std::wstring > &operator=( const FmtArg < std::wstring > & )
     {
-        return *this;
+        return * this;
     }
 };
 #endif // #ifdef SS_SAFEFORMAT
 
-#ifndef SS_ANSI
+#ifndef SS_ANSI 
 // SSResourceHandle: our MFC-like resource handle
 inline HMODULE & SSResourceHandle()
 {
-    static HMODULE hModuleSS = GetModuleHandle(0);
+    static HMODULE hModuleSS = GetModuleHandle( 0 );
     return hModuleSS;
 }
 #endif
@@ -4140,19 +4140,19 @@ inline HMODULE & SSResourceHandle()
 // we use the exact same format.
 
 #ifdef _MFC_VER
-inline CArchive & AFXAPI operator<<(CArchive & ar, const CStdStringA & strA)
+inline CArchive & AFXAPI operator<<( CArchive & ar, const CStdStringA & strA )
 {
     CString strTemp = strA;
     return ar << strTemp;
 }
 
-inline CArchive & AFXAPI operator<<(CArchive & ar, const CStdStringW & strW)
+inline CArchive & AFXAPI operator<<( CArchive & ar, const CStdStringW & strW )
 {
     CString strTemp = strW;
     return ar << strTemp;
 }
 
-inline CArchive & AFXAPI operator>>(CArchive & ar, CStdStringA & strA)
+inline CArchive & AFXAPI operator>>( CArchive & ar, CStdStringA & strA )
 {
     CString strTemp;
     ar >> strTemp;
@@ -4160,7 +4160,7 @@ inline CArchive & AFXAPI operator>>(CArchive & ar, CStdStringA & strA)
     return ar;
 }
 
-inline CArchive & AFXAPI operator>>(CArchive & ar, CStdStringW & strW)
+inline CArchive & AFXAPI operator>>( CArchive & ar, CStdStringW & strW )
 {
     CString strTemp;
     ar >> strTemp;
@@ -4181,59 +4181,59 @@ inline CArchive & AFXAPI operator>>(CArchive & ar, CStdStringW & strW)
 //              object with a single line of code.
 // -----------------------------------------------------------------------------
 
-inline CStdStringA WUFormatA(PCSTR szFormat, ...)
+inline CStdStringA WUFormatA( PCSTR szFormat, ... )
 {
     va_list argList;
-    va_start(argList, szFormat);
+    va_start( argList, szFormat );
     CStdStringA strOut;
-    strOut.FormatV(szFormat, argList);
-    va_end(argList);
+    strOut.FormatV( szFormat, argList );
+    va_end( argList );
     return strOut;
 }
-inline CStdStringW WUFormatW(PCWSTR szwFormat, ...)
+inline CStdStringW WUFormatW( PCWSTR szwFormat, ... )
 {
     va_list argList;
-    va_start(argList, szwFormat);
+    va_start( argList, szwFormat );
     CStdStringW strOut;
-    strOut.FormatV(szwFormat, argList);
-    va_end(argList);
+    strOut.FormatV( szwFormat, argList );
+    va_end( argList );
     return strOut;
 }
 
 #ifdef SS_ANSI
 #else
-inline CStdStringA WUFormatA(UINT nId, ...)
+inline CStdStringA WUFormatA( UINT nId, ... )
 {
     va_list argList;
-    va_start(argList, nId);
+    va_start( argList, nId );
 
     CStdStringA strFmt;
     CStdStringA strOut;
-    if (strFmt.Load(nId))
-        strOut.FormatV(strFmt, argList);
+    if ( strFmt.Load( nId ) )
+        strOut.FormatV( strFmt, argList );
 
-    va_end(argList);
+    va_end( argList );
     return strOut;
 }
 
-inline CStdStringW WUFormatW(UINT nId, ...)
+inline CStdStringW WUFormatW( UINT nId, ... )
 {
     va_list argList;
-    va_start(argList, nId);
+    va_start( argList, nId );
 
     CStdStringW strFmt;
     CStdStringW strOut;
-    if (strFmt.Load(nId))
-        strOut.FormatV(strFmt, argList);
+    if ( strFmt.Load( nId ) )
+        strOut.FormatV( strFmt, argList );
 
-    va_end(argList);
+    va_end( argList );
     return strOut;
 }
 #endif // #ifdef SS_ANSI
 
 
 
-#if defined(SS_WIN32) && !defined (SS_ANSI)
+#if defined(SS_WIN32) && !defined (SS_ANSI) 
 // -------------------------------------------------------------------------
 // FUNCTION: WUSysMessage
 //       CStdStringA WUSysMessageA(DWORD dwError, DWORD dwLangId=SS_DEFLANGID);
@@ -4254,53 +4254,53 @@ inline CStdStringW WUFormatW(UINT nId, ...)
 //       only returns either English of the system default language strings.
 // -------------------------------------------------------------------------
 #define SS_DEFLANGID MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT)
-inline CStdStringA WUSysMessageA(DWORD dwError, DWORD dwLangId = SS_DEFLANGID)
+inline CStdStringA WUSysMessageA( DWORD dwError, DWORD dwLangId = SS_DEFLANGID )
 {
-    CHAR szBuf[512];
-
-    if (0 !=::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
-                             dwLangId, szBuf, 511, NULL))
-        return WUFormatA("%s (0x%X)", szBuf, dwError);
+    CHAR szBuf[ 512 ];
+    
+    if ( 0 != ::FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
+                                dwLangId, szBuf, 511, NULL ) )
+        return WUFormatA( "%s (0x%X)", szBuf, dwError );
     else
-        return WUFormatA("Unknown error (0x%X)", dwError);
+        return WUFormatA( "Unknown error (0x%X)", dwError );
 }
-inline CStdStringW WUSysMessageW(DWORD dwError, DWORD dwLangId = SS_DEFLANGID)
+inline CStdStringW WUSysMessageW( DWORD dwError, DWORD dwLangId = SS_DEFLANGID )
 {
-    WCHAR szBuf[512];
-
-    if (0 !=::FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
-                             dwLangId, szBuf, 511, NULL))
-        return WUFormatW(L"%s (0x%X)", szBuf, dwError);
+    WCHAR szBuf[ 512 ];
+    
+    if ( 0 != ::FormatMessageW( FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
+                                dwLangId, szBuf, 511, NULL ) )
+        return WUFormatW( L"%s (0x%X)", szBuf, dwError );
     else
-        return WUFormatW(L"Unknown error (0x%X)", dwError);
+        return WUFormatW( L"Unknown error (0x%X)", dwError );
 }
 #endif
 
 // Define TCHAR based friendly names for some of these functions
 
-#ifdef UNICODE
+#ifdef UNICODE 
 //#define CStdString                            CStdStringW
 typedef CStdStringW CStdString;
-#define WUSysMessage			WUSysMessageW
-#define WUFormat				WUFormatW
-#else
+#define WUSysMessage   WUSysMessageW
+#define WUFormat    WUFormatW
+#else 
 //#define CStdString                            CStdStringA
 typedef CStdStringA CStdString;
-#define WUSysMessage			WUSysMessageA
-#define WUFormat				WUFormatA
+#define WUSysMessage   WUSysMessageA
+#define WUFormat    WUFormatA
 #endif
 
 // ...and some shorter names for the space-efficient
 
-#define WUSysMsg					WUSysMessage
-#define WUSysMsgA					WUSysMessageA
-#define WUSysMsgW					WUSysMessageW
-#define WUFmtA						WUFormatA
-#define	WUFmtW						WUFormatW
-#define WUFmt						WUFormat
-#define WULastErrMsg()				WUSysMessage(::GetLastError())
-#define WULastErrMsgA()				WUSysMessageA(::GetLastError())
-#define WULastErrMsgW()				WUSysMessageW(::GetLastError())
+#define WUSysMsg     WUSysMessage
+#define WUSysMsgA     WUSysMessageA
+#define WUSysMsgW     WUSysMessageW
+#define WUFmtA      WUFormatA
+#define WUFmtW      WUFormatW
+#define WUFmt      WUFormat
+#define WULastErrMsg()    WUSysMessage(::GetLastError())
+#define WULastErrMsgA()    WUSysMessageA(::GetLastError())
+#define WULastErrMsgW()    WUSysMessageW(::GetLastError())
 
 
 // -----------------------------------------------------------------------------
@@ -4312,57 +4312,57 @@ typedef CStdStringA CStdString;
 //              CStdString objects.  This is useful for maps in which the key may be the
 //               proper string but in the wrong case.
 // -----------------------------------------------------------------------------
-#define StdStringLessNoCaseW		SSLNCW  // avoid VC compiler warning 4786
-#define StdStringEqualsNoCaseW		SSENCW
-#define StdStringLessNoCaseA		SSLNCA
-#define StdStringEqualsNoCaseA		SSENCA
+#define StdStringLessNoCaseW  SSLNCW  // avoid VC compiler warning 4786
+#define StdStringEqualsNoCaseW  SSENCW
+#define StdStringLessNoCaseA  SSLNCA
+#define StdStringEqualsNoCaseA  SSENCA
 
 #ifdef UNICODE
-#define StdStringLessNoCase		SSLNCW
-#define StdStringEqualsNoCase	SSENCW
+#define StdStringLessNoCase  SSLNCW
+#define StdStringEqualsNoCase SSENCW
 #else
-#define StdStringLessNoCase		SSLNCA
-#define StdStringEqualsNoCase	SSENCA
+#define StdStringLessNoCase  SSLNCA
+#define StdStringEqualsNoCase SSENCA
 #endif
 
-struct StdStringLessNoCaseW:std::binary_function < CStdStringW, CStdStringW,
+struct StdStringLessNoCaseW: std::binary_function < CStdStringW, CStdStringW,
             bool >
 {
     inline
-    bool operator() (const CStdStringW & sLeft,
-                     const CStdStringW & sRight) const
+    bool operator() ( const CStdStringW & sLeft,
+                      const CStdStringW & sRight ) const
     {
-        return ssicmp(sLeft.c_str(), sRight.c_str()) < 0;
+        return ssicmp( sLeft.c_str(), sRight.c_str() ) < 0;
     }
 };
-struct StdStringEqualsNoCaseW:std::binary_function < CStdStringW, CStdStringW,
+struct StdStringEqualsNoCaseW: std::binary_function < CStdStringW, CStdStringW,
             bool >
 {
     inline
-    bool operator() (const CStdStringW & sLeft,
-                     const CStdStringW & sRight) const
+    bool operator() ( const CStdStringW & sLeft,
+                      const CStdStringW & sRight ) const
     {
-        return ssicmp(sLeft.c_str(), sRight.c_str()) == 0;
+        return ssicmp( sLeft.c_str(), sRight.c_str() ) == 0;
     }
 };
-struct StdStringLessNoCaseA:std::binary_function < CStdStringA, CStdStringA,
+struct StdStringLessNoCaseA: std::binary_function < CStdStringA, CStdStringA,
             bool >
 {
     inline
-    bool operator() (const CStdStringA & sLeft,
-                     const CStdStringA & sRight) const
+    bool operator() ( const CStdStringA & sLeft,
+                      const CStdStringA & sRight ) const
     {
-        return ssicmp(sLeft.c_str(), sRight.c_str()) < 0;
+        return ssicmp( sLeft.c_str(), sRight.c_str() ) < 0;
     }
 };
-struct StdStringEqualsNoCaseA:std::binary_function < CStdStringA, CStdStringA,
+struct StdStringEqualsNoCaseA: std::binary_function < CStdStringA, CStdStringA,
             bool >
 {
     inline
-    bool operator() (const CStdStringA & sLeft,
-                     const CStdStringA & sRight) const
+    bool operator() ( const CStdStringA & sLeft,
+                      const CStdStringA & sRight ) const
     {
-        return ssicmp(sLeft.c_str(), sRight.c_str()) == 0;
+        return ssicmp( sLeft.c_str(), sRight.c_str() ) == 0;
     }
 };
 
@@ -4392,7 +4392,7 @@ struct StdStringEqualsNoCaseA:std::binary_function < CStdStringA, CStdStringA,
 // Turn back on any Borland warnings we turned off.
 
 #ifdef __BORLANDC__
-#pragma option pop              // Turn back on inline function warnings
+#pragma option pop              // Turn back on inline function warnings 
 //      #pragma warn +inl   // Turn back on inline function warnings
 #endif
 
