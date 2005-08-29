@@ -173,52 +173,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         
         break;
         
-        
-        case WM_WINDOWPOSCHANGING:
-        
-        windowHandle = details->hwnd;
-        //windowHandle2 = details->hwndInsertAfter;
-        //get win name
-        GetWindowText( windowHandle, windowTitle, 150 );
-        
-        //get an id for it
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-        
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-        
-        ////setup return string
-        strcat( result, "MSG=CALLWNDPROC_WM_WINDOWPOSCHANGING;OP=7;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        
-        buffer = result;
-        
-        break;
         case WM_WINDOWPOSCHANGED:
         
         windowHandle = details->hwnd;
