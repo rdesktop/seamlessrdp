@@ -5,6 +5,7 @@
 #include "hookdll.h"
 #include <windows.h>
 #include <winuser.h>
+#include <stdio.h>
 
 #include "wtsapi32.h"
 #include "Cchannel.h"
@@ -80,6 +81,8 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     RECT rect;
     
     CWPSTRUCT *details = ( CWPSTRUCT * ) lParam;
+    CREATESTRUCT *cs = ( CREATESTRUCT * ) details->lParam;
+    LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
     
     switch ( details->message ) {
         case WM_SIZING:
@@ -259,6 +262,27 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         strcat( result, "." );
         
         buffer = result;
+        
+        break;
+        
+        
+        case WM_CREATE:
+        if ( cs->style & WS_DLGFRAME ) {
+            sprintf( result, "DEBUG:WM_CREATE:%dx%d at %d,%d, title=%s, menu=%p, window=%p, WS_BORDER=%d, WS_DLGFRAME=%d, WS_POPUP=%d",
+                     cs->cx, cs->cy, cs->x, cs->y, cs->lpszName, cs->hMenu, details->hwnd,
+                     cs->style & WS_BORDER, cs->style & WS_DLGFRAME,
+                     cs->style & WS_POPUP );
+            buffer = result;
+        }
+        
+        break;
+        
+        
+        case WM_DESTROY:
+        if ( dwStyle & WS_DLGFRAME ) {
+            sprintf( result, "WM_DESTROY:%p", details->hwnd );
+            buffer = result;
+        }
         
         break;
         
