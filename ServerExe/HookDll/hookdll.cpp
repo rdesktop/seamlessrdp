@@ -83,6 +83,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     CWPSTRUCT *details = ( CWPSTRUCT * ) lParam;
     CREATESTRUCT *cs = ( CREATESTRUCT * ) details->lParam;
     LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
+    WINDOWPOS *wp = (WINDOWPOS *) details->lParam;
     
     switch ( details->message ) {
         case WM_SIZING:
@@ -193,8 +194,16 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         ltoa( t, strY, 10 );
         ltoa( r - l, strW, 10 );
         ltoa( l, strX, 10 );
+
+	// FIXME: This is a crude hack to shut up the language bar and
+	// the Office XP speech/handwriting recognition.
+	if (!strcmp(windowTitle, "TF_FloatingLangBar_WndTitle") || 
+	    !strcmp(windowTitle, "CiceroUIWndFrame")) {
+	    break;
+	}
         
         ////setup return string
+	//sprintf( result, "WM_WINDOWPOSCHANGED: title=%s, flags=0x%lx", windowTitle,  wp->flags);
         strcat( result, "MSG=CALLWNDPROC_WM_WINDOWPOSCHANGED;OP=8;" );
         strcat( result, "ID=" );
         strcat( result, strWindowId );
