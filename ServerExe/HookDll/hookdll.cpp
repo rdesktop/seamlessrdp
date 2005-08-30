@@ -111,6 +111,12 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     
         case WM_SIZING:
         case WM_MOVING:
+        if ( !( dwStyle & WS_VISIBLE ) )
+            break;
+            
+        if ( !( dwStyle & WS_DLGFRAME ) )
+            break;
+            
         snprintf( result, sizeof( result ),
                   "POSITION1,0x%x,%d,%d,%d,%d,0x%x",
                   ( int ) details->hwnd,
@@ -120,8 +126,8 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                   0 );
         result[ sizeof( result ) - 1 ] = '\0';
         buffer = result;
-        
         break;
+        
         
         /* Note: WM_WINDOWPOSCHANGING/WM_WINDOWPOSCHANGED are
         strange. Sometimes, for example when bringing up the
@@ -146,21 +152,18 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
+            buffer = result;
         }
-        buffer = result;
-        
         break;
         
         
         case WM_CREATE:
         if ( cs->style & WS_DLGFRAME ) {
-            sprintf( result, "DEBUG:WM_CREATE:%dx%d at %d,%d, title=%s, menu=%p, window=%p, WS_BORDER=%d, WS_DLGFRAME=%d, WS_POPUP=%d",
-                     cs->cx, cs->cy, cs->x, cs->y, cs->lpszName, cs->hMenu, details->hwnd,
-                     cs->style & WS_BORDER, cs->style & WS_DLGFRAME,
-                     cs->style & WS_POPUP );
+            snprintf( result, sizeof( result ),
+                      "CREATE1,0x%x,0x%x\n",
+                      details->hwnd, 0 );
             buffer = result;
         }
-        
         break;
         
         
@@ -171,6 +174,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         }
         
         break;
+        
         
         default:
         break;
