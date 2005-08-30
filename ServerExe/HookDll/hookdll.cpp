@@ -26,12 +26,9 @@ HWND hWnd = 0;
 
 #define snprintf _snprintf
 
-bool bHooked = false;
-bool bHooked2 = false;
-bool bHooked3 = false;
-HHOOK hhook = 0; //cbt
-HHOOK hhook2 = 0; //shell
-HHOOK hhook3 = 0; //wnd proc
+HHOOK hCbtProc = 0; 
+HHOOK hShellProc = 0;
+HHOOK hWndProc = 0;
 HINSTANCE hInst = 0;
 HANDLE m_vcHandle = 0;
 
@@ -80,7 +77,7 @@ BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpRe
 LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
     if ( nCode < 0 ) {
-        return CallNextHookEx( hhook3, nCode, wParam, lParam );
+        return CallNextHookEx( hWndProc, nCode, wParam, lParam );
     }
     
     char windowTitle[ 150 ] = { ""
@@ -158,7 +155,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
                       details->hwnd,
                       cs->lpszName,
-                      1,    // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
+                      1,     // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
@@ -194,13 +191,13 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         break;
     }
     
-    return CallNextHookEx( hhook3, nCode, wParam, lParam );
+    return CallNextHookEx( hWndProc, nCode, wParam, lParam );
 }
 
 LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
     if ( nCode < 0 ) {
-        return CallNextHookEx( hhook, nCode, wParam, lParam );
+        return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
     }
     
     char windowTitle[ 150 ] = { ""
@@ -236,14 +233,14 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
     
     
     
-    return CallNextHookEx( hhook, nCode, wParam, lParam );
+    return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
 }
 
 
 LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
     if ( nCode < 0 ) {
-        return CallNextHookEx( hhook, nCode, wParam, lParam );
+        return CallNextHookEx( hShellProc, nCode, wParam, lParam );
     }
     
     char windowTitle[ 150 ] = { ""
@@ -352,44 +349,38 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
     }
     
     
-    return CallNextHookEx( hhook, nCode, wParam, lParam );
+    return CallNextHookEx( hShellProc, nCode, wParam, lParam );
 }
 
 DLL_EXPORT void SetHooks( void )
 {
-    if ( !bHooked ) {
-        hhook = SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
-        bHooked = true;
+    if ( !hCbtProc ) {
+        hCbtProc = SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
     }
     
 #if 0
-    if ( !bHooked2 ) {
-        hhook2 = SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst, ( DWORD ) NULL );
-        bHooked2 = true;
+    if ( !hShellProc ) {
+        hShellProc = SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst, ( DWORD ) NULL );
     }
 #endif
     
-    if ( !bHooked3 ) {
-        hhook3 = SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst, ( DWORD ) NULL );
-        bHooked3 = true;
+    if ( !hWndProc ) {
+        hWndProc = SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst, ( DWORD ) NULL );
     }
 }
 
 DLL_EXPORT void RemoveHooks( void )
 {
-    if ( bHooked ) {
-        UnhookWindowsHookEx( hhook );
-        bHooked = false;
+    if ( hCbtProc ) {
+        UnhookWindowsHookEx( hCbtProc );
     }
     
-    if ( bHooked2 ) {
-        UnhookWindowsHookEx( hhook2 );
-        bHooked2 = false;
+    if ( hShellProc ) {
+        UnhookWindowsHookEx( hShellProc );
     }
     
-    if ( bHooked3 ) {
-        UnhookWindowsHookEx( hhook3 );
-        bHooked3 = false;
+    if ( hWndProc ) {
+        UnhookWindowsHookEx( hWndProc );
     }
 }
 
