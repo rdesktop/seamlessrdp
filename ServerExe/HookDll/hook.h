@@ -2,8 +2,8 @@
 // Copyright (C) 2004-2005 Martin Wickett
 //
 
-#ifndef __CBT_H__
-#define __CBT_H__
+#ifndef __HOOK_H__
+#define __HOOK_H__
 
 #include <windows.h>
 #include "hookdll.h"
@@ -14,34 +14,34 @@
 class WTSWinClipper
 {
     protected:
-        static HINSTANCE mCbtDllHinst;
-        static SETHOOKS mSetCbtHook;
-        static REMOVEHOOKS mRemoveCbtHook;
+        static HINSTANCE mHookDllHinst;
+        static SETHOOKS mSetHooks;
+        static REMOVEHOOKS mRemoveHooks;
         static GETINSTANCECOUNT mGetInstanceCount;
         
     public:
         static bool Init();
         static void Done()
         {
-            if ( mCbtDllHinst )
-                FreeLibrary( mCbtDllHinst );
+            if ( mHookDllHinst )
+                FreeLibrary( mHookDllHinst );
         }
         
-        static void SetCbtHook()
+        static void SetHooks()
         {
-            if ( mCbtDllHinst )
-                mSetCbtHook();
+            if ( mHookDllHinst )
+                mSetHooks();
         }
         
-        static void RemoveCbtHook()
+        static void RemoveHooks()
         {
-            if ( mCbtDllHinst )
-                mRemoveCbtHook();
+            if ( mHookDllHinst )
+                mRemoveHooks();
         }
         
         static int GetInstanceCount()
         {
-            if ( mCbtDllHinst )
+            if ( mHookDllHinst )
                 return mGetInstanceCount();
             else
                 return 0;

@@ -158,7 +158,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
                       details->hwnd,
                       cs->lpszName,
-                      1,  // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
+                      1,    // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
@@ -355,17 +355,19 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
     return CallNextHookEx( hhook, nCode, wParam, lParam );
 }
 
-DLL_EXPORT void SetCbtHook( void )
+DLL_EXPORT void SetHooks( void )
 {
     if ( !bHooked ) {
         hhook = SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
         bHooked = true;
     }
     
+#if 0
     if ( !bHooked2 ) {
         hhook2 = SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst, ( DWORD ) NULL );
         bHooked2 = true;
     }
+#endif
     
     if ( !bHooked3 ) {
         hhook3 = SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst, ( DWORD ) NULL );
@@ -373,7 +375,7 @@ DLL_EXPORT void SetCbtHook( void )
     }
 }
 
-DLL_EXPORT void RemoveCbtHook( void )
+DLL_EXPORT void RemoveHooks( void )
 {
     if ( bHooked ) {
         UnhookWindowsHookEx( hhook );

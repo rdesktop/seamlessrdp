@@ -4,39 +4,39 @@
 
 #include "hook.h"
 
-HINSTANCE WTSWinClipper::mCbtDllHinst = 0;
-SETHOOKS WTSWinClipper::mSetCbtHook = 0;
-REMOVEHOOKS WTSWinClipper::mRemoveCbtHook = 0;
+HINSTANCE WTSWinClipper::mHookDllHinst = 0;
+SETHOOKS WTSWinClipper::mSetHooks = 0;
+REMOVEHOOKS WTSWinClipper::mRemoveHooks = 0;
 GETINSTANCECOUNT WTSWinClipper::mGetInstanceCount = 0;
 
 bool WTSWinClipper::Init()
 {
-    if ( mCbtDllHinst )
+    if ( mHookDllHinst )
         return true;
         
     while ( true ) {
         // try to load hookdll.dll
-        if ( !( mCbtDllHinst = LoadLibrary( "hookdll.dll" ) ) )
+        if ( !( mHookDllHinst = LoadLibrary( "hookdll.dll" ) ) )
             break;
             
         // check number of instances
         if ( !
                 ( mGetInstanceCount =
-                      ( GETINSTANCECOUNT ) GetProcAddress( mCbtDllHinst,
+                      ( GETINSTANCECOUNT ) GetProcAddress( mHookDllHinst,
                                                            "GetInstanceCount" ) ) )
             break;
             
             
         // get our hook function
         if ( !
-                ( mSetCbtHook =
-                      ( SETHOOKS ) GetProcAddress( mCbtDllHinst, "SetCbtHook" ) ) )
+                ( mSetHooks =
+                      ( SETHOOKS ) GetProcAddress( mHookDllHinst, "SetHooks" ) ) )
             break;
             
         // get our unkook function
         if ( !
-                ( mRemoveCbtHook =
-                      ( REMOVEHOOKS ) GetProcAddress( mCbtDllHinst, "RemoveCbtHook" ) ) )
+                ( mRemoveHooks =
+                      ( REMOVEHOOKS ) GetProcAddress( mHookDllHinst, "RemoveHooks" ) ) )
             break;
             
         // report success
@@ -44,9 +44,9 @@ bool WTSWinClipper::Init()
     }
     
     // if we got here something went wrong
-    if ( mCbtDllHinst ) {
-        FreeLibrary( mCbtDllHinst );
-        mCbtDllHinst = 0;
+    if ( mHookDllHinst ) {
+        FreeLibrary( mHookDllHinst );
+        mHookDllHinst = 0;
     }
     
     return false;

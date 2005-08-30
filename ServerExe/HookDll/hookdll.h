@@ -4,8 +4,8 @@
 
 #include <windows.h>
 
-#ifndef __CBTDLL_H__
-#define __CBTDLL_H__
+#ifndef __HOOKDLL_H__
+#define __HOOKDLL_H__
 
 #define CHANNELNAME "CLIPPER"
 

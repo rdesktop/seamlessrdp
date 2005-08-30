@@ -192,7 +192,7 @@ bool Init( LPSTR lpCmdLine )
     // check number of instances
     if ( WTSWinClipper::GetInstanceCount() == 1 ) {
         // hook in
-        WTSWinClipper::SetCbtHook();
+        WTSWinClipper::SetHooks();
         return true;
     } else {
         // already hooked
@@ -283,7 +283,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     
     
     // remove hook before saying goodbye
-    WTSWinClipper::RemoveCbtHook();
+    WTSWinClipper::RemoveHooks();
     
     WTSWinClipper::Done();
     
