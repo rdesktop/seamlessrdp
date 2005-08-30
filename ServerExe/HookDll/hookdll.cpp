@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <winuser.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "wtsapi32.h"
 #include "Cchannel.h"
@@ -23,6 +24,8 @@ HWND hWnd = 0;
 
 #pragma comment(linker, "/section:SHAREDDATA,rws")
 
+#define snprintf _snprintf
+
 bool bHooked = false;
 bool bHooked2 = false;
 bool bHooked3 = false;
@@ -31,6 +34,25 @@ HHOOK hhook2 = 0; //shell
 HHOOK hhook3 = 0; //wnd proc
 HINSTANCE hInst = 0;
 HANDLE m_vcHandle = 0;
+
+
+void SendDebug( char *format, ... )
+{
+    va_list argp;
+    char buf [ 256 ];
+    
+    va_start( argp, format );
+    vsprintf( buf, format, argp );
+    va_end( argp );
+    
+    if ( ChannelIsOpen() ) {
+        WriteToChannel( "DEBUG1," );
+        WriteToChannel( buf );
+        WriteToChannel( "\n" );
+    }
+}
+
+
 
 BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
 {
@@ -78,152 +100,53 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     char strY[ 5 ];
     char strW[ 5 ];
     char strH[ 5 ];
-    RECT rect;
     
     CWPSTRUCT *details = ( CWPSTRUCT * ) lParam;
     CREATESTRUCT *cs = ( CREATESTRUCT * ) details->lParam;
     LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
-    WINDOWPOS *wp = (WINDOWPOS *) details->lParam;
+    WINDOWPOS *wp = ( WINDOWPOS * ) details->lParam;
+    RECT *rect = ( RECT * ) details->lParam;
     
     switch ( details->message ) {
+    
         case WM_SIZING:
-        windowHandle = details->hwnd;
-        //get win name
-        GetWindowText( windowHandle, windowTitle, 150 );
-        
-        //get an id for it
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-        
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-        
-        ////setup return string
-        strcat( result, "MSG=CALLWNDPROC_WM_SIZING;OP=6;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        
-        buffer = result;
-        
-        break;
         case WM_MOVING:
-        
-        windowHandle = details->hwnd;
-        //get win name
-        GetWindowText( windowHandle, windowTitle, 150 );
-        
-        //get an id for it
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-        
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-        
-        ////setup return string
-        strcat( result, "MSG=CALLWNDPROC_WM_MOVING;OP=2;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        
+        snprintf( result, sizeof( result ),
+                  "POSITION1,0x%x,%d,%d,%d,%d,0x%x",
+                  ( int ) details->hwnd,
+                  rect->left, rect->top,
+                  rect->right - rect->left,
+                  rect->bottom - rect->top,
+                  0 );
+        result[ sizeof( result ) - 1 ] = '\0';
         buffer = result;
         
         break;
         
-        case WM_WINDOWPOSCHANGED:
+        /* Note: WM_WINDOWPOSCHANGING/WM_WINDOWPOSCHANGED are
+        strange. Sometimes, for example when bringing up the
+        Notepad About dialog, only an WM_WINDOWPOSCHANGING is
+        sent. In some other cases, for exmaple when opening
+        Format->Text in Notepad, both events are sent. Also, for
+        some reason, when closing the Notepad About dialog, an
+        WM_WINDOWPOSCHANGING event is sent which looks just like
+        the event that was sent when the About dialog was opened...  */
+        case WM_WINDOWPOSCHANGING:
         
-        windowHandle = details->hwnd;
-        //windowHandle2 = details->hwndInsertAfter;
-        //get win name
-        GetWindowText( windowHandle, windowTitle, 150 );
-        
-        //get an id for it
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-        
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-
-	// FIXME: This is a crude hack to shut up the language bar and
-	// the Office XP speech/handwriting recognition.
-	if (!strcmp(windowTitle, "TF_FloatingLangBar_WndTitle") || 
-	    !strcmp(windowTitle, "CiceroUIWndFrame")) {
-	    break;
-	}
-        
-        ////setup return string
-	//sprintf( result, "WM_WINDOWPOSCHANGED: title=%s, flags=0x%lx", windowTitle,  wp->flags);
-        strcat( result, "MSG=CALLWNDPROC_WM_WINDOWPOSCHANGED;OP=8;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        
+        if ( !( dwStyle & WS_VISIBLE ) )
+            break;
+            
+        if ( !( dwStyle & WS_DLGFRAME ) )
+            break;
+            
+        if ( !( wp->flags & SWP_NOZORDER ) ) {
+            snprintf( result, sizeof( result ),
+                      "ZCHANGE1,0x%x,0x%x,0x%x\n",
+                      details->hwnd,
+                      wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
+                      0 );
+            result[ sizeof( result ) - 1 ] = '\0';
+        }
         buffer = result;
         
         break;
