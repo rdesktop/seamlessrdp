@@ -45,11 +45,9 @@ void SendDebug( char *format, ... )
     vsprintf( buf, format, argp );
     va_end( argp );
     
-    if ( ChannelIsOpen() ) {
-        WriteToChannel( "DEBUG1," );
-        WriteToChannel( buf );
-        WriteToChannel( "\n" );
-    }
+    WriteToChannel( "DEBUG1," );
+    WriteToChannel( buf );
+    WriteToChannel( "\n" );
 }
 
 
@@ -168,10 +166,8 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         break;
     }
     
-    if ( ChannelIsOpen() ) {
-        if ( result[ 0 ] != '\0' ) {
-            WriteToChannel( result );
-        }
+    if ( result[ 0 ] != '\0' ) {
+        WriteToChannel( result );
     }
     
     return CallNextHookEx( hhook3, nCode, wParam, lParam );
@@ -212,10 +208,8 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
         break;
     }
     
-    if ( ChannelIsOpen() ) {
-        if ( result[ 0 ] != '\0' ) {
-            WriteToChannel( result );
-        }
+    if ( result[ 0 ] != '\0' ) {
+        WriteToChannel( result );
     }
     
     return CallNextHookEx( hhook, nCode, wParam, lParam );
@@ -228,113 +222,111 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
         return CallNextHookEx( hhook, nCode, wParam, lParam );
     }
     
-    if ( ChannelIsOpen() ) {
-        char windowTitle[ 150 ] = { ""
-                                  };
-        HWND windowHandle = NULL;
-        char result[ 255 ] = { ""
-                             };
-        char strWindowId[ 25 ];
-        LONG b, t, l, r;
-        char strW[ 5 ];
-        char strY[ 5 ];
-        char strX[ 5 ];
-        char strH[ 5 ];
-        RECT rect;
+    char windowTitle[ 150 ] = { ""
+                              };
+    HWND windowHandle = NULL;
+    char result[ 255 ] = { ""
+                         };
+    char strWindowId[ 25 ];
+    LONG b, t, l, r;
+    char strW[ 5 ];
+    char strY[ 5 ];
+    char strX[ 5 ];
+    char strH[ 5 ];
+    RECT rect;
+    
+    switch ( nCode ) {
+        case HSHELL_WINDOWCREATED:
         
-        switch ( nCode ) {
-            case HSHELL_WINDOWCREATED:
-            
-            //get window id
-            windowHandle = ( HWND ) wParam;
-            itoa( ( int ) windowHandle, strWindowId, 10 );
-            
-            //get coords
-            GetWindowRect( windowHandle, &rect );
-            b = rect.bottom;
-            t = rect.top;
-            l = rect.left;
-            r = rect.right;
-            ltoa( b - t, strH, 10 );
-            ltoa( t, strY, 10 );
-            ltoa( r - l, strW, 10 );
-            ltoa( l, strX, 10 );
-            
-            //get name
-            GetWindowText( windowHandle, windowTitle, 150 );
-            
-            ////setup return string
-            strcat( result, "MSG=HSHELL_WINDOWCREATED;OP=0;" );
-            strcat( result, "ID=" );
-            strcat( result, strWindowId );
-            strcat( result, ";" );
-            strcat( result, "TITLE=" );
-            strcat( result, windowTitle );
-            strcat( result, ";" );
-            strcat( result, "X=" );
-            strcat( result, strX );
-            strcat( result, ";" );
-            strcat( result, "Y=" );
-            strcat( result, strY );
-            strcat( result, ";" );
-            strcat( result, "H=" );
-            strcat( result, strH );
-            strcat( result, ";" );
-            strcat( result, "W=" );
-            strcat( result, strW );
-            strcat( result, "." );
-            
-            break;
-            
-            case HSHELL_WINDOWDESTROYED:
-            
-            //get window id
-            windowHandle = ( HWND ) wParam;
-            itoa( ( int ) windowHandle, strWindowId, 10 );
-            
-            //get coords
-            GetWindowRect( windowHandle, &rect );
-            b = rect.bottom;
-            t = rect.top;
-            l = rect.left;
-            r = rect.right;
-            ltoa( b - t, strH, 10 );
-            ltoa( t, strY, 10 );
-            ltoa( r - l, strW, 10 );
-            ltoa( l, strX, 10 );
-            
-            //get name
-            GetWindowText( windowHandle, windowTitle, 150 );
-            
-            ////setup return string
-            strcat( result, "MSG=HSHELL_WINDOWDESTROYED;OP=1;" );
-            strcat( result, "ID=" );
-            strcat( result, strWindowId );
-            strcat( result, ";" );
-            strcat( result, "TITLE=" );
-            strcat( result, windowTitle );
-            strcat( result, ";" );
-            strcat( result, "X=" );
-            strcat( result, strX );
-            strcat( result, ";" );
-            strcat( result, "Y=" );
-            strcat( result, strY );
-            strcat( result, ";" );
-            strcat( result, "H=" );
-            strcat( result, strH );
-            strcat( result, ";" );
-            strcat( result, "W=" );
-            strcat( result, strW );
-            strcat( result, "." );
-            
-            break;
-            default:
-            break;
-        }
+        //get window id
+        windowHandle = ( HWND ) wParam;
+        itoa( ( int ) windowHandle, strWindowId, 10 );
         
-        if ( result[ 0 ] != '\0' ) {
-            WriteToChannel( result );
-        }
+        //get coords
+        GetWindowRect( windowHandle, &rect );
+        b = rect.bottom;
+        t = rect.top;
+        l = rect.left;
+        r = rect.right;
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
+        
+        //get name
+        GetWindowText( windowHandle, windowTitle, 150 );
+        
+        ////setup return string
+        strcat( result, "MSG=HSHELL_WINDOWCREATED;OP=0;" );
+        strcat( result, "ID=" );
+        strcat( result, strWindowId );
+        strcat( result, ";" );
+        strcat( result, "TITLE=" );
+        strcat( result, windowTitle );
+        strcat( result, ";" );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
+        
+        break;
+        
+        case HSHELL_WINDOWDESTROYED:
+        
+        //get window id
+        windowHandle = ( HWND ) wParam;
+        itoa( ( int ) windowHandle, strWindowId, 10 );
+        
+        //get coords
+        GetWindowRect( windowHandle, &rect );
+        b = rect.bottom;
+        t = rect.top;
+        l = rect.left;
+        r = rect.right;
+        ltoa( b - t, strH, 10 );
+        ltoa( t, strY, 10 );
+        ltoa( r - l, strW, 10 );
+        ltoa( l, strX, 10 );
+        
+        //get name
+        GetWindowText( windowHandle, windowTitle, 150 );
+        
+        ////setup return string
+        strcat( result, "MSG=HSHELL_WINDOWDESTROYED;OP=1;" );
+        strcat( result, "ID=" );
+        strcat( result, strWindowId );
+        strcat( result, ";" );
+        strcat( result, "TITLE=" );
+        strcat( result, windowTitle );
+        strcat( result, ";" );
+        strcat( result, "X=" );
+        strcat( result, strX );
+        strcat( result, ";" );
+        strcat( result, "Y=" );
+        strcat( result, strY );
+        strcat( result, ";" );
+        strcat( result, "H=" );
+        strcat( result, strH );
+        strcat( result, ";" );
+        strcat( result, "W=" );
+        strcat( result, strW );
+        strcat( result, "." );
+        
+        break;
+        default:
+        break;
+    }
+    
+    if ( result[ 0 ] != '\0' ) {
+        WriteToChannel( result );
     }
     
     return CallNextHookEx( hhook, nCode, wParam, lParam );
@@ -419,6 +411,9 @@ int WriteToChannel( PCHAR buffer )
     PULONG bytesRead = 0;
     PULONG pBytesWritten = 0;
     
+    if ( !ChannelIsOpen() )
+        return 1;
+        
     BOOL result = WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ), pBytesWritten );
     
     if ( result ) {
