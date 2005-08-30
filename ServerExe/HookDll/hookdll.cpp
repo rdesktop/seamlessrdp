@@ -169,7 +169,9 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         
         case WM_DESTROY:
         if ( dwStyle & WS_DLGFRAME ) {
-            sprintf( result, "WM_DESTROY:%p", details->hwnd );
+            snprintf( result, sizeof( result ),
+                      "DESTROY1,0x%x,0x%x\n",
+                      details->hwnd, 0 );
             buffer = result;
         }
         
