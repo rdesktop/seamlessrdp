@@ -85,7 +85,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         return CallNextHookEx( hhook3, nCode, wParam, lParam );
     }
     
-    PCHAR buffer = NULL;
     char windowTitle[ 150 ] = { ""
                               };
     HWND windowHandle = NULL;
@@ -116,7 +115,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                   rect->bottom - rect->top,
                   0 );
         result[ sizeof( result ) - 1 ] = '\0';
-        buffer = result;
         break;
         
         
@@ -143,7 +141,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
-            buffer = result;
         }
         break;
         
@@ -153,7 +150,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
             snprintf( result, sizeof( result ),
                       "CREATE1,0x%p,0x%x\n",
                       details->hwnd, 0 );
-            buffer = result;
         }
         break;
         
@@ -163,7 +159,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
             snprintf( result, sizeof( result ),
                       "DESTROY1,0x%p,0x%x\n",
                       details->hwnd, 0 );
-            buffer = result;
         }
         
         break;
@@ -174,8 +169,8 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     }
     
     if ( ChannelIsOpen() ) {
-        if ( buffer != NULL ) {
-            WriteToChannel( buffer );
+        if ( result[ 0 ] != '\0' ) {
+            WriteToChannel( result );
         }
     }
     
@@ -187,10 +182,6 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
     if ( nCode < 0 ) {
         return CallNextHookEx( hhook, nCode, wParam, lParam );
     }
-    
-    
-    PCHAR buffer = NULL;
-    
     
     char windowTitle[ 150 ] = { ""
                               };
@@ -214,7 +205,6 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
                   windowTitle,
                   LOWORD( lParam ),
                   0 );
-        buffer = result;
         break;
         
         
@@ -223,8 +213,8 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
     }
     
     if ( ChannelIsOpen() ) {
-        if ( buffer != NULL ) {
-            WriteToChannel( buffer );
+        if ( result[ 0 ] != '\0' ) {
+            WriteToChannel( result );
         }
     }
     
@@ -239,8 +229,6 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
     }
     
     if ( ChannelIsOpen() ) {
-        PCHAR buffer = NULL;
-        
         char windowTitle[ 150 ] = { ""
                                   };
         HWND windowHandle = NULL;
@@ -296,8 +284,6 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
             strcat( result, strW );
             strcat( result, "." );
             
-            buffer = result;
-            
             break;
             
             case HSHELL_WINDOWDESTROYED:
@@ -341,15 +327,13 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
             strcat( result, strW );
             strcat( result, "." );
             
-            buffer = result;
-            
             break;
             default:
             break;
         }
         
-        if ( buffer != NULL ) {
-            WriteToChannel( buffer );
+        if ( result[ 0 ] != '\0' ) {
+            WriteToChannel( result );
         }
     }
     
