@@ -227,6 +227,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SystemParametersInfo( SPI_SETMINIMIZEDMETRICS,
                               sizeof( MINIMIZEDMETRICS ), &mmm, 0 );
                               
+        // We require DragFullWindows
+        SystemParametersInfo( SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0 );
+        
         //set the current directory to that of the requested app .exe location
         //tokenise lpCmdLine. first is the exe path. second (if exists) is the current directory to set.
         //SetCurrentDirectory ();
