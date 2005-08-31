@@ -26,7 +26,7 @@ HWND hWnd = 0;
 
 #define snprintf _snprintf
 
-HHOOK hCbtProc = 0; 
+HHOOK hCbtProc = 0;
 HHOOK hShellProc = 0;
 HHOOK hWndProc = 0;
 HINSTANCE hInst = 0;
@@ -103,7 +103,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
             break;
             
         snprintf( result, sizeof( result ),
-                  "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+                  "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
                   details->hwnd,
                   rect->left, rect->top,
                   rect->right - rect->left,
@@ -155,13 +155,13 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
                       details->hwnd,
                       cs->lpszName,
-                      1,     // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
+                      1,      // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
             
             snprintf( result, sizeof( result ),
-                      "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+                      "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
                       details->hwnd,
                       cs->x,
                       cs->y,
