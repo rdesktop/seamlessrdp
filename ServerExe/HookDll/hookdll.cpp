@@ -145,6 +145,9 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         case WM_CREATE:
         if ( cs->style & WS_DLGFRAME ) {
         
+            if ( cs->cx < 0 || cs->cy < 0 )
+                break;
+                
             snprintf( result, sizeof( result ),
                       "CREATE1,0x%p,0x%x\n",
                       details->hwnd, 0 );
@@ -155,7 +158,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
                       details->hwnd,
                       cs->lpszName,
-                      1,       // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
+                      1,        // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
