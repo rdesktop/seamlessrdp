@@ -90,27 +90,32 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     CREATESTRUCT *cs = ( CREATESTRUCT * ) details->lParam;
     LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
     WINDOWPOS *wp = ( WINDOWPOS * ) details->lParam;
-    RECT *rect = ( RECT * ) details->lParam;
+    RECT rect;
     
     switch ( details->message ) {
     
-        case WM_SIZING:
-        case WM_MOVING:
-        if ( !( dwStyle & WS_VISIBLE ) )
-            break;
-            
+        case WM_WINDOWPOSCHANGED:
         if ( !( dwStyle & WS_DLGFRAME ) )
             break;
             
+        if ( wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE )
+            break;
+            
+        if ( !GetWindowRect( details->hwnd, &rect ) ) {
+            SendDebug( "GetWindowRect failed!\n" );
+            break;
+        }
+        
         snprintf( result, sizeof( result ),
                   "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
                   details->hwnd,
-                  rect->left, rect->top,
-                  rect->right - rect->left,
-                  rect->bottom - rect->top,
+                  rect.left, rect.top,
+                  rect.right - rect.left,
+                  rect.bottom - rect.top,
                   0 );
         result[ sizeof( result ) - 1 ] = '\0';
         WriteToChannel( result );
+        
         break;
         
         
@@ -123,10 +128,6 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         WM_WINDOWPOSCHANGING event is sent which looks just like
         the event that was sent when the About dialog was opened...  */
         case WM_WINDOWPOSCHANGING:
-        
-        if ( !( dwStyle & WS_VISIBLE ) )
-            break;
-            
         if ( !( dwStyle & WS_DLGFRAME ) )
             break;
             
@@ -158,7 +159,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                       "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
                       details->hwnd,
                       cs->lpszName,
-                      1,        // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
+                      1,         // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
                       0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
