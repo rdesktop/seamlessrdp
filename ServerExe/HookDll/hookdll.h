@@ -7,7 +7,7 @@
 #ifndef __HOOKDLL_H__
 #define __HOOKDLL_H__
 
-#define CHANNELNAME "CLIPPER"
+#define CHANNELNAME "seamlessrdp"
 
 #pragma once
 

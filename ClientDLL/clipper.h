@@ -38,7 +38,7 @@
 //
 // definitions
 //
-#define CHANNELNAME "CLIPPER"
+#define CHANNELNAME "seamlessrdp"
 
 //
 // GLOBAL variables
