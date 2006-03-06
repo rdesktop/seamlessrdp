@@ -38,7 +38,7 @@
 //
 // definitions
 //
-#define CHANNELNAME "seamlessrdp"
+#define CHANNELNAME "seamrdp"
 
 //
 // GLOBAL variables
