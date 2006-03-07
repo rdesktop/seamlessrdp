@@ -3,9 +3,12 @@
 //
 
 #include <windows.h>
+#include <stdio.h>
 
 #include "resource.h"
 #include "hookdll/hook.h"
+
+#define snprintf _snprintf
 
 //
 // some global data
@@ -262,7 +265,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
             CloseHandle( procInfo.hThread );
         } else {
             // CreateProcess failed.
-            Message( "Unable to launch the requested application" );
+	    char msg[ 256 ];
+	    snprintf( msg, sizeof( msg ), "Unable to launch the requested application:\n%s", process );
+	    Message( msg );
         }
     } else
         // we are launching without an app, therefore we will show the system tray app and wait for the user to close it
