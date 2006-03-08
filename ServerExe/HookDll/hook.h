@@ -18,7 +18,7 @@ class WTSWinClipper
         static SETHOOKS mSetHooks;
         static REMOVEHOOKS mRemoveHooks;
         static GETINSTANCECOUNT mGetInstanceCount;
-        
+
     public:
         static bool Init();
         static void Done()
@@ -26,19 +26,19 @@ class WTSWinClipper
             if ( mHookDllHinst )
                 FreeLibrary( mHookDllHinst );
         }
-        
+
         static void SetHooks()
         {
             if ( mHookDllHinst )
                 mSetHooks();
         }
-        
+
         static void RemoveHooks()
         {
             if ( mHookDllHinst )
                 mRemoveHooks();
         }
-        
+
         static int GetInstanceCount()
         {
             if ( mHookDllHinst )
