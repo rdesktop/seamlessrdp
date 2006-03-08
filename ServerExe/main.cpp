@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "resource.h"
-#include "hookdll/hook.h"
+#include "HookDll/hook.h"
 
 #define snprintf _snprintf
 
