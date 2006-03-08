@@ -31,7 +31,7 @@ HHOOK hShellProc = 0;
 HHOOK hWndProc = 0;
 HINSTANCE hInst = 0;
 HANDLE m_vcHandle = 0;
-
+HANDLE hMutex = 0;
 
 void SendDebug( char *format, ... )
 {
@@ -52,22 +52,37 @@ void SendDebug( char *format, ... )
 extern "C" BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
 {
     switch ( ul_reason_for_call ) {
-    case DLL_PROCESS_ATTACH: {
-            // remember our instance handle
-            hInst = hinstDLL;
-            ++iInstanceCount;
-            OpenVirtualChannel();
-            break;
-        }
+    case DLL_PROCESS_ATTACH:
+        // remember our instance handle
+        hInst = hinstDLL;
+
+        hMutex = CreateMutex( NULL, FALSE, "Local\\Seamless" );
+        if (!hMutex)
+            return FALSE;
+
+        WaitForSingleObject( hMutex, INFINITE );
+        ++iInstanceCount;
+        ReleaseMutex( hMutex );
+
+        OpenVirtualChannel();
+
+        break;
 
     case DLL_THREAD_ATTACH:
         break;
+
     case DLL_THREAD_DETACH:
         break;
-    case DLL_PROCESS_DETACH: {
-            --iInstanceCount;
-            CloseVirtualChannel();
-        }
+
+    case DLL_PROCESS_DETACH:
+        WaitForSingleObject( hMutex, INFINITE );
+        --iInstanceCount;
+        ReleaseMutex( hMutex );
+
+        CloseVirtualChannel();
+
+        CloseHandle( hMutex );
+
         break;
     }
 
@@ -441,13 +456,16 @@ int ChannelIsOpen()
 
 int WriteToChannel( PCHAR buffer )
 {
+    BOOL result;
     PULONG bytesRead = 0;
     PULONG pBytesWritten = 0;
 
     if ( !ChannelIsOpen() )
         return 1;
 
-    BOOL result = WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ), pBytesWritten );
+    WaitForSingleObject( hMutex, INFINITE );
+    result = WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ), pBytesWritten );
+    ReleaseMutex( hMutex );
 
     if ( result ) {
         return 1;
