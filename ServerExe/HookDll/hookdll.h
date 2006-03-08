@@ -20,6 +20,6 @@ typedef int ( *GETINSTANCECOUNT ) ();
 int OpenVirtualChannel();
 int CloseVirtualChannel();
 int ChannelIsOpen();
-int WriteToChannel( PCHAR buffer );
+int WriteToChannel( char *format, ... );
 
 #endif

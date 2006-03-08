@@ -38,13 +38,14 @@ void SendDebug( char *format, ... )
     va_list argp;
     char buf [ 256 ];
 
+    sprintf( buf, "DEBUG1," );
+
     va_start( argp, format );
-    vsprintf( buf, format, argp );
+    vsnprintf( buf + sizeof( "DEBUG1," ) - 1,
+               sizeof( buf ) - sizeof( "DEBUG1," ) + 1, format, argp );
     va_end( argp );
 
-    WriteToChannel( "DEBUG1," );
     WriteToChannel( buf );
-    WriteToChannel( "\n" );
 }
 
 
@@ -117,12 +118,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         if ( wp->flags & SWP_SHOWWINDOW ) {
             // FIXME: Now, just like create!
             SendDebug("SWP_SHOWWINDOW for %p!", details->hwnd);
-
-            snprintf( result, sizeof( result ),
-                      "CREATE1,0x%p,0x%x\n",
-                      details->hwnd, 0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
+            WriteToChannel( "CREATE1,0x%p,0x%x", details->hwnd, 0 );
 
             // FIXME: SETSTATE
 
@@ -130,27 +126,17 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
                 SendDebug( "GetWindowRect failed!\n" );
                 break;
             }
-            snprintf( result, sizeof( result ),
-                      "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
-                      details->hwnd,
-                      rect.left, rect.top,
-                      rect.right - rect.left,
-                      rect.bottom - rect.top,
-                      0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-
+            WriteToChannel( "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+                            details->hwnd,
+                            rect.left, rect.top,
+                            rect.right - rect.left,
+                            rect.bottom - rect.top,
+                            0 );
         }
 
 
-        if ( wp->flags & SWP_HIDEWINDOW ) {
-            snprintf( result, sizeof( result ),
-                      "DESTROY1,0x%p,0x%x\n",
-                      details->hwnd, 0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-
-        }
+        if ( wp->flags & SWP_HIDEWINDOW )
+            WriteToChannel( "DESTROY1,0x%p,0x%x", details->hwnd, 0 );
 
 
         if ( !( dwStyle & WS_VISIBLE ) )
@@ -164,15 +150,12 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
             break;
         }
 
-        snprintf( result, sizeof( result ),
-                  "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
-                  details->hwnd,
-                  rect.left, rect.top,
-                  rect.right - rect.left,
-                  rect.bottom - rect.top,
-                  0 );
-        result[ sizeof( result ) - 1 ] = '\0';
-        WriteToChannel( result );
+        WriteToChannel( "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+                        details->hwnd,
+                        rect.left, rect.top,
+                        rect.right - rect.left,
+                        rect.bottom - rect.top,
+                        0 );
 
         break;
 
@@ -192,15 +175,12 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         if ( !( dwStyle & WS_VISIBLE ) )
             break;
 
-        if ( !( wp->flags & SWP_NOZORDER ) ) {
-            snprintf( result, sizeof( result ),
-                      "ZCHANGE1,0x%p,0x%p,0x%x\n",
-                      details->hwnd,
-                      wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
-                      0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-        }
+        if ( !( wp->flags & SWP_NOZORDER ) )
+            WriteToChannel( "ZCHANGE1,0x%p,0x%p,0x%x",
+                            details->hwnd,
+                            wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
+                            0 );
+
         break;
 
 
@@ -210,11 +190,7 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         if ( dwStyle & WS_CHILD)
             break;
 
-        snprintf( result, sizeof( result ),
-                  "DESTROY1,0x%p,0x%x\n",
-                  details->hwnd, 0 );
-        result[ sizeof( result ) - 1 ] = '\0';
-        WriteToChannel( result );
+        WriteToChannel( "DESTROY1,0x%p,0x%x", details->hwnd, 0 );
 
         break;
 
@@ -248,14 +224,11 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
 
         GetWindowText( ( HWND ) wParam, windowTitle, 150 );
 
-        snprintf( result, sizeof( result ),
-                  "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
-                  ( HWND ) wParam,
-                  windowTitle,
-                  LOWORD( lParam ),
-                  0 );
-        result[ sizeof( result ) - 1 ] = '\0';
-        WriteToChannel( result );
+        WriteToChannel( "SETSTATE1,0x%p,%s,0x%x,0x%x",
+                        ( HWND ) wParam,
+                        windowTitle,
+                        LOWORD( lParam ),
+                        0 );
         break;
 
 
@@ -454,17 +427,28 @@ int ChannelIsOpen()
     }
 }
 
-int WriteToChannel( PCHAR buffer )
+int WriteToChannel( char *format, ... )
 {
     BOOL result;
+    va_list argp;
+    char buf [ 1024 ];
+    int size;
     PULONG bytesRead = 0;
     PULONG pBytesWritten = 0;
 
     if ( !ChannelIsOpen() )
         return 1;
 
+    va_start( argp, format );
+    size = vsnprintf( buf, sizeof( buf ), format, argp );
+    va_end( argp );
+
+    if ( size >= sizeof( buf ) )
+        return 0;
+
     WaitForSingleObject( hMutex, INFINITE );
-    result = WTSVirtualChannelWrite( m_vcHandle, buffer, ( ULONG ) strlen( buffer ), pBytesWritten );
+    result = WTSVirtualChannelWrite( m_vcHandle, buf, ( ULONG ) strlen( buf ), pBytesWritten );
+    result = WTSVirtualChannelWrite( m_vcHandle, "\n", ( ULONG ) 1, pBytesWritten );
     ReleaseMutex( hMutex );
 
     if ( result ) {
