@@ -95,8 +95,51 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     switch ( details->message ) {
     
         case WM_WINDOWPOSCHANGED:
-        if ( !( dwStyle & WS_DLGFRAME ) )
-            break;
+	    if ( dwStyle & WS_CHILD)
+		break;
+
+
+	    if ( wp->flags & SWP_SHOWWINDOW ) {
+		// FIXME: Now, just like create!
+		SendDebug("SWP_SHOWWINDOW for %p!", details->hwnd);
+		
+		snprintf( result, sizeof( result ),
+			  "CREATE1,0x%p,0x%x\n",
+			  details->hwnd, 0 );
+		result[ sizeof( result ) - 1 ] = '\0';
+		WriteToChannel( result );
+
+		// FIXME: SETSTATE
+	    
+		if ( !GetWindowRect( details->hwnd, &rect ) ) {
+		    SendDebug( "GetWindowRect failed!\n" );
+		    break;
+		}
+		snprintf( result, sizeof( result ),
+			  "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
+			  details->hwnd,
+			  rect.left, rect.top,
+			  rect.right - rect.left,
+			  rect.bottom - rect.top,
+			  0 );
+		result[ sizeof( result ) - 1 ] = '\0';
+		WriteToChannel( result );
+
+	    }
+
+
+	    if ( wp->flags & SWP_HIDEWINDOW ) {
+		snprintf( result, sizeof( result ),
+			  "DESTROY1,0x%p,0x%x\n",
+			  details->hwnd, 0 );
+		result[ sizeof( result ) - 1 ] = '\0';
+		WriteToChannel( result );
+
+	    }
+
+
+	if ( !( dwStyle & WS_VISIBLE ) )
+		break;
             
         if ( wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE )
             break;
@@ -128,8 +171,11 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         WM_WINDOWPOSCHANGING event is sent which looks just like
         the event that was sent when the About dialog was opened...  */
         case WM_WINDOWPOSCHANGING:
-        if ( !( dwStyle & WS_DLGFRAME ) )
-            break;
+	    if ( dwStyle & WS_CHILD)
+		break;
+
+	    if ( !( dwStyle & WS_VISIBLE ) )
+		break;
             
         if ( !( wp->flags & SWP_NOZORDER ) ) {
             snprintf( result, sizeof( result ),
@@ -142,55 +188,22 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
         }
         break;
         
-        
-        case WM_CREATE:
-        if ( cs->style & WS_DLGFRAME ) {
-        
-            if ( cs->cx < 0 || cs->cy < 0 )
-                break;
-                
-            snprintf( result, sizeof( result ),
-                      "CREATE1,0x%p,0x%x\n",
-                      details->hwnd, 0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-            
-            snprintf( result, sizeof( result ),
-                      "SETSTATE1,0x%p,%s,0x%x,0x%x\n",
-                      details->hwnd,
-                      cs->lpszName,
-                      1,         // FIXME: Check for WS_MAXIMIZE/WS_MINIMIZE
-                      0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-            
-            snprintf( result, sizeof( result ),
-                      "POSITION1,0x%p,%d,%d,%d,%d,0x%x\n",
-                      details->hwnd,
-                      cs->x,
-                      cs->y,
-                      cs->cx,
-                      cs->cy,
-                      0 );
-            result[ sizeof( result ) - 1 ] = '\0';
-            WriteToChannel( result );
-            
-        }
-        break;
-        
+       
+      
         
         case WM_DESTROY:
-        if ( dwStyle & WS_DLGFRAME ) {
+	    if ( dwStyle & WS_CHILD)
+		break;
+
             snprintf( result, sizeof( result ),
                       "DESTROY1,0x%p,0x%x\n",
                       details->hwnd, 0 );
             result[ sizeof( result ) - 1 ] = '\0';
             WriteToChannel( result );
-        }
         
         break;
-        
-        
+
+      
         default:
         break;
     }
