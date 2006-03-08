@@ -9,7 +9,7 @@
 #include <stdarg.h>
 
 #include "wtsapi32.h"
-#include "Cchannel.h"
+#include "cchannel.h"
 
 #define DLL_EXPORT extern "C" __declspec(dllexport)
 
