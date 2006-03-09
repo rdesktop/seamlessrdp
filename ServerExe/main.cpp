@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 #include "resource.h"
-#include "HookDll/hook.h"
 
 #define snprintf _snprintf
 
@@ -19,6 +18,10 @@ HINSTANCE hAppInstance;
 
 static const UINT WM_TRAY_NOTIFY = ( WM_APP + 1000 );
 static const char szAppName[] = "SeamlessRDP Shell";
+
+typedef void ( *SetHooksProc ) ();
+typedef void ( *RemoveHooksProc ) ();
+typedef int ( *GetInstanceCountProc ) ();
 
 //
 // spawn a message box
@@ -108,7 +111,7 @@ void DoContextMenu()
     int cmd = TrackPopupMenu( hSubMenu,
                               TPM_RETURNCMD | TPM_LEFTALIGN | TPM_RIGHTBUTTON,
                               pt.x, pt.y, 0, ghWnd, NULL );
-    DeleteObject( hMenu );
+    DestroyMenu( hMenu );
 
     switch ( cmd ) {
     case ID_WMEXIT: {
@@ -181,38 +184,42 @@ bool InitWindow()
 }
 
 //
-// init
-//
-bool Init( LPSTR lpCmdLine )
-{
-    // try to load WTSWinClipper.dll
-    if ( !WTSWinClipper::Init() ) {
-        Message
-        ( "Application not installed correctly: Unable to init hookdll.dll." );
-        return false;
-    }
-
-    // check number of instances
-    if ( WTSWinClipper::GetInstanceCount() == 1 ) {
-        // hook in
-        WTSWinClipper::SetHooks();
-        return true;
-    } else {
-        // already hooked
-        return false;
-    }
-}
-
-//
 // our main loop
 //
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
                     LPSTR lpCmdLine, int nCmdShow )
 {
+    HMODULE hHookDLL;
+    GetInstanceCountProc pfnInstanceCount;
+    SetHooksProc pfnSetHooks;
+    RemoveHooksProc pfnRemoveHooks;
+
     hAppInstance = hInstance;
-    if ( !Init( lpCmdLine ) ) {
-        return 0;
+
+    hHookDLL = LoadLibrary( "hookdll.dll" );
+    if ( !hHookDLL ) {
+        Message( "Could not load hook DLL. Unable to continue." );
+        return -1;
     }
+
+    pfnInstanceCount = (GetInstanceCountProc) GetProcAddress( hHookDLL, "GetInstanceCount" );
+    pfnSetHooks = (SetHooksProc) GetProcAddress( hHookDLL, "SetHooks" );
+    pfnRemoveHooks = (RemoveHooksProc) GetProcAddress( hHookDLL, "RemoveHooks" );
+
+    if ( !pfnInstanceCount || !pfnSetHooks || !pfnRemoveHooks ) {
+        FreeLibrary( hHookDLL );
+        Message( "Hook DLL doesn't contain the correct functions. Unable to continue." );
+        return -1;
+    }
+
+    /* Check if the DLL is already loaded */
+    if ( pfnInstanceCount() != 1 ) {
+        FreeLibrary( hHookDLL );
+        Message( "Another running instance of Seamless RDP detected." );
+        return -1;
+    }
+
+    pfnSetHooks();
 
     // if we have been specified an app to launch, we will wait until the app has closed and use that for
     // our cue to exit
@@ -291,9 +298,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 
     // remove hook before saying goodbye
-    WTSWinClipper::RemoveHooks();
+    pfnRemoveHooks();
 
-    WTSWinClipper::Done();
+    FreeLibrary( hHookDLL );
 
     return 1;
 }

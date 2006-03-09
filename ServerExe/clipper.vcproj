@@ -144,12 +144,6 @@
 			RelativePath=".\clipper.rc">
 		</File>
 		<File
-			RelativePath=".\hookdll\hook.cpp">
-		</File>
-		<File
-			RelativePath=".\hookdll\hook.h">
-		</File>
-		<File
 			RelativePath=".\icon.ico">
 		</File>
 		<File
