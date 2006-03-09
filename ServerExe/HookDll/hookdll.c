@@ -49,6 +49,22 @@ static HINSTANCE g_instance = NULL;
 
 static HANDLE g_mutex = NULL;
 
+static void
+update_position(HWND hwnd)
+{
+	RECT rect;
+
+	if (!GetWindowRect(hwnd, &rect))
+	{
+		debug("GetWindowRect failed!\n");
+		return;
+	}
+
+	vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+		       hwnd,
+		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+}
+
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
@@ -77,7 +93,6 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 		case WM_WINDOWPOSCHANGED:
 			{
-				RECT rect;
 				WINDOWPOS *wp = (WINDOWPOS *) lparam;
 
 				if (wp->flags & SWP_SHOWWINDOW)
@@ -88,16 +103,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 					// FIXME: SETSTATE
 
-					if (!GetWindowRect(hwnd, &rect))
-					{
-						debug("GetWindowRect failed!\n");
-						break;
-					}
-					vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-						       hwnd,
-						       rect.left, rect.top,
-						       rect.right - rect.left,
-						       rect.bottom - rect.top, 0);
+					update_position(hwnd);
 				}
 
 				if (wp->flags & SWP_HIDEWINDOW)
@@ -107,19 +113,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 					break;
 
 				if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
-				{
-					if (!GetWindowRect(hwnd, &rect))
-					{
-						debug("GetWindowRect failed!\n");
-						break;
-					}
-
-					vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-						       hwnd,
-						       rect.left, rect.top,
-						       rect.right - rect.left,
-						       rect.bottom - rect.top, 0);
-				}
+					update_position(hwnd);
 
 				if (!(wp->flags & SWP_NOZORDER))
 				{
@@ -131,6 +125,14 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				break;
 			}
+
+		case WM_SIZE:
+			update_position(hwnd);
+			break;
+
+		case WM_MOVE:
+			update_position(hwnd);
+			break;
 
 		case WM_DESTROY:
 			vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
