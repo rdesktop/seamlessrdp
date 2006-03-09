@@ -11,7 +11,7 @@
 #include "wtsapi32.h"
 #include "cchannel.h"
 
-#define DLL_EXPORT extern "C" __declspec(dllexport)
+#define DLL_EXPORT __declspec(dllexport)
 
 // Shared DATA
 #pragma data_seg ( "SHAREDDATA" )
@@ -41,7 +41,7 @@ void SendDebug( char *format, ... )
     sprintf( buf, "DEBUG1," );
 
     va_start( argp, format );
-    vsnprintf( buf + sizeof( "DEBUG1," ) - 1,
+    _vsnprintf( buf + sizeof( "DEBUG1," ) - 1,
                sizeof( buf ) - sizeof( "DEBUG1," ) + 1, format, argp );
     va_end( argp );
 
@@ -50,7 +50,7 @@ void SendDebug( char *format, ... )
 
 
 
-extern "C" BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
+BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
 {
     switch ( ul_reason_for_call ) {
     case DLL_PROCESS_ATTACH:
@@ -92,10 +92,6 @@ extern "C" BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, 
 
 LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-    if ( nCode < 0 ) {
-        return CallNextHookEx( hWndProc, nCode, wParam, lParam );
-    }
-
     char windowTitle[ 150 ] = { ""
                               };
     HWND windowHandle = NULL;
@@ -107,6 +103,10 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
     LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
     WINDOWPOS *wp = ( WINDOWPOS * ) details->lParam;
     RECT rect;
+
+    if ( nCode < 0 ) {
+        return CallNextHookEx( hWndProc, nCode, wParam, lParam );
+    }
 
     switch ( details->message ) {
 
@@ -204,16 +204,17 @@ LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
 
 LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-    if ( nCode < 0 ) {
-        return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
-    }
-
     char windowTitle[ 150 ] = { ""
                               };
     HWND windowHandle = NULL;
     char result[ 255 ] = { ""
                          };
-    switch ( nCode ) {
+
+	if ( nCode < 0 ) {
+        return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
+    }
+
+	switch ( nCode ) {
     case HCBT_MINMAX:
 
         if ( ( LOWORD( lParam ) == SW_SHOWMINIMIZED )
@@ -244,10 +245,6 @@ LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
 
 LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
 {
-    if ( nCode < 0 ) {
-        return CallNextHookEx( hShellProc, nCode, wParam, lParam );
-    }
-
     char windowTitle[ 150 ] = { ""
                               };
     HWND windowHandle = NULL;
@@ -260,6 +257,10 @@ LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
     char strX[ 5 ];
     char strH[ 5 ];
     RECT rect;
+
+    if ( nCode < 0 ) {
+        return CallNextHookEx( hShellProc, nCode, wParam, lParam );
+    }
 
     switch ( nCode ) {
     case HSHELL_WINDOWCREATED:
@@ -440,7 +441,7 @@ int WriteToChannel( char *format, ... )
         return 1;
 
     va_start( argp, format );
-    size = vsnprintf( buf, sizeof( buf ), format, argp );
+    size = _vsnprintf( buf, sizeof( buf ), format, argp );
     va_end( argp );
 
     if ( size >= sizeof( buf ) )

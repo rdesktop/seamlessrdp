@@ -147,7 +147,7 @@
 			RelativePath=".\icon.ico">
 		</File>
 		<File
-			RelativePath=".\main.cpp">
+			RelativePath=".\main.c">
 		</File>
 		<File
 			RelativePath=".\resource.h">

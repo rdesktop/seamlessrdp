@@ -16,7 +16,8 @@ HWND ghWnd;
 NOTIFYICONDATA nid;
 HINSTANCE hAppInstance;
 
-static const UINT WM_TRAY_NOTIFY = ( WM_APP + 1000 );
+#define WM_TRAY_NOTIFY ( WM_APP + 1000 )
+
 static const char szAppName[] = "SeamlessRDP Shell";
 
 typedef void ( *SetHooksProc ) ();
@@ -34,7 +35,7 @@ void Message( const char *message )
 //
 // manage the tray icon
 //
-bool InitTrayIcon()
+BOOL InitTrayIcon()
 {
     nid.cbSize = sizeof( NOTIFYICONDATA );
     nid.hWnd = ghWnd;
@@ -42,27 +43,27 @@ bool InitTrayIcon()
     nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = WM_TRAY_NOTIFY;
     strcpy( nid.szTip, szAppName );
-    nid.hIcon = ::LoadIcon( hAppInstance, MAKEINTRESOURCE( IDI_TRAY ) );
+    nid.hIcon = LoadIcon( hAppInstance, MAKEINTRESOURCE( IDI_TRAY ) );
 
     if ( Shell_NotifyIcon( NIM_ADD, &nid ) != TRUE ) {
         Message( "Unable to create tray icon." );
-        return false;
+        return FALSE;
     }
 
-    return true;
+    return TRUE;
 }
 
 //
 // Remove tray icon
 //
-bool RemoveTrayIcon()
+BOOL RemoveTrayIcon()
 {
     if ( Shell_NotifyIcon( NIM_DELETE, &nid ) != TRUE ) {
         Message( "Unable to remove tray icon." );
-        return false;
+        return FALSE;
     }
 
-    return true;
+    return TRUE;
 
 }
 
@@ -91,24 +92,27 @@ void AboutDlg()
 //
 void DoContextMenu()
 {
-    HMENU hMenu = LoadMenu( hAppInstance, MAKEINTRESOURCE( IDR_TRAY ) );
+    HMENU hMenu, hSubMenu;
+    POINT pt;
+	int cmd;
+
+    hMenu = LoadMenu( hAppInstance, MAKEINTRESOURCE( IDR_TRAY ) );
     if ( hMenu == NULL ) {
         Message( "Unable to load menu ressource." );
         return ;
     }
 
-    HMENU hSubMenu = GetSubMenu( hMenu, 0 );
+    hSubMenu = GetSubMenu( hMenu, 0 );
     if ( hSubMenu == NULL ) {
         Message( "Unable to find popup mennu." );
         return ;
     }
 
     // get the cursor position
-    POINT pt;
     GetCursorPos( &pt );
 
     SetForegroundWindow( ghWnd );
-    int cmd = TrackPopupMenu( hSubMenu,
+    cmd = TrackPopupMenu( hSubMenu,
                               TPM_RETURNCMD | TPM_LEFTALIGN | TPM_RIGHTBUTTON,
                               pt.x, pt.y, 0, ghWnd, NULL );
     DestroyMenu( hMenu );
@@ -148,7 +152,7 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 //
 //Init window
 //
-bool InitWindow()
+BOOL InitWindow()
 {
     // register the frame class
     WNDCLASS wndclass;
@@ -165,7 +169,7 @@ bool InitWindow()
 
     if ( !RegisterClass( &wndclass ) ) {
         Message( "Unable to register the window class." );
-        return false;
+        return FALSE;
     }
 
     // create the frame
@@ -177,10 +181,10 @@ bool InitWindow()
     // make sure window was created
     if ( !ghWnd ) {
         Message( "Unable to create the window." );
-        return false;
+        return FALSE;
     }
 
-    return true;
+    return TRUE;
 }
 
 //
@@ -227,12 +231,21 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // Because we do not have a explorer.exe we need to make this application the replacement
         // shell. We do this by calling SystemParametersInfo. If we don't do this, we won't get the WH_SHELL notifications.
 
+        MINIMIZEDMETRICS mmm;
+        PROCESS_INFORMATION procInfo;
+        STARTUPINFO startupInfo = {
+                                      0
+                                  };
+        char attr[] = "";
+        LPTSTR process = lpCmdLine;
+        DWORD dwExitCode;
+        BOOL m_create;
+
         // From MSDN:
         // Note that custom shell applications do not receive WH_SHELL messages. Therefore, any application that
         // registers itself as the default shell must call the SystemParametersInfo function with SPI_SETMINIMIZEDMETRICS
         // before it (or any other application) can receive WH_SHELL messages.
 
-        MINIMIZEDMETRICS mmm;
         mmm.cbSize = sizeof( MINIMIZEDMETRICS );
         SystemParametersInfo( SPI_SETMINIMIZEDMETRICS,
                               sizeof( MINIMIZEDMETRICS ), &mmm, 0 );
@@ -245,20 +258,13 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
         //SetCurrentDirectory ();
 
         //start process specified from command line arg.
-        PROCESS_INFORMATION procInfo;
-        STARTUPINFO startupInfo = {
-                                      0
-                                  };
         startupInfo.cb = sizeof( STARTUPINFO );
-        char attr[] = "";
-        LPTSTR process = lpCmdLine;
-        DWORD dwExitCode;
 
-        BOOL m_create =
+        m_create =
             CreateProcess( NULL, process, NULL, NULL, FALSE, 0, NULL, NULL,
                            &startupInfo, &procInfo );
 
-        if ( m_create != false ) {
+        if ( m_create != FALSE ) {
             // A loop to watch the process.
             GetExitCodeProcess( procInfo.hProcess, &dwExitCode );
 
@@ -279,14 +285,15 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
     } else
         // we are launching without an app, therefore we will show the system tray app and wait for the user to close it
     {
-        // create a dummy window to receive WM_QUIT message
+        MSG msg;
+
+		// create a dummy window to receive WM_QUIT message
         InitWindow();
 
         // create the tray icon
         InitTrayIcon();
 
         // just get and dispatch messages until we're killed
-        MSG msg;
         while ( GetMessage( &msg, 0, 0, 0 ) ) {
             TranslateMessage( &msg );
             DispatchMessage( &msg );
