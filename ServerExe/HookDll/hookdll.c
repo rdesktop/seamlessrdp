@@ -129,14 +129,20 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			}
 
 		case WM_SIZE:
+			if (!(style & WS_VISIBLE))
+				break;
 			update_position(hwnd);
 			break;
 
 		case WM_MOVE:
+			if (!(style & WS_VISIBLE))
+				break;
 			update_position(hwnd);
 			break;
 
 		case WM_DESTROY:
+			if (!(style & WS_VISIBLE))
+				break;
 			vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
 			break;
 
