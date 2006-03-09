@@ -22,6 +22,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <windows.h>
 #include <wtsapi32.h>
@@ -92,9 +93,66 @@ vchannel_is_open()
 }
 
 int
-vchannel_read(char *buffer, size_t length)
+vchannel_read(char *line, size_t length)
 {
-	return -1;
+	static BOOL overflow_mode = FALSE;
+	static char buffer[VCHANNEL_MAX_LINE];
+	static size_t size = 0;
+
+	char *newline;
+	int line_size;
+
+	BOOL result;
+	ULONG bytes_read;
+
+	result = WTSVirtualChannelRead(g_vchannel, 0, buffer + size,
+				       sizeof(buffer) - size, &bytes_read);
+
+	if (!result) {
+		errno = EIO;
+		return -1;
+	}
+
+	if (overflow_mode) {
+		newline = strchr(buffer, '\n');
+		if (newline && (newline - buffer) < bytes_read) {
+			size = bytes_read - (newline - buffer) - 1;
+			memmove(buffer, newline + 1, size);
+			overflow_mode = FALSE;
+		}
+	}
+	else
+		size += bytes_read;
+
+	if (overflow_mode) {
+		errno = -EAGAIN;
+		return -1;
+	}
+
+	newline = strchr(buffer, '\n');
+	if (!newline || (newline - buffer) >= size) {
+		if (size == sizeof(buffer)) {
+			overflow_mode = TRUE;
+			size = 0;
+		}
+		errno = -EAGAIN;
+		return -1;
+	}
+
+	if ((newline - buffer) >= length) {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	*newline = '\0';
+
+	strcpy(line, buffer);
+	line_size = newline - buffer;
+
+	size -= newline - buffer + 1;
+	memmove(buffer, newline + 1, size);
+
+	return 0;
 }
 
 int
@@ -102,7 +160,7 @@ vchannel_write(char *format, ...)
 {
 	BOOL result;
 	va_list argp;
-	char buf[1024];
+	char buf[VCHANNEL_MAX_LINE];
 	int size;
 	ULONG bytes_written;
 

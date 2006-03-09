@@ -22,6 +22,8 @@
 #ifndef __VCHANNEL_H__
 #define __VCHANNEL_H__
 
+#define VCHANNEL_MAX_LINE 1024
+
 void debug(char *format, ...);
 
 int vchannel_open();
@@ -29,7 +31,8 @@ void vchannel_close();
 
 int vchannel_is_open();
 
-int vchannel_read(char *buffer, size_t length);
+/* read may only be used by a single process. write is completely safe */
+int vchannel_read(char *line, size_t length);
 int vchannel_write(char *format, ...);
 
 #endif

@@ -25,6 +25,8 @@
 #include <windows.h>
 #include <stdio.h>
 
+#include "vchannel.h"
+
 #include "resource.h"
 
 #define APP_NAME "SeamlessRDP Shell"
@@ -40,6 +42,17 @@ static void
 message(const char *text)
 {
 	MessageBox(GetDesktopWindow(), text, "SeamlessRDP Shell", MB_OK);
+}
+
+static void
+process_cmds(void)
+{
+	char line[VCHANNEL_MAX_LINE];
+	int size;
+
+	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
+		debug("Got: %s", line);
+	}
 }
 
 int WINAPI
@@ -79,6 +92,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		return -1;
 	}
 
+	vchannel_open();
+
 	set_hooks_fn();
 
 	if (strlen(cmdline) == 0)
@@ -103,7 +118,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		{
 			do
 			{
-				Sleep(1000);
+				process_cmds();
+				Sleep(100);
 				GetExitCodeProcess(proc_info.hProcess, &exitcode);
 			}
 			while (exitcode == STILL_ACTIVE);
@@ -125,6 +141,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	remove_hooks_fn();
 
 	FreeLibrary(hookdll);
+
+	vchannel_close();
 
 	return 1;
 }
