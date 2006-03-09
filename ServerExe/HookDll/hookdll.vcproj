@@ -33,12 +33,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="wtsapi32.lib"
-				OutputFile="$(OutDir)/hookDll.dll"
+				OutputFile="$(OutDir)/seamlessrdp.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/hookDll.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/hookDll.lib"
+				ImportLibrary="$(OutDir)/seamlessrdp.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -87,13 +87,13 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="wtsapi32.lib"
-				OutputFile="$(OutDir)/hookDll.dll"
+				OutputFile="$(OutDir)/seamlessrdp.dll"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/hookDll.lib"
+				ImportLibrary="$(OutDir)/seamlessrdp.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>

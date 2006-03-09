@@ -161,7 +161,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	g_instance = instance;
 
-	hookdll = LoadLibrary("hookdll.dll");
+	hookdll = LoadLibrary("seamlessrdp.dll");
 	if (!hookdll)
 	{
 		message("Could not load hook DLL. Unable to continue.");
