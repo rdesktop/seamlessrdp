@@ -85,7 +85,9 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	if (style & WS_CHILD)
+	/* Docs say that WS_CHILD and WS_POPUP is an illegal combination,
+	   but they exist nonetheless. */
+	if ((style & WS_CHILD) && !(style & WS_POPUP))
 		goto end;
 
 	switch (msg)
