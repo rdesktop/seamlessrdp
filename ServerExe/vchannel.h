@@ -35,4 +35,7 @@ int vchannel_is_open();
 int vchannel_read(char *line, size_t length);
 int vchannel_write(char *format, ...);
 
+void vchannel_block();
+void vchannel_unblock();
+
 #endif

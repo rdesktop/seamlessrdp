@@ -44,14 +44,110 @@ message(const char *text)
 	MessageBox(GetDesktopWindow(), text, "SeamlessRDP Shell", MB_OK);
 }
 
+static char *
+get_token(char **s)
+{
+	char *comma, *head;
+	head = *s;
+
+	if (!head)
+		return NULL;
+
+	comma = strchr(head, ',');
+	if (comma)
+	{
+		*comma = '\0';
+		*s = comma + 1;
+	}
+	else
+	{
+		*s = NULL;
+	}
+
+	return head;
+}
+
+static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lparam)
+{
+	RECT rect;
+	char title[150];
+	LONG styles;
+	int state;
+
+	styles = GetWindowLong(hwnd, GWL_STYLE);
+
+	if (!(styles & WS_VISIBLE))
+		return TRUE;
+
+	vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
+
+	if (!GetWindowRect(hwnd, &rect)) {
+		debug("GetWindowRect failed!");
+		return TRUE;
+	}
+
+	vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+		       hwnd,
+		       rect.left, rect.top,
+		       rect.right - rect.left,
+		       rect.bottom - rect.top,
+		       0);
+
+	GetWindowText(hwnd, title, sizeof(title));
+
+	/* FIXME: Strip title of dangerous characters */
+
+	if (styles & WS_MAXIMIZE)
+		state = 2;
+	else if (styles & WS_MINIMIZE)
+		state = 1;
+	else
+		state = 0;
+
+	vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x",
+		       hwnd, title, state, 0);
+
+	return TRUE;
+}
+
+static void
+do_sync(void)
+{
+	vchannel_block();
+
+	vchannel_write("SYNCBEGIN,0x0");
+
+	EnumWindows(enum_cb, 0);
+
+	vchannel_write("SYNCEND,0x0");
+
+	vchannel_unblock();
+}
+
 static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
 	int size;
 
+	char *p, *tok1, *tok2, *tok3, *tok4, *tok5, *tok6, *tok7, *tok8;
+
 	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
 		debug("Got: %s", line);
+
+		p = line;
+
+		tok1 = get_token(&p);
+		tok2 = get_token(&p);
+		tok3 = get_token(&p);
+		tok4 = get_token(&p);
+		tok5 = get_token(&p);
+		tok6 = get_token(&p);
+		tok7 = get_token(&p);
+		tok8 = get_token(&p);
+
+		if (strcmp(tok1, "SYNC") == 0)
+			do_sync();
 	}
 }
 

@@ -182,3 +182,15 @@ vchannel_write(char *format, ...)
 
 	return bytes_written;
 }
+
+void
+vchannel_block()
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+}
+
+void
+vchannel_unblock()
+{
+	ReleaseMutex(g_mutex);
+}
