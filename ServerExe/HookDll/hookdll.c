@@ -106,35 +106,28 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				if (!(style & WS_VISIBLE))
 					break;
 
-				if (wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE)
-					break;
-
-				if (!GetWindowRect(hwnd, &rect))
+				if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
 				{
-					debug("GetWindowRect failed!\n");
-					break;
+					if (!GetWindowRect(hwnd, &rect))
+					{
+						debug("GetWindowRect failed!\n");
+						break;
+					}
+
+					vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+						       hwnd,
+						       rect.left, rect.top,
+						       rect.right - rect.left,
+						       rect.bottom - rect.top, 0);
 				}
 
-				vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-					       hwnd,
-					       rect.left, rect.top,
-					       rect.right - rect.left, rect.bottom - rect.top, 0);
-
-				break;
-			}
-
-		case WM_WINDOWPOSCHANGING:
-			{
-				WINDOWPOS *wp = (WINDOWPOS *) lparam;
-
-				if (!(style & WS_VISIBLE))
-					break;
-
 				if (!(wp->flags & SWP_NOZORDER))
+				{
 					vchannel_write("ZCHANGE1,0x%p,0x%p,0x%x",
 						       hwnd,
 						       wp->flags & SWP_NOACTIVATE ? wp->
 						       hwndInsertAfter : 0, 0);
+				}
 
 				break;
 			}
