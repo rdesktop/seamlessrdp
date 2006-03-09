@@ -67,7 +67,8 @@ get_token(char **s)
 	return head;
 }
 
-static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lparam)
+static BOOL CALLBACK
+enum_cb(HWND hwnd, LPARAM lparam)
 {
 	RECT rect;
 	char title[150];
@@ -81,17 +82,15 @@ static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lparam)
 
 	vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
 
-	if (!GetWindowRect(hwnd, &rect)) {
+	if (!GetWindowRect(hwnd, &rect))
+	{
 		debug("GetWindowRect failed!");
 		return TRUE;
 	}
 
 	vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
 		       hwnd,
-		       rect.left, rect.top,
-		       rect.right - rect.left,
-		       rect.bottom - rect.top,
-		       0);
+		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
 	GetWindowText(hwnd, title, sizeof(title));
 
@@ -104,8 +103,7 @@ static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x",
-		       hwnd, title, state, 0);
+	vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x", hwnd, title, state, 0);
 
 	return TRUE;
 }
@@ -132,7 +130,8 @@ process_cmds(void)
 
 	char *p, *tok1, *tok2, *tok3, *tok4, *tok5, *tok6, *tok7, *tok8;
 
-	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
+	while ((size = vchannel_read(line, sizeof(line))) >= 0)
+	{
 		debug("Got: %s", line);
 
 		p = line;

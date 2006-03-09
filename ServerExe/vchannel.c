@@ -61,7 +61,8 @@ vchannel_open()
 		return -1;
 
 	g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessChannel");
-	if (!g_mutex) {
+	if (!g_mutex)
+	{
 		WTSVirtualChannelClose(g_vchannel);
 		g_vchannel = NULL;
 		return -1;
@@ -108,14 +109,17 @@ vchannel_read(char *line, size_t length)
 	result = WTSVirtualChannelRead(g_vchannel, 0, buffer + size,
 				       sizeof(buffer) - size, &bytes_read);
 
-	if (!result) {
+	if (!result)
+	{
 		errno = EIO;
 		return -1;
 	}
 
-	if (overflow_mode) {
+	if (overflow_mode)
+	{
 		newline = strchr(buffer, '\n');
-		if (newline && (newline - buffer) < bytes_read) {
+		if (newline && (newline - buffer) < bytes_read)
+		{
 			size = bytes_read - (newline - buffer) - 1;
 			memmove(buffer, newline + 1, size);
 			overflow_mode = FALSE;
@@ -124,14 +128,17 @@ vchannel_read(char *line, size_t length)
 	else
 		size += bytes_read;
 
-	if (overflow_mode) {
+	if (overflow_mode)
+	{
 		errno = -EAGAIN;
 		return -1;
 	}
 
 	newline = strchr(buffer, '\n');
-	if (!newline || (newline - buffer) >= size) {
-		if (size == sizeof(buffer)) {
+	if (!newline || (newline - buffer) >= size)
+	{
+		if (size == sizeof(buffer))
+		{
 			overflow_mode = TRUE;
 			size = 0;
 		}
@@ -139,7 +146,8 @@ vchannel_read(char *line, size_t length)
 		return -1;
 	}
 
-	if ((newline - buffer) >= length) {
+	if ((newline - buffer) >= length)
+	{
 		errno = ENOMEM;
 		return -1;
 	}
