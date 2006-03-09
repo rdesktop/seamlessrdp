@@ -1,6 +1,2 @@
 #!/bin/sh
-astyle --style=linux -C -s4 --suffix=.astyle \
-    ClientDLL/*.cpp ClientDLL/*.h \
-    ServerExe/*.cpp ServerExe/*.h \
-    ServerExe/HookDll/*.cpp ServerExe/HookDll/*.h
-rm ClientDLL/*.astyle ServerExe/*.astyle ServerExe/HookDll/*.astyle
+indent -bli0 -i8 -cli8 -npcs -l100 ServerExe/*.h ServerExe/*.c ServerExe/HookDll/*.h ServerExe/HookDll/*.c
