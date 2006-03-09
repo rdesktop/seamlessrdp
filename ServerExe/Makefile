@@ -10,10 +10,13 @@ CFLAGS=-Wall
 
 default: seamlessrdpshell.exe HookDll/hookdll.dll
 
-seamlessrdpshell.exe: main.c
-	$(CC) $(CFLAGS) -mwindows -o $@ $^
+seamlessrdpshell.exe: main.c vchannel.o
+	$(CC) $(CFLAGS) -mwindows -o $@ $^ -lwtsapi32
 
-HookDll/hookdll.dll: HookDll/hookdll.c
+vchannel.o: vchannel.c vchannel.h
+	$(CC) $(CFLAGS) -c -o $@ vchannel.c
+
+HookDll/hookdll.dll: HookDll/hookdll.c vchannel.o
 	$(CC) $(CFLAGS) -shared -o $@ $^ -lwtsapi32
 
 clean:

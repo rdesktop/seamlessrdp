@@ -101,7 +101,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies=""
+				AdditionalDependencies="wtsapi32.lib"
 				OutputFile=".\Release/seamlessrdpshell.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -151,6 +151,12 @@
 		</File>
 		<File
 			RelativePath=".\resource.h">
+		</File>
+		<File
+			RelativePath=".\vchannel.c">
+		</File>
+		<File
+			RelativePath=".\vchannel.h">
 		</File>
 	</Files>
 	<Globals>

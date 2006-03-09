@@ -1,10 +1,7 @@
 /* -*- c-basic-offset: 8 -*-
    rdesktop: A Remote Desktop Protocol client.
-   Seamless windows - Remote server hook DLL
+   Seamless windows - Virtual channel handling
 
-   Based on code copyright (C) 2004-2005 Martin Wickett
-
-   Copyright (C) Peter Åstrand <astrand@cendio.se> 2005-2006
    Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
 
    This program is free software; you can redistribute it and/or modify
@@ -22,17 +19,17 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#include <windows.h>
+#ifndef __VCHANNEL_H__
+#define __VCHANNEL_H__
 
-#ifndef __HOOKDLL_H__
-#define __HOOKDLL_H__
+void debug(char *format, ...);
 
-#define CHANNELNAME "seamrdp"
-
-//Terminal Server
 int vchannel_open();
-int vchannel_close();
+void vchannel_close();
+
 int vchannel_is_open();
+
+int vchannel_read(char *buffer, size_t length);
 int vchannel_write(char *format, ...);
 
 #endif

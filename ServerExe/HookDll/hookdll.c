@@ -27,10 +27,8 @@
 
 #include <windows.h>
 #include <winuser.h>
-#include <wtsapi32.h>
-#include <cchannel.h>
 
-#include "hookdll.h"
+#include "../vchannel.h"
 
 #define DLL_EXPORT __declspec(dllexport)
 
@@ -50,23 +48,6 @@ static HHOOK g_wndproc_hook = NULL;
 static HINSTANCE g_instance = NULL;
 
 static HANDLE g_mutex = NULL;
-
-static HANDLE g_vchannel = NULL;
-
-static void
-debug(char *format, ...)
-{
-	va_list argp;
-	char buf[256];
-
-	sprintf(buf, "DEBUG1,");
-
-	va_start(argp, format);
-	_vsnprintf(buf + sizeof("DEBUG1,") - 1, sizeof(buf) - sizeof("DEBUG1,") + 1, format, argp);
-	va_end(argp);
-
-	vchannel_write(buf);
-}
 
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
@@ -219,72 +200,6 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	return CallNextHookEx(g_cbt_hook, code, wparam, lparam);
 }
 
-int
-vchannel_open()
-{
-	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
-					   WTS_CURRENT_SESSION, CHANNELNAME);
-
-	if (g_vchannel == NULL)
-		return 0;
-	else
-		return 1;
-}
-
-int
-vchannel_close()
-{
-	BOOL result;
-
-	result = WTSVirtualChannelClose(g_vchannel);
-
-	g_vchannel = NULL;
-
-	if (result)
-		return 1;
-	else
-		return 0;
-}
-
-int
-vchannel_is_open()
-{
-	if (g_vchannel == NULL)
-		return 0;
-	else
-		return 1;
-}
-
-int
-vchannel_write(char *format, ...)
-{
-	BOOL result;
-	va_list argp;
-	char buf[1024];
-	int size;
-	ULONG bytes_written;
-
-	if (!vchannel_is_open())
-		return 1;
-
-	va_start(argp, format);
-	size = _vsnprintf(buf, sizeof(buf), format, argp);
-	va_end(argp);
-
-	if (size >= sizeof(buf))
-		return 0;
-
-	WaitForSingleObject(g_mutex, INFINITE);
-	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
-	result = WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
-	ReleaseMutex(g_mutex);
-
-	if (result)
-		return 1;
-	else
-		return 0;
-}
-
 DLL_EXPORT void
 SetHooks(void)
 {
@@ -320,7 +235,7 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			// remember our instance handle
 			g_instance = hinstDLL;
 
-			g_mutex = CreateMutex(NULL, FALSE, "Local\\Seamless");
+			g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessDLL");
 			if (!g_mutex)
 				return FALSE;
 

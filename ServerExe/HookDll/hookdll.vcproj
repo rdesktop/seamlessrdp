@@ -125,7 +125,10 @@
 			RelativePath="hookdll.c">
 		</File>
 		<File
-			RelativePath="hookdll.h">
+			RelativePath="..\vchannel.c">
+		</File>
+		<File
+			RelativePath="..\vchannel.h">
 		</File>
 	</Files>
 	<Globals>
