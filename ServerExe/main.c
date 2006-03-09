@@ -192,6 +192,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	set_hooks_fn();
 
+	/* Since we don't see the entire desktop we must resize windows
+	   immediatly. */
+	SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
+
 	if (strlen(cmdline) == 0)
 	{
 		message("No command line specified.");
