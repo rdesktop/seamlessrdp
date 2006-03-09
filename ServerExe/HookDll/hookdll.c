@@ -52,104 +52,96 @@ static HANDLE g_mutex = NULL;
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
-	HWND hwnd = ((CWPSTRUCT *) details)->hwnd;
-	UINT msg = ((CWPSTRUCT *) details)->message;
-	WPARAM wparam = ((CWPSTRUCT *) details)->wParam;
-	LPARAM lparam = ((CWPSTRUCT *) details)->lParam;
+	HWND hwnd;
+	UINT msg;
+	WPARAM wparam;
+	LPARAM lparam;
 
-	LONG style = GetWindowLong(hwnd, GWL_STYLE);
-	WINDOWPOS *wp = (WINDOWPOS *) lparam;
-	RECT rect;
+	LONG style;
 
 	if (code < 0)
+		goto end;
+
+	hwnd = ((CWPSTRUCT *) details)->hwnd;
+	msg = ((CWPSTRUCT *) details)->message;
+	wparam = ((CWPSTRUCT *) details)->wParam;
+	lparam = ((CWPSTRUCT *) details)->lParam;
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
+
+	if (style & WS_CHILD)
 		goto end;
 
 	switch (msg)
 	{
 
 		case WM_WINDOWPOSCHANGED:
-			if (style & WS_CHILD)
-				break;
-
-
-			if (wp->flags & SWP_SHOWWINDOW)
 			{
-				// FIXME: Now, just like create!
-				debug("SWP_SHOWWINDOW for %p!", hwnd);
-				vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
+				RECT rect;
+				WINDOWPOS *wp = (WINDOWPOS *) lparam;
 
-				// FIXME: SETSTATE
+				if (wp->flags & SWP_SHOWWINDOW)
+				{
+					// FIXME: Now, just like create!
+					debug("SWP_SHOWWINDOW for %p!", hwnd);
+					vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
+
+					// FIXME: SETSTATE
+
+					if (!GetWindowRect(hwnd, &rect))
+					{
+						debug("GetWindowRect failed!\n");
+						break;
+					}
+					vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+						       hwnd,
+						       rect.left, rect.top,
+						       rect.right - rect.left,
+						       rect.bottom - rect.top, 0);
+				}
+
+				if (wp->flags & SWP_HIDEWINDOW)
+					vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
+
+				if (!(style & WS_VISIBLE))
+					break;
+
+				if (wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE)
+					break;
 
 				if (!GetWindowRect(hwnd, &rect))
 				{
 					debug("GetWindowRect failed!\n");
 					break;
 				}
+
 				vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
 					       hwnd,
 					       rect.left, rect.top,
 					       rect.right - rect.left, rect.bottom - rect.top, 0);
-			}
 
-
-			if (wp->flags & SWP_HIDEWINDOW)
-				vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
-
-
-			if (!(style & WS_VISIBLE))
-				break;
-
-			if (wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE)
-				break;
-
-			if (!GetWindowRect(hwnd, &rect))
-			{
-				debug("GetWindowRect failed!\n");
 				break;
 			}
 
-			vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-				       hwnd,
-				       rect.left, rect.top,
-				       rect.right - rect.left, rect.bottom - rect.top, 0);
-
-			break;
-
-
-			/* Note: WM_WINDOWPOSCHANGING/WM_WINDOWPOSCHANGED are
-			   strange. Sometimes, for example when bringing up the
-			   Notepad About dialog, only an WM_WINDOWPOSCHANGING is
-			   sent. In some other cases, for exmaple when opening
-			   Format->Text in Notepad, both events are sent. Also, for
-			   some reason, when closing the Notepad About dialog, an
-			   WM_WINDOWPOSCHANGING event is sent which looks just like
-			   the event that was sent when the About dialog was opened...  */
 		case WM_WINDOWPOSCHANGING:
-			if (style & WS_CHILD)
+			{
+				WINDOWPOS *wp = (WINDOWPOS *) lparam;
+
+				if (!(style & WS_VISIBLE))
+					break;
+
+				if (!(wp->flags & SWP_NOZORDER))
+					vchannel_write("ZCHANGE1,0x%p,0x%p,0x%x",
+						       hwnd,
+						       wp->flags & SWP_NOACTIVATE ? wp->
+						       hwndInsertAfter : 0, 0);
+
 				break;
-
-			if (!(style & WS_VISIBLE))
-				break;
-
-			if (!(wp->flags & SWP_NOZORDER))
-				vchannel_write("ZCHANGE1,0x%p,0x%p,0x%x",
-					       hwnd,
-					       wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
-					       0);
-
-			break;
-
-
-
+			}
 
 		case WM_DESTROY:
-			if (style & WS_CHILD)
-				break;
-
 			vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
-
 			break;
-
 
 		default:
 			break;
@@ -171,7 +163,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	{
 		case HCBT_MINMAX:
 			{
-				int show;
+				int show, state;
 
 				show = LOWORD(lparam);
 
@@ -187,8 +179,14 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 
 				/* FIXME: Strip title of dangerous characters */
 
+				if (show == SW_SHOWNORMAL)
+					state = 0;
+				else if (show == SW_SHOWMINIMIZED)
+					state = 1;
+				else if (show == SW_SHOWMAXIMIZED)
+					state = 2;
 				vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x",
-					       (HWND) wparam, title, show, 0);
+					       (HWND) wparam, title, state, 0);
 				break;
 			}
 
