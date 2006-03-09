@@ -1,313 +1,130 @@
-//
-// Copyright (C) 2004-2005 Martin Wickett
-//
+/* -*- c-basic-offset: 8 -*-
+   rdesktop: A Remote Desktop Protocol client.
+   Seamless windows - Remote server executable
+
+   Based on code copyright (C) 2004-2005 Martin Wickett
+
+   Copyright (C) Peter Åstrand <astrand@cendio.se> 2005-2006
+   Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
 
 #include <windows.h>
 #include <stdio.h>
 
 #include "resource.h"
 
-#define snprintf _snprintf
+#define APP_NAME "SeamlessRDP Shell"
 
-//
-// some global data
-//
-HWND ghWnd;
-NOTIFYICONDATA nid;
-HINSTANCE hAppInstance;
+/* Global data */
+static HINSTANCE g_instance;
 
-#define WM_TRAY_NOTIFY ( WM_APP + 1000 )
+typedef void (*set_hooks_proc_t) ();
+typedef void (*remove_hooks_proc_t) ();
+typedef int (*get_instance_count_proc_t) ();
 
-static const char szAppName[] = "SeamlessRDP Shell";
-
-typedef void ( *SetHooksProc ) ();
-typedef void ( *RemoveHooksProc ) ();
-typedef int ( *GetInstanceCountProc ) ();
-
-//
-// spawn a message box
-//
-void Message( const char *message )
+static void
+message(const char *text)
 {
-    MessageBox( GetDesktopWindow(), message, "SeamlessRDP Shell", MB_OK );
+	MessageBox(GetDesktopWindow(), text, "SeamlessRDP Shell", MB_OK);
 }
 
-//
-// manage the tray icon
-//
-BOOL InitTrayIcon()
+int WINAPI
+WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
-    nid.cbSize = sizeof( NOTIFYICONDATA );
-    nid.hWnd = ghWnd;
-    nid.uID = 0;
-    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-    nid.uCallbackMessage = WM_TRAY_NOTIFY;
-    strcpy( nid.szTip, szAppName );
-    nid.hIcon = LoadIcon( hAppInstance, MAKEINTRESOURCE( IDI_TRAY ) );
+	HMODULE hookdll;
 
-    if ( Shell_NotifyIcon( NIM_ADD, &nid ) != TRUE ) {
-        Message( "Unable to create tray icon." );
-        return FALSE;
-    }
+	set_hooks_proc_t set_hooks_fn;
+	remove_hooks_proc_t remove_hooks_fn;
+	get_instance_count_proc_t instance_count_fn;
 
-    return TRUE;
-}
+	g_instance = instance;
 
-//
-// Remove tray icon
-//
-BOOL RemoveTrayIcon()
-{
-    if ( Shell_NotifyIcon( NIM_DELETE, &nid ) != TRUE ) {
-        Message( "Unable to remove tray icon." );
-        return FALSE;
-    }
+	hookdll = LoadLibrary("hookdll.dll");
+	if (!hookdll)
+	{
+		message("Could not load hook DLL. Unable to continue.");
+		return -1;
+	}
 
-    return TRUE;
+	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
+	remove_hooks_fn = (remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
+	instance_count_fn = (get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
 
-}
+	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn)
+	{
+		FreeLibrary(hookdll);
+		message("Hook DLL doesn't contain the correct functions. Unable to continue.");
+		return -1;
+	}
 
-//
-// manage the about dialog box
-//
-BOOL CALLBACK DialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam,
-                          LPARAM lParam )
-{
-    if ( uMsg == WM_COMMAND ) {
-        WORD wID = LOWORD( wParam );
-        if ( wID == IDOK )
-            DestroyWindow( hwndDlg );
-    }
+	/* Check if the DLL is already loaded */
+	if (instance_count_fn() != 1)
+	{
+		FreeLibrary(hookdll);
+		message("Another running instance of Seamless RDP detected.");
+		return -1;
+	}
 
-    return 0;
-}
+	set_hooks_fn();
 
-void AboutDlg()
-{
-    DialogBox( hAppInstance, MAKEINTRESOURCE( IDD_ABOUT ), NULL, DialogProc );
-}
+	if (strlen(cmdline) == 0)
+	{
+		message("No command line specified.");
+		return -1;
+	}
+	else
+	{
+		BOOL result;
+		DWORD exitcode;
+		PROCESS_INFORMATION proc_info;
+		STARTUPINFO startup_info;
 
-//
-// manage the context menu
-//
-void DoContextMenu()
-{
-    HMENU hMenu, hSubMenu;
-    POINT pt;
-	int cmd;
+		memset(&startup_info, 0, sizeof(STARTUPINFO));
+		startup_info.cb = sizeof(STARTUPINFO);
 
-    hMenu = LoadMenu( hAppInstance, MAKEINTRESOURCE( IDR_TRAY ) );
-    if ( hMenu == NULL ) {
-        Message( "Unable to load menu ressource." );
-        return ;
-    }
+		result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
+				       NULL, NULL, &startup_info, &proc_info);
 
-    hSubMenu = GetSubMenu( hMenu, 0 );
-    if ( hSubMenu == NULL ) {
-        Message( "Unable to find popup mennu." );
-        return ;
-    }
+		if (result)
+		{
+			do
+			{
+				Sleep(1000);
+				GetExitCodeProcess(proc_info.hProcess, &exitcode);
+			}
+			while (exitcode == STILL_ACTIVE);
 
-    // get the cursor position
-    GetCursorPos( &pt );
+			// Release handles
+			CloseHandle(proc_info.hProcess);
+			CloseHandle(proc_info.hThread);
+		}
+		else
+		{
+			// CreateProcess failed.
+			char msg[256];
+			_snprintf(msg, sizeof(msg),
+				  "Unable to launch the requested application:\n%s", cmdline);
+			message(msg);
+		}
+	}
 
-    SetForegroundWindow( ghWnd );
-    cmd = TrackPopupMenu( hSubMenu,
-                              TPM_RETURNCMD | TPM_LEFTALIGN | TPM_RIGHTBUTTON,
-                              pt.x, pt.y, 0, ghWnd, NULL );
-    DestroyMenu( hMenu );
+	remove_hooks_fn();
 
-    switch ( cmd ) {
-    case ID_WMEXIT: {
-            PostQuitMessage( 0 );
-            break;
-        }
-    case ID_WMABOUT: {
-            AboutDlg();
-            break;
-        }
-    }
-}
+	FreeLibrary(hookdll);
 
-//
-// manage the main window
-//
-LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
-{
-    switch ( uMsg ) {
-    case WM_DESTROY: {
-            PostQuitMessage( 0 );
-            return 0;
-        }
-    case WM_TRAY_NOTIFY: {
-            if ( lParam == WM_RBUTTONDOWN )
-                DoContextMenu();
-            return 0;
-        }
-    }
-
-    return DefWindowProc( hWnd, uMsg, wParam, lParam );
-}
-
-//
-//Init window
-//
-BOOL InitWindow()
-{
-    // register the frame class
-    WNDCLASS wndclass;
-    wndclass.style = 0;
-    wndclass.lpfnWndProc = ( WNDPROC ) MainWndProc;
-    wndclass.cbClsExtra = 0;
-    wndclass.cbWndExtra = 0;
-    wndclass.hInstance = hAppInstance;
-    wndclass.hIcon = 0;
-    wndclass.hCursor = LoadCursor( NULL, IDC_ARROW );
-    wndclass.hbrBackground = ( HBRUSH ) ( COLOR_WINDOW + 1 );
-    wndclass.lpszMenuName = NULL;
-    wndclass.lpszClassName = szAppName;
-
-    if ( !RegisterClass( &wndclass ) ) {
-        Message( "Unable to register the window class." );
-        return FALSE;
-    }
-
-    // create the frame
-    ghWnd = CreateWindow( szAppName, szAppName,
-                          WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS |
-                          WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT, 640,
-                          480, NULL, NULL, hAppInstance, NULL );
-
-    // make sure window was created
-    if ( !ghWnd ) {
-        Message( "Unable to create the window." );
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
-//
-// our main loop
-//
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine, int nCmdShow )
-{
-    HMODULE hHookDLL;
-    GetInstanceCountProc pfnInstanceCount;
-    SetHooksProc pfnSetHooks;
-    RemoveHooksProc pfnRemoveHooks;
-
-    hAppInstance = hInstance;
-
-    hHookDLL = LoadLibrary( "hookdll.dll" );
-    if ( !hHookDLL ) {
-        Message( "Could not load hook DLL. Unable to continue." );
-        return -1;
-    }
-
-    pfnInstanceCount = (GetInstanceCountProc) GetProcAddress( hHookDLL, "GetInstanceCount" );
-    pfnSetHooks = (SetHooksProc) GetProcAddress( hHookDLL, "SetHooks" );
-    pfnRemoveHooks = (RemoveHooksProc) GetProcAddress( hHookDLL, "RemoveHooks" );
-
-    if ( !pfnInstanceCount || !pfnSetHooks || !pfnRemoveHooks ) {
-        FreeLibrary( hHookDLL );
-        Message( "Hook DLL doesn't contain the correct functions. Unable to continue." );
-        return -1;
-    }
-
-    /* Check if the DLL is already loaded */
-    if ( pfnInstanceCount() != 1 ) {
-        FreeLibrary( hHookDLL );
-        Message( "Another running instance of Seamless RDP detected." );
-        return -1;
-    }
-
-    pfnSetHooks();
-
-    // if we have been specified an app to launch, we will wait until the app has closed and use that for
-    // our cue to exit
-    if ( strlen( lpCmdLine ) > 0 ) {
-        // Because we do not have a explorer.exe we need to make this application the replacement
-        // shell. We do this by calling SystemParametersInfo. If we don't do this, we won't get the WH_SHELL notifications.
-
-        MINIMIZEDMETRICS mmm;
-        PROCESS_INFORMATION procInfo;
-        STARTUPINFO startupInfo = {
-                                      0
-                                  };
-        char attr[] = "";
-        LPTSTR process = lpCmdLine;
-        DWORD dwExitCode;
-        BOOL m_create;
-
-        // From MSDN:
-        // Note that custom shell applications do not receive WH_SHELL messages. Therefore, any application that
-        // registers itself as the default shell must call the SystemParametersInfo function with SPI_SETMINIMIZEDMETRICS
-        // before it (or any other application) can receive WH_SHELL messages.
-
-        mmm.cbSize = sizeof( MINIMIZEDMETRICS );
-        SystemParametersInfo( SPI_SETMINIMIZEDMETRICS,
-                              sizeof( MINIMIZEDMETRICS ), &mmm, 0 );
-
-        // We require DragFullWindows
-        SystemParametersInfo( SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0 );
-
-        //set the current directory to that of the requested app .exe location
-        //tokenise lpCmdLine. first is the exe path. second (if exists) is the current directory to set.
-        //SetCurrentDirectory ();
-
-        //start process specified from command line arg.
-        startupInfo.cb = sizeof( STARTUPINFO );
-
-        m_create =
-            CreateProcess( NULL, process, NULL, NULL, FALSE, 0, NULL, NULL,
-                           &startupInfo, &procInfo );
-
-        if ( m_create != FALSE ) {
-            // A loop to watch the process.
-            GetExitCodeProcess( procInfo.hProcess, &dwExitCode );
-
-            while ( dwExitCode == STILL_ACTIVE ) {
-                GetExitCodeProcess( procInfo.hProcess, &dwExitCode );
-                Sleep( 1000 );
-            }
-
-            // Release handles
-            CloseHandle( procInfo.hProcess );
-            CloseHandle( procInfo.hThread );
-        } else {
-            // CreateProcess failed.
-            char msg[ 256 ];
-            snprintf( msg, sizeof( msg ), "Unable to launch the requested application:\n%s", process );
-            Message( msg );
-        }
-    } else
-        // we are launching without an app, therefore we will show the system tray app and wait for the user to close it
-    {
-        MSG msg;
-
-		// create a dummy window to receive WM_QUIT message
-        InitWindow();
-
-        // create the tray icon
-        InitTrayIcon();
-
-        // just get and dispatch messages until we're killed
-        while ( GetMessage( &msg, 0, 0, 0 ) ) {
-            TranslateMessage( &msg );
-            DispatchMessage( &msg );
-        };
-
-        // remove our tray icon
-        RemoveTrayIcon();
-    }
-
-
-    // remove hook before saying goodbye
-    pfnRemoveHooks();
-
-    FreeLibrary( hHookDLL );
-
-    return 1;
+	return 1;
 }

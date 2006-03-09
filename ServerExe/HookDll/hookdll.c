@@ -1,15 +1,36 @@
-//
-// Copyright (C) 2004-2005 Martin Wickett
-//
+/* -*- c-basic-offset: 8 -*-
+   rdesktop: A Remote Desktop Protocol client.
+   Seamless windows - Remote server hook DLL
 
-#include "hookdll.h"
-#include <windows.h>
-#include <winuser.h>
+   Based on code copyright (C) 2004-2005 Martin Wickett
+
+   Copyright (C) Peter Åstrand <astrand@cendio.se> 2005-2006
+   Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "wtsapi32.h"
-#include "cchannel.h"
+#include <windows.h>
+#include <winuser.h>
+#include <wtsapi32.h>
+#include <cchannel.h>
+
+#include "hookdll.h"
 
 #define DLL_EXPORT __declspec(dllexport)
 
@@ -17,444 +38,317 @@
 #pragma data_seg ( "SHAREDDATA" )
 
 // this is the total number of processes this dll is currently attached to
-int iInstanceCount = 0;
-HWND hWnd = 0;
+int g_instance_count = 0;
 
 #pragma data_seg ()
 
 #pragma comment(linker, "/section:SHAREDDATA,rws")
 
-#define snprintf _snprintf
+static HHOOK g_cbt_hook = NULL;
+static HHOOK g_wndproc_hook = NULL;
 
-HHOOK hCbtProc = 0;
-HHOOK hShellProc = 0;
-HHOOK hWndProc = 0;
-HINSTANCE hInst = 0;
-HANDLE m_vcHandle = 0;
-HANDLE hMutex = 0;
+static HINSTANCE g_instance = NULL;
 
-void SendDebug( char *format, ... )
+static HANDLE g_mutex = NULL;
+
+static HANDLE g_vchannel = NULL;
+
+static void
+debug(char *format, ...)
 {
-    va_list argp;
-    char buf [ 256 ];
+	va_list argp;
+	char buf[256];
 
-    sprintf( buf, "DEBUG1," );
+	sprintf(buf, "DEBUG1,");
 
-    va_start( argp, format );
-    _vsnprintf( buf + sizeof( "DEBUG1," ) - 1,
-               sizeof( buf ) - sizeof( "DEBUG1," ) + 1, format, argp );
-    va_end( argp );
+	va_start(argp, format);
+	_vsnprintf(buf + sizeof("DEBUG1,") - 1, sizeof(buf) - sizeof("DEBUG1,") + 1, format, argp);
+	va_end(argp);
 
-    WriteToChannel( buf );
+	vchannel_write(buf);
 }
 
-
-
-BOOL APIENTRY DllMain( HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved )
+static LRESULT CALLBACK
+wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
-    switch ( ul_reason_for_call ) {
-    case DLL_PROCESS_ATTACH:
-        // remember our instance handle
-        hInst = hinstDLL;
+	HWND hwnd = ((CWPSTRUCT *) details)->hwnd;
+	UINT msg = ((CWPSTRUCT *) details)->message;
+	WPARAM wparam = ((CWPSTRUCT *) details)->wParam;
+	LPARAM lparam = ((CWPSTRUCT *) details)->lParam;
 
-        hMutex = CreateMutex( NULL, FALSE, "Local\\Seamless" );
-        if (!hMutex)
-            return FALSE;
+	LONG style = GetWindowLong(hwnd, GWL_STYLE);
+	WINDOWPOS *wp = (WINDOWPOS *) lparam;
+	RECT rect;
 
-        WaitForSingleObject( hMutex, INFINITE );
-        ++iInstanceCount;
-        ReleaseMutex( hMutex );
+	if (code < 0)
+		goto end;
 
-        OpenVirtualChannel();
+	switch (msg)
+	{
 
-        break;
+		case WM_WINDOWPOSCHANGED:
+			if (style & WS_CHILD)
+				break;
 
-    case DLL_THREAD_ATTACH:
-        break;
 
-    case DLL_THREAD_DETACH:
-        break;
+			if (wp->flags & SWP_SHOWWINDOW)
+			{
+				// FIXME: Now, just like create!
+				debug("SWP_SHOWWINDOW for %p!", hwnd);
+				vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
 
-    case DLL_PROCESS_DETACH:
-        WaitForSingleObject( hMutex, INFINITE );
-        --iInstanceCount;
-        ReleaseMutex( hMutex );
+				// FIXME: SETSTATE
 
-        CloseVirtualChannel();
+				if (!GetWindowRect(hwnd, &rect))
+				{
+					debug("GetWindowRect failed!\n");
+					break;
+				}
+				vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+					       hwnd,
+					       rect.left, rect.top,
+					       rect.right - rect.left, rect.bottom - rect.top, 0);
+			}
 
-        CloseHandle( hMutex );
 
-        break;
-    }
+			if (wp->flags & SWP_HIDEWINDOW)
+				vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
 
-    return TRUE;
+
+			if (!(style & WS_VISIBLE))
+				break;
+
+			if (wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE)
+				break;
+
+			if (!GetWindowRect(hwnd, &rect))
+			{
+				debug("GetWindowRect failed!\n");
+				break;
+			}
+
+			vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+				       hwnd,
+				       rect.left, rect.top,
+				       rect.right - rect.left, rect.bottom - rect.top, 0);
+
+			break;
+
+
+			/* Note: WM_WINDOWPOSCHANGING/WM_WINDOWPOSCHANGED are
+			   strange. Sometimes, for example when bringing up the
+			   Notepad About dialog, only an WM_WINDOWPOSCHANGING is
+			   sent. In some other cases, for exmaple when opening
+			   Format->Text in Notepad, both events are sent. Also, for
+			   some reason, when closing the Notepad About dialog, an
+			   WM_WINDOWPOSCHANGING event is sent which looks just like
+			   the event that was sent when the About dialog was opened...  */
+		case WM_WINDOWPOSCHANGING:
+			if (style & WS_CHILD)
+				break;
+
+			if (!(style & WS_VISIBLE))
+				break;
+
+			if (!(wp->flags & SWP_NOZORDER))
+				vchannel_write("ZCHANGE1,0x%p,0x%p,0x%x",
+					       hwnd,
+					       wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
+					       0);
+
+			break;
+
+
+
+
+		case WM_DESTROY:
+			if (style & WS_CHILD)
+				break;
+
+			vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
+
+			break;
+
+
+		default:
+			break;
+	}
+
+      end:
+	return CallNextHookEx(g_wndproc_hook, code, cur_thread, details);
 }
 
-LRESULT CALLBACK CallWndProc( int nCode, WPARAM wParam, LPARAM lParam )
+static LRESULT CALLBACK
+cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 {
-    char windowTitle[ 150 ] = { ""
-                              };
-    HWND windowHandle = NULL;
-    HWND windowHandle2 = NULL;
-    char result[ 255 ] = { ""
-                         };
-    CWPSTRUCT *details = ( CWPSTRUCT * ) lParam;
-    CREATESTRUCT *cs = ( CREATESTRUCT * ) details->lParam;
-    LONG dwStyle = GetWindowLong( details->hwnd, GWL_STYLE );
-    WINDOWPOS *wp = ( WINDOWPOS * ) details->lParam;
-    RECT rect;
+	char title[150];
 
-    if ( nCode < 0 ) {
-        return CallNextHookEx( hWndProc, nCode, wParam, lParam );
-    }
+	if (code < 0)
+		goto end;
 
-    switch ( details->message ) {
+	switch (code)
+	{
+		case HCBT_MINMAX:
+			{
+				int show;
 
-    case WM_WINDOWPOSCHANGED:
-        if ( dwStyle & WS_CHILD)
-            break;
+				show = LOWORD(lparam);
 
+				if ((show == SW_SHOWMINIMIZED) || (show == SW_MINIMIZE))
+				{
+					MessageBox(0,
+						   "Minimizing windows is not allowed in this version. Sorry!",
+						   "SeamlessRDP", MB_OK);
+					return 1;
+				}
 
-        if ( wp->flags & SWP_SHOWWINDOW ) {
-            // FIXME: Now, just like create!
-            SendDebug("SWP_SHOWWINDOW for %p!", details->hwnd);
-            WriteToChannel( "CREATE1,0x%p,0x%x", details->hwnd, 0 );
+				GetWindowText((HWND) wparam, title, sizeof(title));
 
-            // FIXME: SETSTATE
+				/* FIXME: Strip title of dangerous characters */
 
-            if ( !GetWindowRect( details->hwnd, &rect ) ) {
-                SendDebug( "GetWindowRect failed!\n" );
-                break;
-            }
-            WriteToChannel( "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-                            details->hwnd,
-                            rect.left, rect.top,
-                            rect.right - rect.left,
-                            rect.bottom - rect.top,
-                            0 );
-        }
+				vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x",
+					       (HWND) wparam, title, show, 0);
+				break;
+			}
 
+		default:
+			break;
+	}
 
-        if ( wp->flags & SWP_HIDEWINDOW )
-            WriteToChannel( "DESTROY1,0x%p,0x%x", details->hwnd, 0 );
-
-
-        if ( !( dwStyle & WS_VISIBLE ) )
-            break;
-
-        if ( wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE )
-            break;
-
-        if ( !GetWindowRect( details->hwnd, &rect ) ) {
-            SendDebug( "GetWindowRect failed!\n" );
-            break;
-        }
-
-        WriteToChannel( "POSITION1,0x%p,%d,%d,%d,%d,0x%x",
-                        details->hwnd,
-                        rect.left, rect.top,
-                        rect.right - rect.left,
-                        rect.bottom - rect.top,
-                        0 );
-
-        break;
-
-
-        /* Note: WM_WINDOWPOSCHANGING/WM_WINDOWPOSCHANGED are
-        strange. Sometimes, for example when bringing up the
-        Notepad About dialog, only an WM_WINDOWPOSCHANGING is
-        sent. In some other cases, for exmaple when opening
-        Format->Text in Notepad, both events are sent. Also, for
-        some reason, when closing the Notepad About dialog, an
-        WM_WINDOWPOSCHANGING event is sent which looks just like
-        the event that was sent when the About dialog was opened...  */
-    case WM_WINDOWPOSCHANGING:
-        if ( dwStyle & WS_CHILD)
-            break;
-
-        if ( !( dwStyle & WS_VISIBLE ) )
-            break;
-
-        if ( !( wp->flags & SWP_NOZORDER ) )
-            WriteToChannel( "ZCHANGE1,0x%p,0x%p,0x%x",
-                            details->hwnd,
-                            wp->flags & SWP_NOACTIVATE ? wp->hwndInsertAfter : 0,
-                            0 );
-
-        break;
-
-
-
-
-    case WM_DESTROY:
-        if ( dwStyle & WS_CHILD)
-            break;
-
-        WriteToChannel( "DESTROY1,0x%p,0x%x", details->hwnd, 0 );
-
-        break;
-
-
-    default:
-        break;
-    }
-
-    return CallNextHookEx( hWndProc, nCode, wParam, lParam );
+      end:
+	return CallNextHookEx(g_cbt_hook, code, wparam, lparam);
 }
 
-LRESULT CALLBACK CbtProc( int nCode, WPARAM wParam, LPARAM lParam )
+int
+vchannel_open()
 {
-    char windowTitle[ 150 ] = { ""
-                              };
-    HWND windowHandle = NULL;
-    char result[ 255 ] = { ""
-                         };
+	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
+					   WTS_CURRENT_SESSION, CHANNELNAME);
 
-	if ( nCode < 0 ) {
-        return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
-    }
-
-	switch ( nCode ) {
-    case HCBT_MINMAX:
-
-        if ( ( LOWORD( lParam ) == SW_SHOWMINIMIZED )
-                || ( LOWORD( lParam ) == SW_MINIMIZE ) ) {
-            MessageBox( 0, "Minimizing windows is not allowed in this version. Sorry!", "SeamlessRDP", MB_OK );
-            return 1;
-        }
-
-        GetWindowText( ( HWND ) wParam, windowTitle, 150 );
-
-        WriteToChannel( "SETSTATE1,0x%p,%s,0x%x,0x%x",
-                        ( HWND ) wParam,
-                        windowTitle,
-                        LOWORD( lParam ),
-                        0 );
-        break;
-
-
-    default:
-        break;
-    }
-
-
-
-    return CallNextHookEx( hCbtProc, nCode, wParam, lParam );
+	if (g_vchannel == NULL)
+		return 0;
+	else
+		return 1;
 }
 
-
-LRESULT CALLBACK ShellProc( int nCode, WPARAM wParam, LPARAM lParam )
+int
+vchannel_close()
 {
-    char windowTitle[ 150 ] = { ""
-                              };
-    HWND windowHandle = NULL;
-    char result[ 255 ] = { ""
-                         };
-    char strWindowId[ 25 ];
-    LONG b, t, l, r;
-    char strW[ 5 ];
-    char strY[ 5 ];
-    char strX[ 5 ];
-    char strH[ 5 ];
-    RECT rect;
+	BOOL result;
 
-    if ( nCode < 0 ) {
-        return CallNextHookEx( hShellProc, nCode, wParam, lParam );
-    }
+	result = WTSVirtualChannelClose(g_vchannel);
 
-    switch ( nCode ) {
-    case HSHELL_WINDOWCREATED:
+	g_vchannel = NULL;
 
-        //get window id
-        windowHandle = ( HWND ) wParam;
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-
-        //get name
-        GetWindowText( windowHandle, windowTitle, 150 );
-
-        ////setup return string
-        strcat( result, "MSG=HSHELL_WINDOWCREATED;OP=0;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        WriteToChannel( result );
-        break;
-
-    case HSHELL_WINDOWDESTROYED:
-
-        //get window id
-        windowHandle = ( HWND ) wParam;
-        itoa( ( int ) windowHandle, strWindowId, 10 );
-
-        //get coords
-        GetWindowRect( windowHandle, &rect );
-        b = rect.bottom;
-        t = rect.top;
-        l = rect.left;
-        r = rect.right;
-        ltoa( b - t, strH, 10 );
-        ltoa( t, strY, 10 );
-        ltoa( r - l, strW, 10 );
-        ltoa( l, strX, 10 );
-
-        //get name
-        GetWindowText( windowHandle, windowTitle, 150 );
-
-        ////setup return string
-        strcat( result, "MSG=HSHELL_WINDOWDESTROYED;OP=1;" );
-        strcat( result, "ID=" );
-        strcat( result, strWindowId );
-        strcat( result, ";" );
-        strcat( result, "TITLE=" );
-        strcat( result, windowTitle );
-        strcat( result, ";" );
-        strcat( result, "X=" );
-        strcat( result, strX );
-        strcat( result, ";" );
-        strcat( result, "Y=" );
-        strcat( result, strY );
-        strcat( result, ";" );
-        strcat( result, "H=" );
-        strcat( result, strH );
-        strcat( result, ";" );
-        strcat( result, "W=" );
-        strcat( result, strW );
-        strcat( result, "." );
-        WriteToChannel( result );
-        break;
-
-
-    default:
-        break;
-    }
-
-
-    return CallNextHookEx( hShellProc, nCode, wParam, lParam );
+	if (result)
+		return 1;
+	else
+		return 0;
 }
 
-DLL_EXPORT void SetHooks( void )
+int
+vchannel_is_open()
 {
-    if ( !hCbtProc ) {
-        hCbtProc = SetWindowsHookEx( WH_CBT, ( HOOKPROC ) CbtProc, hInst, ( DWORD ) NULL );
-    }
-
-#if 0
-    if ( !hShellProc ) {
-        hShellProc = SetWindowsHookEx( WH_SHELL, ( HOOKPROC ) ShellProc, hInst, ( DWORD ) NULL );
-    }
-#endif
-
-    if ( !hWndProc ) {
-        hWndProc = SetWindowsHookEx( WH_CALLWNDPROC, ( HOOKPROC ) CallWndProc, hInst, ( DWORD ) NULL );
-    }
+	if (g_vchannel == NULL)
+		return 0;
+	else
+		return 1;
 }
 
-DLL_EXPORT void RemoveHooks( void )
+int
+vchannel_write(char *format, ...)
 {
-    if ( hCbtProc ) {
-        UnhookWindowsHookEx( hCbtProc );
-    }
+	BOOL result;
+	va_list argp;
+	char buf[1024];
+	int size;
+	ULONG bytes_written;
 
-    if ( hShellProc ) {
-        UnhookWindowsHookEx( hShellProc );
-    }
+	if (!vchannel_is_open())
+		return 1;
 
-    if ( hWndProc ) {
-        UnhookWindowsHookEx( hWndProc );
-    }
+	va_start(argp, format);
+	size = _vsnprintf(buf, sizeof(buf), format, argp);
+	va_end(argp);
+
+	if (size >= sizeof(buf))
+		return 0;
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
+	result = WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
+	ReleaseMutex(g_mutex);
+
+	if (result)
+		return 1;
+	else
+		return 0;
 }
 
-DLL_EXPORT int GetInstanceCount()
+DLL_EXPORT void
+SetHooks(void)
 {
-    return iInstanceCount;
+	if (!g_cbt_hook)
+		g_cbt_hook = SetWindowsHookEx(WH_CBT, cbt_hook_proc, g_instance, 0);
+
+	if (!g_wndproc_hook)
+		g_wndproc_hook = SetWindowsHookEx(WH_CALLWNDPROC, wndproc_hook_proc, g_instance, 0);
 }
 
-int OpenVirtualChannel()
+DLL_EXPORT void
+RemoveHooks(void)
 {
-    m_vcHandle = WTSVirtualChannelOpen( WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, CHANNELNAME );
+	if (g_cbt_hook)
+		UnhookWindowsHookEx(g_cbt_hook);
 
-    if ( m_vcHandle == NULL ) {
-        return 0;
-    } else {
-        return 1;
-    }
+	if (g_wndproc_hook)
+		UnhookWindowsHookEx(g_wndproc_hook);
 }
 
-int CloseVirtualChannel()
+DLL_EXPORT int
+GetInstanceCount()
 {
-    BOOL result = WTSVirtualChannelClose( m_vcHandle );
-
-    m_vcHandle = NULL;
-
-    if ( result ) {
-        return 1;
-    } else {
-        return 0;
-    }
+	return g_instance_count;
 }
 
-int ChannelIsOpen()
+BOOL APIENTRY
+DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-    if ( m_vcHandle == NULL ) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
+	switch (ul_reason_for_call)
+	{
+		case DLL_PROCESS_ATTACH:
+			// remember our instance handle
+			g_instance = hinstDLL;
 
-int WriteToChannel( char *format, ... )
-{
-    BOOL result;
-    va_list argp;
-    char buf [ 1024 ];
-    int size;
-    PULONG bytesRead = 0;
-    PULONG pBytesWritten = 0;
+			g_mutex = CreateMutex(NULL, FALSE, "Local\\Seamless");
+			if (!g_mutex)
+				return FALSE;
 
-    if ( !ChannelIsOpen() )
-        return 1;
+			WaitForSingleObject(g_mutex, INFINITE);
+			++g_instance_count;
+			ReleaseMutex(g_mutex);
 
-    va_start( argp, format );
-    size = _vsnprintf( buf, sizeof( buf ), format, argp );
-    va_end( argp );
+			vchannel_open();
 
-    if ( size >= sizeof( buf ) )
-        return 0;
+			break;
 
-    WaitForSingleObject( hMutex, INFINITE );
-    result = WTSVirtualChannelWrite( m_vcHandle, buf, ( ULONG ) strlen( buf ), pBytesWritten );
-    result = WTSVirtualChannelWrite( m_vcHandle, "\n", ( ULONG ) 1, pBytesWritten );
-    ReleaseMutex( hMutex );
+		case DLL_THREAD_ATTACH:
+			break;
 
-    if ( result ) {
-        return 1;
-    } else {
-        return 0;
-    }
+		case DLL_THREAD_DETACH:
+			break;
+
+		case DLL_PROCESS_DETACH:
+			WaitForSingleObject(g_mutex, INFINITE);
+			--g_instance_count;
+			ReleaseMutex(g_mutex);
+
+			vchannel_close();
+
+			CloseHandle(g_mutex);
+
+			break;
+	}
+
+	return TRUE;
 }
