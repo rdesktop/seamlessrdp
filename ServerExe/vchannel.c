@@ -32,6 +32,9 @@
 
 #define CHANNELNAME "seamrdp"
 
+#define INVALID_CHARS ","
+#define REPLACEMENT_CHAR '_'
+
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
 
@@ -46,6 +49,8 @@ debug(char *format, ...)
 	va_start(argp, format);
 	_vsnprintf(buf + sizeof("DEBUG,") - 1, sizeof(buf) - sizeof("DEBUG,") + 1, format, argp);
 	va_end(argp);
+
+	vchannel_strfilter(buf + sizeof("DEBUG,"));
 
 	vchannel_write(buf);
 }
@@ -201,4 +206,18 @@ void
 vchannel_unblock()
 {
 	ReleaseMutex(g_mutex);
+}
+
+const char *
+vchannel_strfilter(char *string)
+{
+	char *c;
+
+	for (c = string; *c != '\0'; c++)
+	{
+		if ((*c < 0x20) || (strchr(INVALID_CHARS, *c) != NULL))
+			*c = REPLACEMENT_CHAR;
+	}
+
+	return string;
 }

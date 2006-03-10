@@ -100,9 +100,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 
 	GetWindowText(hwnd, title, sizeof(title));
 
-	/* FIXME: Strip title of dangerous characters */
-
-	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, title, 0);
+	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, vchannel_strfilter(title), 0);
 
 	if (styles & WS_MAXIMIZE)
 		state = 2;

@@ -115,9 +115,8 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 					GetWindowText(hwnd, title, sizeof(title));
 
-					/* FIXME: Strip title of dangerous characters */
-
-					vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, title, 0);
+					vchannel_write("TITLE,0x%x,%s,0x%x", hwnd,
+						       vchannel_strfilter(title), 0);
 
 					if (style & WS_MAXIMIZE)
 						state = 2;
@@ -166,11 +165,16 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			break;
 
 		case WM_SETTEXT:
-			if (!(style & WS_VISIBLE))
+			{
+				char *title;
+				if (!(style & WS_VISIBLE))
+					break;
+				title = _strdup((char *) lparam);
+				vchannel_write("TITLE,0x%p,%s,0x%x", hwnd,
+					       vchannel_strfilter(title), 0);
+				free(title);
 				break;
-			/* FIXME: Strip title of dangerous characters */
-			vchannel_write("TITLE,0x%p,%s,0x%x", hwnd, (char *) lparam, 0);
-			break;
+			}
 
 		case WM_DESTROY:
 			if (!(style & WS_VISIBLE))

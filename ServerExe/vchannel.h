@@ -38,4 +38,6 @@ int vchannel_write(char *format, ...);
 void vchannel_block();
 void vchannel_unblock();
 
+const char *vchannel_strfilter(char *string);
+
 #endif
