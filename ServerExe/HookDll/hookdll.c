@@ -91,7 +91,11 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		goto end;
 
 	if (style & WS_POPUP)
+	{
 		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+		if (!parent)
+			parent = (HWND) - 1;
+	}
 	else
 		parent = NULL;
 
