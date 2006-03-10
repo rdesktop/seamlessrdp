@@ -74,13 +74,19 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	char title[150];
 	LONG styles;
 	int state;
+	HWND parent;
 
 	styles = GetWindowLong(hwnd, GWL_STYLE);
 
 	if (!(styles & WS_VISIBLE))
 		return TRUE;
 
-	vchannel_write("CREATE,0x%p,0x%x", hwnd, 0);
+	if (styles & WS_POPUP)
+		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+	else
+		parent = NULL;
+
+	vchannel_write("CREATE,0x%p,0x%p,0x%x", hwnd, parent, 0);
 
 	if (!GetWindowRect(hwnd, &rect))
 	{

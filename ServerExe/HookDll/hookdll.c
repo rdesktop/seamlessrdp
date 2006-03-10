@@ -68,7 +68,7 @@ update_position(HWND hwnd)
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
-	HWND hwnd;
+	HWND hwnd, parent;
 	UINT msg;
 	WPARAM wparam;
 	LPARAM lparam;
@@ -90,6 +90,11 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	if ((style & WS_CHILD) && !(style & WS_POPUP))
 		goto end;
 
+	if (style & WS_POPUP)
+		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+	else
+		parent = NULL;
+
 	switch (msg)
 	{
 
@@ -101,7 +106,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				{
 					// FIXME: Now, just like create!
 					debug("SWP_SHOWWINDOW for %p!", hwnd);
-					vchannel_write("CREATE,0x%p,0x%x", hwnd, 0);
+					vchannel_write("CREATE,0x%p,0x%p,0x%x", hwnd, parent, 0);
 
 					// FIXME: SETSTATE
 
