@@ -132,7 +132,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				if (wp->flags & SWP_HIDEWINDOW)
 					vchannel_write("DESTROY,0x%p,0x%x", hwnd, 0);
 
-				if (!(style & WS_VISIBLE))
+				if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 					break;
 
 				if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
@@ -150,13 +150,13 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			}
 
 		case WM_SIZE:
-			if (!(style & WS_VISIBLE))
+			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 				break;
 			update_position(hwnd);
 			break;
 
 		case WM_MOVE:
-			if (!(style & WS_VISIBLE))
+			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 				break;
 			update_position(hwnd);
 			break;
