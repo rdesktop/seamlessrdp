@@ -80,7 +80,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	if (!(styles & WS_VISIBLE))
 		return TRUE;
 
-	vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
+	vchannel_write("CREATE,0x%p,0x%x", hwnd, 0);
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
@@ -88,7 +88,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		return TRUE;
 	}
 
-	vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+	vchannel_write("POSITION,0x%p,%d,%d,%d,%d,0x%x",
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
@@ -103,7 +103,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x", hwnd, title, state, 0);
+	vchannel_write("SETSTATE,0x%p,%s,0x%x,0x%x", hwnd, title, state, 0);
 
 	return TRUE;
 }

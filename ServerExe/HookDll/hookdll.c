@@ -60,7 +60,7 @@ update_position(HWND hwnd)
 		return;
 	}
 
-	vchannel_write("POSITION1,0x%p,%d,%d,%d,%d,0x%x",
+	vchannel_write("POSITION,0x%p,%d,%d,%d,%d,0x%x",
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 }
@@ -101,7 +101,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				{
 					// FIXME: Now, just like create!
 					debug("SWP_SHOWWINDOW for %p!", hwnd);
-					vchannel_write("CREATE1,0x%p,0x%x", hwnd, 0);
+					vchannel_write("CREATE,0x%p,0x%x", hwnd, 0);
 
 					// FIXME: SETSTATE
 
@@ -109,7 +109,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				}
 
 				if (wp->flags & SWP_HIDEWINDOW)
-					vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
+					vchannel_write("DESTROY,0x%p,0x%x", hwnd, 0);
 
 				if (!(style & WS_VISIBLE))
 					break;
@@ -119,7 +119,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				if (!(wp->flags & SWP_NOZORDER))
 				{
-					vchannel_write("ZCHANGE1,0x%p,0x%p,0x%x",
+					vchannel_write("ZCHANGE,0x%p,0x%p,0x%x",
 						       hwnd,
 						       wp->flags & SWP_NOACTIVATE ? wp->
 						       hwndInsertAfter : 0, 0);
@@ -143,7 +143,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		case WM_DESTROY:
 			if (!(style & WS_VISIBLE))
 				break;
-			vchannel_write("DESTROY1,0x%p,0x%x", hwnd, 0);
+			vchannel_write("DESTROY,0x%p,0x%x", hwnd, 0);
 			break;
 
 		default:
@@ -188,7 +188,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					state = 1;
 				else if (show == SW_SHOWMAXIMIZED)
 					state = 2;
-				vchannel_write("SETSTATE1,0x%p,%s,0x%x,0x%x",
+				vchannel_write("SETSTATE,0x%p,%s,0x%x,0x%x",
 					       (HWND) wparam, title, state, 0);
 				break;
 			}

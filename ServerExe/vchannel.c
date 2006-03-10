@@ -41,10 +41,10 @@ debug(char *format, ...)
 	va_list argp;
 	char buf[256];
 
-	sprintf(buf, "DEBUG1,");
+	sprintf(buf, "DEBUG,");
 
 	va_start(argp, format);
-	_vsnprintf(buf + sizeof("DEBUG1,") - 1, sizeof(buf) - sizeof("DEBUG1,") + 1, format, argp);
+	_vsnprintf(buf + sizeof("DEBUG,") - 1, sizeof(buf) - sizeof("DEBUG,") + 1, format, argp);
 	va_end(argp);
 
 	vchannel_write(buf);
