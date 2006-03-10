@@ -144,6 +144,20 @@ do_state(HWND hwnd, int state)
 }
 
 static void
+do_position(HWND hwnd, int x, int y, int width, int height)
+{
+	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+}
+
+static void
+do_zchange(HWND hwnd, HWND behind)
+{
+	if (behind == NULL)
+		behind = HWND_TOP;
+	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+}
+
+static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
@@ -170,6 +184,12 @@ process_cmds(void)
 			do_sync();
 		else if (strcmp(tok1, "STATE") == 0)
 			do_state((HWND) strtol(tok2, NULL, 0), strtol(tok3, NULL, 0));
+		else if (strcmp(tok1, "POSITION") == 0)
+			do_position((HWND) strtol(tok2, NULL, 0), strtol(tok3, NULL, 0),
+				    strtol(tok4, NULL, 0), strtol(tok5, NULL, 0), strtol(tok6, NULL,
+											 0));
+		else if (strcmp(tok1, "ZCHANGE") == 0)
+			do_zchange((HWND) strtol(tok2, NULL, 0), (HWND) strtol(tok3, NULL, 0));
 	}
 }
 
