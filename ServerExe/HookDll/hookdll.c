@@ -161,6 +161,13 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			update_position(hwnd);
 			break;
 
+		case WM_SETTEXT:
+			if (!(style & WS_VISIBLE))
+				break;
+			/* FIXME: Strip title of dangerous characters */
+			vchannel_write("TITLE,0x%p,%s,0x%x", hwnd, (char *) lparam, 0);
+			break;
+
 		case WM_DESTROY:
 			if (!(style & WS_VISIBLE))
 				break;
