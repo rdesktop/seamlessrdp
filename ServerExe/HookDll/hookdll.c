@@ -195,6 +195,8 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					state = 1;
 				else if (show == SW_SHOWMAXIMIZED)
 					state = 2;
+				else
+					break;
 				vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state, 0);
 				break;
 			}
