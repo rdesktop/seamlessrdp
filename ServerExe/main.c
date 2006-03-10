@@ -131,6 +131,19 @@ do_sync(void)
 }
 
 static void
+do_state(HWND hwnd, int state)
+{
+	if (state == 0)
+		ShowWindow(hwnd, SW_RESTORE);
+	else if (state == 1)
+		ShowWindow(hwnd, SW_MINIMIZE);
+	else if (state == 2)
+		ShowWindow(hwnd, SW_MAXIMIZE);
+	else
+		debug("Invalid state %d sent.", state);
+}
+
+static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
@@ -155,6 +168,8 @@ process_cmds(void)
 
 		if (strcmp(tok1, "SYNC") == 0)
 			do_sync();
+		else if (strcmp(tok1, "STATE") == 0)
+			do_state((HWND) strtol(tok2, NULL, 0), strtol(tok3, NULL, 0));
 	}
 }
 
