@@ -196,14 +196,17 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 
 				show = LOWORD(lparam);
 
-				if (show == SW_SHOWNORMAL)
+				if ((show == SW_NORMAL) || (show == SW_SHOWNORMAL))
 					state = 0;
-				else if (show == SW_SHOWMINIMIZED)
+				else if ((show == SW_MINIMIZE) || (show == SW_SHOWMINIMIZED))
 					state = 1;
-				else if (show == SW_SHOWMAXIMIZED)
+				else if ((show == SW_MAXIMIZE) || (show == SW_SHOWMAXIMIZED))
 					state = 2;
 				else
+				{
+					debug("Unexpected show: %d", show);
 					break;
+				}
 				vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state, 0);
 				break;
 			}
