@@ -104,13 +104,29 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				if (wp->flags & SWP_SHOWWINDOW)
 				{
-					// FIXME: Now, just like create!
-					debug("SWP_SHOWWINDOW for %p!", hwnd);
+					char title[150];
+					int state;
+
 					vchannel_write("CREATE,0x%p,0x%p,0x%x", hwnd, parent, 0);
 
-					// FIXME: SETSTATE
+					GetWindowText(hwnd, title, sizeof(title));
+
+					/* FIXME: Strip title of dangerous characters */
+
+					vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, title, 0);
+
+					if (style & WS_MAXIMIZE)
+						state = 2;
+					else if (style & WS_MINIMIZE)
+						state = 1;
+					else
+						state = 0;
+
+					vchannel_write("STATE,0x%p,0x%x,0x%x", hwnd, state, 0);
 
 					update_position(hwnd);
+
+					/* FIXME: Figure out z order */
 				}
 
 				if (wp->flags & SWP_HIDEWINDOW)
