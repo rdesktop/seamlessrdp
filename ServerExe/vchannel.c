@@ -169,7 +169,7 @@ vchannel_read(char *line, size_t length)
 }
 
 int
-vchannel_write(char *format, ...)
+vchannel_write(const char *format, ...)
 {
 	BOOL result;
 	va_list argp;

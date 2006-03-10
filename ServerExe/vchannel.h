@@ -33,7 +33,7 @@ int vchannel_is_open();
 
 /* read may only be used by a single process. write is completely safe */
 int vchannel_read(char *line, size_t length);
-int vchannel_write(char *format, ...);
+int vchannel_write(const char *format, ...);
 
 void vchannel_block();
 void vchannel_unblock();
