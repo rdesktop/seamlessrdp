@@ -195,6 +195,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	   immediatly. */
 	SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 
+	/* Disable screen saver since we cannot catch its windows. */
+	SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
+
 	if (strlen(cmdline) == 0)
 	{
 		message("No command line specified.");
