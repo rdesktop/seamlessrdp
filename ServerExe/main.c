@@ -96,6 +96,8 @@ enum_cb(HWND hwnd, LPARAM lparam)
 
 	/* FIXME: Strip title of dangerous characters */
 
+	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, title, 0);
+
 	if (styles & WS_MAXIMIZE)
 		state = 2;
 	else if (styles & WS_MINIMIZE)
@@ -103,7 +105,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	vchannel_write("SETSTATE,0x%p,%s,0x%x,0x%x", hwnd, title, state, 0);
+	vchannel_write("STATE,0x%p,0x%x,0x%x", hwnd, state, 0);
 
 	return TRUE;
 }

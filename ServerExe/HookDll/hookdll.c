@@ -157,8 +157,6 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 static LRESULT CALLBACK
 cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 {
-	char title[150];
-
 	if (code < 0)
 		goto end;
 
@@ -170,26 +168,13 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 
 				show = LOWORD(lparam);
 
-				if ((show == SW_SHOWMINIMIZED) || (show == SW_MINIMIZE))
-				{
-					MessageBox(0,
-						   "Minimizing windows is not allowed in this version. Sorry!",
-						   "SeamlessRDP", MB_OK);
-					return 1;
-				}
-
-				GetWindowText((HWND) wparam, title, sizeof(title));
-
-				/* FIXME: Strip title of dangerous characters */
-
 				if (show == SW_SHOWNORMAL)
 					state = 0;
 				else if (show == SW_SHOWMINIMIZED)
 					state = 1;
 				else if (show == SW_SHOWMAXIMIZED)
 					state = 2;
-				vchannel_write("SETSTATE,0x%p,%s,0x%x,0x%x",
-					       (HWND) wparam, title, state, 0);
+				vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state, 0);
 				break;
 			}
 
