@@ -204,7 +204,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 
 				show = LOWORD(lparam);
 
-				if ((show == SW_NORMAL) || (show == SW_SHOWNORMAL))
+				if ((show == SW_NORMAL) || (show == SW_SHOWNORMAL) || (show == SW_RESTORE))
 					state = 0;
 				else if ((show == SW_MINIMIZE) || (show == SW_SHOWMINIMIZED))
 					state = 1;
