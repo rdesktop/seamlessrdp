@@ -215,7 +215,7 @@ vchannel_strfilter(char *string)
 
 	for (c = string; *c != '\0'; c++)
 	{
-		if ((*c < 0x20) || (strchr(INVALID_CHARS, *c) != NULL))
+		if (((unsigned char) *c < 0x20) || (strchr(INVALID_CHARS, *c) != NULL))
 			*c = REPLACEMENT_CHAR;
 	}
 
