@@ -181,13 +181,13 @@ process_cmds(void)
 		if (strcmp(tok1, "SYNC") == 0)
 			do_sync();
 		else if (strcmp(tok1, "STATE") == 0)
-			do_state((HWND) strtol(tok2, NULL, 0), strtol(tok3, NULL, 0));
+			do_state((HWND) strtoul(tok2, NULL, 0), strtol(tok3, NULL, 0));
 		else if (strcmp(tok1, "POSITION") == 0)
-			do_position((HWND) strtol(tok2, NULL, 0), strtol(tok3, NULL, 0),
+			do_position((HWND) strtoul(tok2, NULL, 0), strtol(tok3, NULL, 0),
 				    strtol(tok4, NULL, 0), strtol(tok5, NULL, 0), strtol(tok6, NULL,
 											 0));
 		else if (strcmp(tok1, "ZCHANGE") == 0)
-			do_zchange((HWND) strtol(tok2, NULL, 0), (HWND) strtol(tok3, NULL, 0));
+			do_zchange((HWND) strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
 	}
 }
 
