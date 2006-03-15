@@ -125,11 +125,9 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 					else
 						state = 0;
 
-					vchannel_write("STATE,0x%p,0x%x,0x%x", hwnd, state, 0);
-
 					update_position(hwnd);
 
-					/* FIXME: Figure out z order */
+					vchannel_write("STATE,0x%p,0x%x,0x%x", hwnd, state, 0);
 				}
 
 				if (wp->flags & SWP_HIDEWINDOW)
