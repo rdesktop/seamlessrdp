@@ -44,6 +44,7 @@ int g_instance_count = 0;
 
 static HHOOK g_cbt_hook = NULL;
 static HHOOK g_wndproc_hook = NULL;
+static HHOOK g_wndprocret_hook = NULL;
 
 static HINSTANCE g_instance = NULL;
 
@@ -108,15 +109,15 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				if (wp->flags & SWP_SHOWWINDOW)
 				{
-					char title[150];
+					unsigned short title[150];
 					int state;
 
 					vchannel_write("CREATE,0x%p,0x%p,0x%x", hwnd, parent, 0);
 
-					GetWindowText(hwnd, title, sizeof(title));
+					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
 					vchannel_write("TITLE,0x%x,%s,0x%x", hwnd,
-						       vchannel_strfilter(title), 0);
+						       vchannel_strfilter_unicode(title), 0);
 
 					if (style & WS_MAXIMIZE)
 						state = 2;
@@ -162,18 +163,6 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			update_position(hwnd);
 			break;
 
-		case WM_SETTEXT:
-			{
-				char *title;
-				if (!(style & WS_VISIBLE))
-					break;
-				title = _strdup((char *) lparam);
-				vchannel_write("TITLE,0x%p,%s,0x%x", hwnd,
-					       vchannel_strfilter(title), 0);
-				free(title);
-				break;
-			}
-
 		case WM_DESTROY:
 			if (!(style & WS_VISIBLE))
 				break;
@@ -186,6 +175,54 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
       end:
 	return CallNextHookEx(g_wndproc_hook, code, cur_thread, details);
+}
+
+static LRESULT CALLBACK
+wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
+{
+	HWND hwnd, parent;
+	UINT msg;
+	WPARAM wparam;
+	LPARAM lparam;
+
+	LONG style;
+
+	if (code < 0)
+		goto end;
+
+	hwnd = ((CWPRETSTRUCT *) details)->hwnd;
+	msg = ((CWPRETSTRUCT *) details)->message;
+	wparam = ((CWPRETSTRUCT *) details)->wParam;
+	lparam = ((CWPRETSTRUCT *) details)->lParam;
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
+
+	/* Docs say that WS_CHILD and WS_POPUP is an illegal combination,
+	   but they exist nonetheless. */
+	if ((style & WS_CHILD) && !(style & WS_POPUP))
+		goto end;
+
+	switch (msg)
+	{
+		case WM_SETTEXT:
+			{
+				unsigned short title[150];
+				if (!(style & WS_VISIBLE))
+					break;
+				/* We cannot use the string in lparam because
+				   we need unicode. */
+				GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
+				vchannel_write("TITLE,0x%p,%s,0x%x", hwnd,
+					       vchannel_strfilter_unicode(title), 0);
+				break;
+			}
+
+		default:
+			break;
+	}
+
+      end:
+	return CallNextHookEx(g_wndprocret_hook, code, cur_thread, details);
 }
 
 static LRESULT CALLBACK
@@ -234,6 +271,10 @@ SetHooks(void)
 
 	if (!g_wndproc_hook)
 		g_wndproc_hook = SetWindowsHookEx(WH_CALLWNDPROC, wndproc_hook_proc, g_instance, 0);
+
+	if (!g_wndprocret_hook)
+		g_wndprocret_hook =
+			SetWindowsHookEx(WH_CALLWNDPROCRET, wndprocret_hook_proc, g_instance, 0);
 }
 
 DLL_EXPORT void
@@ -244,6 +285,9 @@ RemoveHooks(void)
 
 	if (g_wndproc_hook)
 		UnhookWindowsHookEx(g_wndproc_hook);
+
+	if (g_wndprocret_hook)
+		UnhookWindowsHookEx(g_wndprocret_hook);
 }
 
 DLL_EXPORT int

@@ -26,6 +26,8 @@
 
 void debug(char *format, ...);
 
+const char *unicode_to_utf8(const unsigned short *string);
+
 int vchannel_open();
 void vchannel_close();
 
@@ -39,5 +41,6 @@ void vchannel_block();
 void vchannel_unblock();
 
 const char *vchannel_strfilter(char *string);
+const char *vchannel_strfilter_unicode(const unsigned short *string);
 
 #endif

@@ -55,6 +55,63 @@ debug(char *format, ...)
 	vchannel_write(buf);
 }
 
+#define CONVERT_BUFFER_SIZE 1024
+static char convert_buffer[CONVERT_BUFFER_SIZE];
+
+const char *
+unicode_to_utf8(const unsigned short *string)
+{
+	unsigned char *buf;
+	size_t size;
+
+	buf = (unsigned char *) convert_buffer;
+	size = sizeof(convert_buffer) - 1;
+
+	/* We do not handle characters outside BMP (i.e. we can't do UTF-16) */
+	while (*string != 0x0000)
+	{
+		if (*string < 0x80)
+		{
+			if (size < 1)
+				break;
+			*buf++ = (unsigned char) *string;
+			size--;
+		}
+		else if (*string < 0x800)
+		{
+			if (size < 2)
+				break;
+			*buf++ = 0xC0 | (*string >> 6);
+			*buf++ = 0x80 | (*string & 0x3F);
+			size -= 2;
+		}
+		else if (*string < 0x10000)
+		{
+			if (size < 3)
+				break;
+			*buf++ = 0xE0 | (*string >> 12);
+			*buf++ = 0x80 | (*string >> 6 & 0x3F);
+			*buf++ = 0x80 | (*string & 0x3F);
+			size -= 2;
+		}
+		else if (*string < 0x200000)
+		{
+			if (size < 4)
+				break;
+			*buf++ = 0xF0 | (*string >> 18);
+			*buf++ = 0x80 | (*string >> 12 & 0x3F);
+			*buf++ = 0x80 | (*string >> 6 & 0x3F);
+			*buf++ = 0x80 | (*string & 0x3F);
+			size -= 2;
+		}
+
+		string++;
+	}
+
+	*buf = '\0';
+
+	return convert_buffer;
+}
 
 int
 vchannel_open()
@@ -220,4 +277,10 @@ vchannel_strfilter(char *string)
 	}
 
 	return string;
+}
+
+const char *
+vchannel_strfilter_unicode(const unsigned short *string)
+{
+	return vchannel_strfilter((char *) unicode_to_utf8(string));
 }
