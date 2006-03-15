@@ -71,7 +71,7 @@ static BOOL CALLBACK
 enum_cb(HWND hwnd, LPARAM lparam)
 {
 	RECT rect;
-	char title[150];
+	unsigned short title[150];
 	LONG styles;
 	int state;
 	HWND parent;
@@ -98,9 +98,9 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
-	GetWindowText(hwnd, title, sizeof(title));
+	GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, vchannel_strfilter(title), 0);
+	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, vchannel_strfilter_unicode(title), 0);
 
 	if (styles & WS_MAXIMIZE)
 		state = 2;
