@@ -24,6 +24,8 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <wtsapi32.h>
+#include <cchannel.h>
 
 #include "vchannel.h"
 
@@ -31,8 +33,16 @@
 
 #define APP_NAME "SeamlessRDP Shell"
 
+#ifndef WM_WTSSESSION_CHANGE
+#define WM_WTSSESSION_CHANGE 0x02B1
+#endif
+#ifndef WTS_REMOTE_CONNECT
+#define WTS_REMOTE_CONNECT 0x3
+#endif
+
 /* Global data */
 static HINSTANCE g_instance;
+static HWND g_hwnd;
 
 typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
@@ -193,6 +203,53 @@ process_cmds(void)
 	}
 }
 
+static LRESULT CALLBACK
+wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	if (message == WM_WTSSESSION_CHANGE)
+	{
+		if (wparam == WTS_REMOTE_CONNECT)
+			vchannel_write("HELLO,0x%08x", 1);
+	}
+
+	return DefWindowProc(hwnd, message, wparam, lparam);
+}
+
+static BOOL
+register_class(void)
+{
+	WNDCLASSEX wcx;
+
+	memset(&wcx, 0, sizeof(wcx));
+
+	wcx.cbSize = sizeof(wcx);
+	wcx.lpfnWndProc = wndproc;
+	wcx.hInstance = g_instance;
+	wcx.lpszClassName = "SeamlessClass";
+
+	return RegisterClassEx(&wcx);
+}
+
+static BOOL
+create_wnd(void)
+{
+	if (!register_class())
+		return FALSE;
+
+	g_hwnd = CreateWindow("SeamlessClass",
+			      "Seamless Window",
+			      WS_OVERLAPPEDWINDOW,
+			      CW_USEDEFAULT,
+			      CW_USEDEFAULT,
+			      CW_USEDEFAULT,
+			      CW_USEDEFAULT, (HWND) NULL, (HMENU) NULL, g_instance, (LPVOID) NULL);
+
+	if (!g_hwnd)
+		return FALSE;
+
+	return TRUE;
+}
+
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
@@ -231,7 +288,18 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		return -1;
 	}
 
+	if (!create_wnd())
+	{
+		FreeLibrary(hookdll);
+		message("Couldn't create a window to catch events.");
+		return -1;
+	}
+
+	WTSRegisterSessionNotification(g_hwnd, NOTIFY_FOR_THIS_SESSION);
+
 	vchannel_open();
+
+	vchannel_write("HELLO,0x%08x", 0);
 
 	set_hooks_fn();
 
@@ -253,6 +321,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		DWORD exitcode;
 		PROCESS_INFORMATION proc_info;
 		STARTUPINFO startup_info;
+		MSG msg;
 
 		memset(&startup_info, 0, sizeof(STARTUPINFO));
 		startup_info.cb = sizeof(STARTUPINFO);
@@ -264,6 +333,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		{
 			do
 			{
+				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+				{
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				}
 				process_cmds();
 				Sleep(100);
 				GetExitCodeProcess(proc_info.hProcess, &exitcode);
@@ -283,6 +357,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			message(msg);
 		}
 	}
+
+	WTSUnRegisterSessionNotification(g_hwnd);
 
 	remove_hooks_fn();
 
