@@ -209,7 +209,12 @@ wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	if (message == WM_WTSSESSION_CHANGE)
 	{
 		if (wparam == WTS_REMOTE_CONNECT)
+		{
+			/* These get reset on each reconnect */
+			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
+			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
 			vchannel_write("HELLO,0x%08x", 1);
+		}
 	}
 
 	return DefWindowProc(hwnd, message, wparam, lparam);
