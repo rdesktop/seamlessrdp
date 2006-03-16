@@ -38,6 +38,10 @@ typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
 
+typedef void (*move_window_proc_t) (HWND hwnd, int x, int y, int width, int height);
+
+static move_window_proc_t g_move_window_fn = NULL;
+
 static void
 message(const char *text)
 {
@@ -144,7 +148,7 @@ do_state(HWND hwnd, int state)
 static void
 do_position(HWND hwnd, int x, int y, int width, int height)
 {
-	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+	g_move_window_fn(hwnd, x, y, width, height);
 }
 
 static void
@@ -165,8 +169,6 @@ process_cmds(void)
 
 	while ((size = vchannel_read(line, sizeof(line))) >= 0)
 	{
-		debug("Got: %s", line);
-
 		p = line;
 
 		tok1 = get_token(&p);
@@ -212,8 +214,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
 	remove_hooks_fn = (remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
 	instance_count_fn = (get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
+	g_move_window_fn = (move_window_proc_t) GetProcAddress(hookdll, "SafeMoveWindow");
 
-	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn)
+	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn)
 	{
 		FreeLibrary(hookdll);
 		message("Hook DLL doesn't contain the correct functions. Unable to continue.");

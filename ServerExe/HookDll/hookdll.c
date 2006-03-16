@@ -32,11 +32,20 @@
 
 #define DLL_EXPORT __declspec(dllexport)
 
+#ifdef __GNUC__
+#define SHARED __attribute__((section ("SHAREDDATA"), shared))
+#else
+#define SHARED
+#endif
+
 // Shared DATA
 #pragma data_seg ( "SHAREDDATA" )
 
 // this is the total number of processes this dll is currently attached to
-int g_instance_count = 0;
+int g_instance_count SHARED = 0;
+
+// blocks for locally generated events
+RECT g_block_move SHARED = { 0, 0, 0, 0 };
 
 #pragma data_seg ()
 
@@ -53,13 +62,21 @@ static HANDLE g_mutex = NULL;
 static void
 update_position(HWND hwnd)
 {
-	RECT rect;
+	RECT rect, blocked;
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
 		debug("GetWindowRect failed!\n");
 		return;
 	}
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	memcpy(&blocked, &g_block_move, sizeof(RECT));
+	ReleaseMutex(g_mutex);
+
+	if ((rect.left == blocked.left) && (rect.top == blocked.top)
+	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
+		return;
 
 	vchannel_write("POSITION,0x%p,%d,%d,%d,%d,0x%x",
 		       hwnd,
@@ -288,6 +305,23 @@ RemoveHooks(void)
 
 	if (g_wndprocret_hook)
 		UnhookWindowsHookEx(g_wndprocret_hook);
+}
+
+DLL_EXPORT void
+SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_block_move.left = x;
+	g_block_move.top = y;
+	g_block_move.right = x + width;
+	g_block_move.bottom = y + height;
+	ReleaseMutex(g_mutex);
+
+	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	memset(&g_block_move, 0, sizeof(RECT));
+	ReleaseMutex(g_mutex);
 }
 
 DLL_EXPORT int
