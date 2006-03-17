@@ -33,9 +33,6 @@
 
 #define APP_NAME "SeamlessRDP Shell"
 
-#define FOCUS_MSG_NAME "WM_SEAMLESS_FOCUS"
-static UINT g_wm_seamless_focus;
-
 #ifndef WM_WTSSESSION_CHANGE
 #define WM_WTSSESSION_CHANGE 0x02B1
 #endif
@@ -52,8 +49,12 @@ typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
 
 typedef void (*move_window_proc_t) (HWND hwnd, int x, int y, int width, int height);
+typedef void (*zchange_proc_t) (HWND hwnd, HWND behind);
+typedef void (*focus_proc_t) (HWND hwnd);
 
 static move_window_proc_t g_move_window_fn = NULL;
+static zchange_proc_t g_zchange_fn = NULL;
+static focus_proc_t g_focus_fn = NULL;
 
 static void
 message(const char *text)
@@ -167,15 +168,13 @@ do_position(HWND hwnd, int x, int y, int width, int height)
 static void
 do_zchange(HWND hwnd, HWND behind)
 {
-	if (behind == NULL)
-		behind = HWND_TOP;
-	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+	g_zchange_fn(hwnd, behind);
 }
 
 static void
 do_focus(HWND hwnd)
 {
-	SendMessage(hwnd, g_wm_seamless_focus, 0, 0);
+	g_focus_fn(hwnd);
 }
 
 static void
@@ -288,8 +287,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	remove_hooks_fn = (remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
 	instance_count_fn = (get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
 	g_move_window_fn = (move_window_proc_t) GetProcAddress(hookdll, "SafeMoveWindow");
+	g_zchange_fn = (zchange_proc_t) GetProcAddress(hookdll, "SafeZChange");
+	g_focus_fn = (focus_proc_t) GetProcAddress(hookdll, "SafeFocus");
 
-	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn)
+	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn
+	    || !g_zchange_fn || !g_focus_fn)
 	{
 		FreeLibrary(hookdll);
 		message("Hook DLL doesn't contain the correct functions. Unable to continue.");
@@ -310,8 +312,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		message("Couldn't create a window to catch events.");
 		return -1;
 	}
-
-	g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
 
 	WTSRegisterSessionNotification(g_hwnd, NOTIFY_FOR_THIS_SESSION);
 

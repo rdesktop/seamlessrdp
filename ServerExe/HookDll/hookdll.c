@@ -46,6 +46,8 @@ int g_instance_count SHARED = 0;
 
 // blocks for locally generated events
 RECT g_block_move SHARED = { 0, 0, 0, 0 };
+HWND g_blocked_zchange[2] SHARED = { NULL, NULL };
+HWND g_blocked_focus SHARED = NULL;
 
 #pragma data_seg ()
 
@@ -162,10 +164,20 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				if (!(wp->flags & SWP_NOZORDER))
 				{
-					vchannel_write("ZCHANGE,0x%p,0x%p,0x%x",
-						       hwnd,
-						       wp->flags & SWP_NOACTIVATE ? wp->
-						       hwndInsertAfter : 0, 0);
+					HWND block_hwnd, block_behind;
+					WaitForSingleObject(g_mutex, INFINITE);
+					block_hwnd = g_blocked_zchange[0];
+					block_behind = g_blocked_zchange[1];
+					ReleaseMutex(g_mutex);
+
+					if ((hwnd != block_hwnd)
+					    || (wp->hwndInsertAfter != block_behind))
+					{
+						vchannel_write("ZCHANGE,0x%p,0x%p,0x%x",
+							       hwnd,
+							       wp->flags & SWP_NOACTIVATE ? wp->
+							       hwndInsertAfter : 0, 0);
+					}
 				}
 
 				break;
@@ -222,6 +234,15 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	if ((style & WS_CHILD) && !(style & WS_POPUP))
 		goto end;
 
+	if (style & WS_POPUP)
+	{
+		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+		if (!parent)
+			parent = (HWND) - 1;
+	}
+	else
+		parent = NULL;
+
 	switch (msg)
 	{
 		case WM_SETTEXT:
@@ -242,7 +263,12 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	}
 
 	if (msg == g_wm_seamless_focus)
-		SetFocus(hwnd);
+	{
+		/* FIXME: SetActiveWindow() kills menus. Need to find a clean
+		   way to solve this. */
+		if ((GetActiveWindow() != hwnd) && !parent)
+			SetActiveWindow(hwnd);
+	}
 
       end:
 	return CallNextHookEx(g_wndprocret_hook, code, cur_thread, details);
@@ -327,6 +353,39 @@ SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	memset(&g_block_move, 0, sizeof(RECT));
+	ReleaseMutex(g_mutex);
+}
+
+DLL_EXPORT void
+SafeZChange(HWND hwnd, HWND behind)
+{
+	if (behind == NULL)
+		behind = HWND_TOP;
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_zchange[0] = hwnd;
+	g_blocked_zchange[1] = behind;
+	ReleaseMutex(g_mutex);
+
+	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_zchange[0] = NULL;
+	g_blocked_zchange[1] = NULL;
+	ReleaseMutex(g_mutex);
+}
+
+DLL_EXPORT void
+SafeFocus(HWND hwnd)
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_focus = hwnd;
+	ReleaseMutex(g_mutex);
+
+	SendMessage(hwnd, g_wm_seamless_focus, 0, 0);
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_focus = NULL;
 	ReleaseMutex(g_mutex);
 }
 
