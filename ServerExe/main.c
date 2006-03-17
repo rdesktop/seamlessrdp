@@ -51,10 +51,12 @@ typedef int (*get_instance_count_proc_t) ();
 typedef void (*move_window_proc_t) (HWND hwnd, int x, int y, int width, int height);
 typedef void (*zchange_proc_t) (HWND hwnd, HWND behind);
 typedef void (*focus_proc_t) (HWND hwnd);
+typedef void (*set_state_proc_t) (HWND hwnd, int state);
 
 static move_window_proc_t g_move_window_fn = NULL;
 static zchange_proc_t g_zchange_fn = NULL;
 static focus_proc_t g_focus_fn = NULL;
+static set_state_proc_t g_set_state_fn = NULL;
 
 static void
 message(const char *text)
@@ -149,14 +151,7 @@ do_sync(void)
 static void
 do_state(HWND hwnd, int state)
 {
-	if (state == 0)
-		ShowWindow(hwnd, SW_RESTORE);
-	else if (state == 1)
-		ShowWindow(hwnd, SW_MINIMIZE);
-	else if (state == 2)
-		ShowWindow(hwnd, SW_MAXIMIZE);
-	else
-		debug("Invalid state %d sent.", state);
+	g_set_state_fn(hwnd, state);
 }
 
 static void
@@ -289,9 +284,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	g_move_window_fn = (move_window_proc_t) GetProcAddress(hookdll, "SafeMoveWindow");
 	g_zchange_fn = (zchange_proc_t) GetProcAddress(hookdll, "SafeZChange");
 	g_focus_fn = (focus_proc_t) GetProcAddress(hookdll, "SafeFocus");
+	g_set_state_fn = (set_state_proc_t) GetProcAddress(hookdll, "SafeSetState");
 
 	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn
-	    || !g_zchange_fn || !g_focus_fn)
+	    || !g_zchange_fn || !g_focus_fn || !g_set_state_fn)
 	{
 		FreeLibrary(hookdll);
 		message("Hook DLL doesn't contain the correct functions. Unable to continue.");

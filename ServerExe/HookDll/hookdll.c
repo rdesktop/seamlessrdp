@@ -48,6 +48,7 @@ int g_instance_count SHARED = 0;
 RECT g_block_move SHARED = { 0, 0, 0, 0 };
 HWND g_blocked_zchange[2] SHARED = { NULL, NULL };
 HWND g_blocked_focus SHARED = NULL;
+int g_blocked_state SHARED = -1;
 
 #pragma data_seg ()
 
@@ -124,7 +125,6 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	switch (msg)
 	{
-
 		case WM_WINDOWPOSCHANGED:
 			{
 				WINDOWPOS *wp = (WINDOWPOS *) lparam;
@@ -284,7 +284,11 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	{
 		case HCBT_MINMAX:
 			{
-				int show, state;
+				int show, state, blocked;
+
+				WaitForSingleObject(g_mutex, INFINITE);
+				blocked = g_blocked_state;
+				ReleaseMutex(g_mutex);
 
 				show = LOWORD(lparam);
 
@@ -300,7 +304,11 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					debug("Unexpected show: %d", show);
 					break;
 				}
-				vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state, 0);
+
+				if (blocked != state)
+					vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state,
+						       0);
+
 				break;
 			}
 
@@ -386,6 +394,27 @@ SafeFocus(HWND hwnd)
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_blocked_focus = NULL;
+	ReleaseMutex(g_mutex);
+}
+
+DLL_EXPORT void
+SafeSetState(HWND hwnd, int state)
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_state = state;
+	ReleaseMutex(g_mutex);
+
+	if (state == 0)
+		ShowWindow(hwnd, SW_RESTORE);
+	else if (state == 1)
+		ShowWindow(hwnd, SW_MINIMIZE);
+	else if (state == 2)
+		ShowWindow(hwnd, SW_MAXIMIZE);
+	else
+		debug("Invalid state %d sent.", state);
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_state = -1;
 	ReleaseMutex(g_mutex);
 }
 
