@@ -45,9 +45,11 @@
 int g_instance_count SHARED = 0;
 
 // blocks for locally generated events
+HWND g_block_move_hwnd SHARED = NULL;
 RECT g_block_move SHARED = { 0, 0, 0, 0 };
 HWND g_blocked_zchange[2] SHARED = { NULL, NULL };
 HWND g_blocked_focus SHARED = NULL;
+HWND g_blocked_state_hwnd SHARED = NULL;
 int g_blocked_state SHARED = -1;
 
 #pragma data_seg ()
@@ -69,6 +71,7 @@ static void
 update_position(HWND hwnd)
 {
 	RECT rect, blocked;
+	HWND blocked_hwnd;
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
@@ -77,10 +80,11 @@ update_position(HWND hwnd)
 	}
 
 	WaitForSingleObject(g_mutex, INFINITE);
+	blocked_hwnd = hwnd;
 	memcpy(&blocked, &g_block_move, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 
-	if ((rect.left == blocked.left) && (rect.top == blocked.top)
+	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left) && (rect.top == blocked.top)
 	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
 		return;
 
@@ -285,8 +289,10 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 		case HCBT_MINMAX:
 			{
 				int show, state, blocked;
+				HWND blocked_hwnd;
 
 				WaitForSingleObject(g_mutex, INFINITE);
+				blocked_hwnd = g_blocked_state_hwnd;
 				blocked = g_blocked_state;
 				ReleaseMutex(g_mutex);
 
@@ -305,7 +311,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				if (blocked != state)
+				if ((blocked_hwnd != (HWND) wparam) || (blocked != state))
 					vchannel_write("STATE,0x%p,0x%x,0x%x", (HWND) wparam, state,
 						       0);
 
@@ -351,6 +357,7 @@ DLL_EXPORT void
 SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_block_move_hwnd = hwnd;
 	g_block_move.left = x;
 	g_block_move.top = y;
 	g_block_move.right = x + width;
@@ -360,6 +367,7 @@ SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
 	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
 
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_block_move_hwnd = NULL;
 	memset(&g_block_move, 0, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 }
@@ -401,6 +409,7 @@ DLL_EXPORT void
 SafeSetState(HWND hwnd, int state)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_state_hwnd = hwnd;
 	g_blocked_state = state;
 	ReleaseMutex(g_mutex);
 
@@ -414,6 +423,7 @@ SafeSetState(HWND hwnd, int state)
 		debug("Invalid state %d sent.", state);
 
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_state_hwnd = NULL;
 	g_blocked_state = -1;
 	ReleaseMutex(g_mutex);
 }
