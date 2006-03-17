@@ -85,21 +85,11 @@ unicode_to_utf8(const unsigned short *string)
 			*buf++ = 0x80 | (*string & 0x3F);
 			size -= 2;
 		}
-		else if (*string < 0x10000)
+		else if ((*string < 0xD800) || (*string > 0xDFFF))
 		{
 			if (size < 3)
 				break;
 			*buf++ = 0xE0 | (*string >> 12);
-			*buf++ = 0x80 | (*string >> 6 & 0x3F);
-			*buf++ = 0x80 | (*string & 0x3F);
-			size -= 2;
-		}
-		else if (*string < 0x200000)
-		{
-			if (size < 4)
-				break;
-			*buf++ = 0xF0 | (*string >> 18);
-			*buf++ = 0x80 | (*string >> 12 & 0x3F);
 			*buf++ = 0x80 | (*string >> 6 & 0x3F);
 			*buf++ = 0x80 | (*string & 0x3F);
 			size -= 2;
