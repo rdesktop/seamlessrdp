@@ -175,13 +175,6 @@ do_zchange(HWND hwnd, HWND behind)
 static void
 do_focus(HWND hwnd)
 {
-/*	if (!AttachThreadInput(GetCurrentThreadId(), GetWindowThreadProcessId(hwnd, NULL), TRUE))
-	{
-		debug("Failed to attach");
-		return;
-	}
-	SetFocus(hwnd);
-	AttachThreadInput(GetCurrentThreadId(), GetWindowThreadProcessId(hwnd, NULL), FALSE)*/
 	SendMessage(hwnd, g_wm_seamless_focus, 0, 0);
 }
 
