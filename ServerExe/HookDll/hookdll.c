@@ -51,6 +51,9 @@ RECT g_block_move SHARED = { 0, 0, 0, 0 };
 
 #pragma comment(linker, "/section:SHAREDDATA,rws")
 
+#define FOCUS_MSG_NAME "WM_SEAMLESS_FOCUS"
+static UINT g_wm_seamless_focus;
+
 static HHOOK g_cbt_hook = NULL;
 static HHOOK g_wndproc_hook = NULL;
 static HHOOK g_wndprocret_hook = NULL;
@@ -238,6 +241,9 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 			break;
 	}
 
+	if (msg == g_wm_seamless_focus)
+		SetFocus(hwnd);
+
       end:
 	return CallNextHookEx(g_wndprocret_hook, code, cur_thread, details);
 }
@@ -346,6 +352,8 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			WaitForSingleObject(g_mutex, INFINITE);
 			++g_instance_count;
 			ReleaseMutex(g_mutex);
+
+			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
 
 			vchannel_open();
 

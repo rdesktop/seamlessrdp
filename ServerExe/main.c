@@ -33,6 +33,9 @@
 
 #define APP_NAME "SeamlessRDP Shell"
 
+#define FOCUS_MSG_NAME "WM_SEAMLESS_FOCUS"
+static UINT g_wm_seamless_focus;
+
 #ifndef WM_WTSSESSION_CHANGE
 #define WM_WTSSESSION_CHANGE 0x02B1
 #endif
@@ -170,6 +173,19 @@ do_zchange(HWND hwnd, HWND behind)
 }
 
 static void
+do_focus(HWND hwnd)
+{
+/*	if (!AttachThreadInput(GetCurrentThreadId(), GetWindowThreadProcessId(hwnd, NULL), TRUE))
+	{
+		debug("Failed to attach");
+		return;
+	}
+	SetFocus(hwnd);
+	AttachThreadInput(GetCurrentThreadId(), GetWindowThreadProcessId(hwnd, NULL), FALSE)*/
+	SendMessage(hwnd, g_wm_seamless_focus, 0, 0);
+}
+
+static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
@@ -200,6 +216,8 @@ process_cmds(void)
 											 0));
 		else if (strcmp(tok1, "ZCHANGE") == 0)
 			do_zchange((HWND) strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
+		else if (strcmp(tok1, "FOCUS") == 0)
+			do_focus((HWND) strtoul(tok2, NULL, 0));
 	}
 }
 
@@ -299,6 +317,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		message("Couldn't create a window to catch events.");
 		return -1;
 	}
+
+	g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
 
 	WTSRegisterSessionNotification(g_hwnd, NOTIFY_FOR_THIS_SESSION);
 
