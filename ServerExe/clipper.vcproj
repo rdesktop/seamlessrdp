@@ -152,12 +152,6 @@
 		<File
 			RelativePath=".\resource.h">
 		</File>
-		<File
-			RelativePath=".\vchannel.c">
-		</File>
-		<File
-			RelativePath=".\vchannel.h">
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

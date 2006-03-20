@@ -1,13 +1,19 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExe", "ServerExe\clipper.vcproj", "{4C27EA74-3453-4222-BDD2-37C3B90438D2}"
 	ProjectSection(ProjectDependencies) = postProject
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7} = {8B343CDF-D7F6-480A-83B8-7F534675FFE7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HookDll", "ServerExe\HookDll\hookDll.vcproj", "{8B343CDF-D7F6-480A-83B8-7F534675FFE6}"
 	ProjectSection(ProjectDependencies) = postProject
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7} = {8B343CDF-D7F6-480A-83B8-7F534675FFE7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClientDLL", "ClientDLL\TSWindowClipper.vcproj", "{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vchannel", "ServerExe\vchannel.vcproj", "{8B343CDF-D7F6-480A-83B8-7F534675FFE7}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -29,6 +35,10 @@ Global
 		{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}.Debug.Build.0 = Debug|Win32
 		{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}.Release.ActiveCfg = Release|Win32
 		{7A2CB0E6-2796-4AAB-8D94-EE8EA3AFCEFB}.Release.Build.0 = Release|Win32
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7}.Debug.ActiveCfg = Debug|Win32
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7}.Debug.Build.0 = Debug|Win32
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7}.Release.ActiveCfg = Release|Win32
+		{8B343CDF-D7F6-480A-83B8-7F534675FFE7}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		notes.txt = notes.txt

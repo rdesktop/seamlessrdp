@@ -106,7 +106,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		parent = NULL;
 
-	vchannel_write("CREATE,0x%p,0x%p,0x%x", hwnd, parent, 0);
+	vchannel_write("CREATE", "0x%p,0x%p,0x%x", hwnd, parent, 0);
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
@@ -114,13 +114,13 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		return TRUE;
 	}
 
-	vchannel_write("POSITION,0x%p,%d,%d,%d,%d,0x%x",
+	vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
 	GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-	vchannel_write("TITLE,0x%x,%s,0x%x", hwnd, vchannel_strfilter_unicode(title), 0);
+	vchannel_write("TITLE", "0x%x,%s,0x%x", hwnd, vchannel_strfilter_unicode(title), 0);
 
 	if (styles & WS_MAXIMIZE)
 		state = 2;
@@ -129,7 +129,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	vchannel_write("STATE,0x%p,0x%x,0x%x", hwnd, state, 0);
+	vchannel_write("STATE", "0x%p,0x%x,0x%x", hwnd, state, 0);
 
 	return TRUE;
 }
@@ -139,35 +139,35 @@ do_sync(void)
 {
 	vchannel_block();
 
-	vchannel_write("SYNCBEGIN,0x0");
+	vchannel_write("SYNCBEGIN", "0x0");
 
 	EnumWindows(enum_cb, 0);
 
-	vchannel_write("SYNCEND,0x0");
+	vchannel_write("SYNCEND", "0x0");
 
 	vchannel_unblock();
 }
 
 static void
-do_state(HWND hwnd, int state)
+do_state(unsigned int serial, HWND hwnd, int state)
 {
 	g_set_state_fn(hwnd, state);
 }
 
 static void
-do_position(HWND hwnd, int x, int y, int width, int height)
+do_position(unsigned int serial, HWND hwnd, int x, int y, int width, int height)
 {
 	g_move_window_fn(hwnd, x, y, width, height);
 }
 
 static void
-do_zchange(HWND hwnd, HWND behind)
+do_zchange(unsigned int serial, HWND hwnd, HWND behind)
 {
 	g_zchange_fn(hwnd, behind);
 }
 
 static void
-do_focus(HWND hwnd)
+do_focus(unsigned int serial, HWND hwnd)
 {
 	g_focus_fn(hwnd);
 }
@@ -196,15 +196,18 @@ process_cmds(void)
 		if (strcmp(tok1, "SYNC") == 0)
 			do_sync();
 		else if (strcmp(tok1, "STATE") == 0)
-			do_state((HWND) strtoul(tok2, NULL, 0), strtol(tok3, NULL, 0));
+			do_state(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
+				 strtol(tok4, NULL, 0));
 		else if (strcmp(tok1, "POSITION") == 0)
-			do_position((HWND) strtoul(tok2, NULL, 0), strtol(tok3, NULL, 0),
+			do_position(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
 				    strtol(tok4, NULL, 0), strtol(tok5, NULL, 0), strtol(tok6, NULL,
-											 0));
+											 0),
+				    strtol(tok7, NULL, 0));
 		else if (strcmp(tok1, "ZCHANGE") == 0)
-			do_zchange((HWND) strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
+			do_zchange(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
+				   (HWND) strtoul(tok4, NULL, 0));
 		else if (strcmp(tok1, "FOCUS") == 0)
-			do_focus((HWND) strtoul(tok2, NULL, 0));
+			do_focus(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
 	}
 }
 
@@ -218,7 +221,7 @@ wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 			/* These get reset on each reconnect */
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
-			vchannel_write("HELLO,0x%08x", 1);
+			vchannel_write("HELLO", "0x%08x", 1);
 		}
 	}
 
@@ -313,7 +316,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	vchannel_open();
 
-	vchannel_write("HELLO,0x%08x", 0);
+	vchannel_write("HELLO", "0x%08x", 0);
 
 	set_hooks_fn();
 

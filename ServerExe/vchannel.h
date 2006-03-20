@@ -22,25 +22,27 @@
 #ifndef __VCHANNEL_H__
 #define __VCHANNEL_H__
 
+#define DLL_EXPORT __declspec(dllexport)
+
 #define VCHANNEL_MAX_LINE 1024
 
-void debug(char *format, ...);
+DLL_EXPORT void debug(char *format, ...);
 
-const char *unicode_to_utf8(const unsigned short *string);
+DLL_EXPORT const char *unicode_to_utf8(const unsigned short *string);
 
-int vchannel_open();
-void vchannel_close();
+DLL_EXPORT int vchannel_open();
+DLL_EXPORT void vchannel_close();
 
-int vchannel_is_open();
+DLL_EXPORT int vchannel_is_open();
 
 /* read may only be used by a single process. write is completely safe */
-int vchannel_read(char *line, size_t length);
-int vchannel_write(const char *format, ...);
+DLL_EXPORT int vchannel_read(char *line, size_t length);
+DLL_EXPORT int vchannel_write(const char *command, const char *format, ...);
 
-void vchannel_block();
-void vchannel_unblock();
+DLL_EXPORT void vchannel_block();
+DLL_EXPORT void vchannel_unblock();
 
-const char *vchannel_strfilter(char *string);
-const char *vchannel_strfilter_unicode(const unsigned short *string);
+DLL_EXPORT const char *vchannel_strfilter(char *string);
+DLL_EXPORT const char *vchannel_strfilter_unicode(const unsigned short *string);
 
 #endif

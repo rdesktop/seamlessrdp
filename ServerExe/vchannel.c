@@ -35,30 +35,43 @@
 #define INVALID_CHARS ","
 #define REPLACEMENT_CHAR '_'
 
+#ifdef __GNUC__
+#define SHARED __attribute__((section ("SHAREDDATA"), shared))
+#else
+#define SHARED
+#endif
+
+// Shared DATA
+#pragma data_seg ( "SHAREDDATA" )
+
+unsigned int g_vchannel_serial SHARED = 0;
+
+#pragma data_seg ()
+
+#pragma comment(linker, "/section:SHAREDDATA,rws")
+
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
 
-void
+DLL_EXPORT void
 debug(char *format, ...)
 {
 	va_list argp;
 	char buf[256];
 
-	sprintf(buf, "DEBUG,");
-
 	va_start(argp, format);
-	_vsnprintf(buf + sizeof("DEBUG,") - 1, sizeof(buf) - sizeof("DEBUG,") + 1, format, argp);
+	_vsnprintf(buf, sizeof(buf), format, argp);
 	va_end(argp);
 
-	vchannel_strfilter(buf + sizeof("DEBUG,"));
+	vchannel_strfilter(buf);
 
-	vchannel_write(buf);
+	vchannel_write("DEBUG", buf);
 }
 
 #define CONVERT_BUFFER_SIZE 1024
 static char convert_buffer[CONVERT_BUFFER_SIZE];
 
-const char *
+DLL_EXPORT const char *
 unicode_to_utf8(const unsigned short *string)
 {
 	unsigned char *buf;
@@ -103,7 +116,7 @@ unicode_to_utf8(const unsigned short *string)
 	return convert_buffer;
 }
 
-int
+DLL_EXPORT int
 vchannel_open()
 {
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
@@ -123,7 +136,7 @@ vchannel_open()
 	return 0;
 }
 
-void
+DLL_EXPORT void
 vchannel_close()
 {
 	if (g_mutex)
@@ -136,7 +149,7 @@ vchannel_close()
 	g_vchannel = NULL;
 }
 
-int
+DLL_EXPORT int
 vchannel_is_open()
 {
 	if (g_vchannel == NULL)
@@ -145,7 +158,7 @@ vchannel_is_open()
 		return 1;
 }
 
-int
+DLL_EXPORT int
 vchannel_read(char *line, size_t length)
 {
 	static BOOL overflow_mode = FALSE;
@@ -215,8 +228,8 @@ vchannel_read(char *line, size_t length)
 	return 0;
 }
 
-int
-vchannel_write(const char *format, ...)
+DLL_EXPORT int
+vchannel_write(const char *command, const char *format, ...)
 {
 	BOOL result;
 	va_list argp;
@@ -226,15 +239,23 @@ vchannel_write(const char *format, ...)
 
 	assert(vchannel_is_open());
 
+	WaitForSingleObject(g_mutex, INFINITE);
+
+	size = _snprintf(buf, sizeof(buf), "%s,%u,", command, g_vchannel_serial);
+
+	assert(size < sizeof(buf));
+
 	va_start(argp, format);
-	size = _vsnprintf(buf, sizeof(buf), format, argp);
+	size += _vsnprintf(buf + size, sizeof(buf) - size, format, argp);
 	va_end(argp);
 
 	assert(size < sizeof(buf));
 
-	WaitForSingleObject(g_mutex, INFINITE);
 	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
 	result = WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
+
+	g_vchannel_serial++;
+
 	ReleaseMutex(g_mutex);
 
 	if (!result)
@@ -243,19 +264,19 @@ vchannel_write(const char *format, ...)
 	return bytes_written;
 }
 
-void
+DLL_EXPORT void
 vchannel_block()
 {
 	WaitForSingleObject(g_mutex, INFINITE);
 }
 
-void
+DLL_EXPORT void
 vchannel_unblock()
 {
 	ReleaseMutex(g_mutex);
 }
 
-const char *
+DLL_EXPORT const char *
 vchannel_strfilter(char *string)
 {
 	char *c;
@@ -269,7 +290,7 @@ vchannel_strfilter(char *string)
 	return string;
 }
 
-const char *
+DLL_EXPORT const char *
 vchannel_strfilter_unicode(const unsigned short *string)
 {
 	return vchannel_strfilter((char *) unicode_to_utf8(string));
