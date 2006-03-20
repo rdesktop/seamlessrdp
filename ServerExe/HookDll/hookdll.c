@@ -46,9 +46,16 @@ int g_instance_count SHARED = 0;
 
 // blocks for locally generated events
 HWND g_block_move_hwnd SHARED = NULL;
+unsigned int g_block_move_serial SHARED = 0;
 RECT g_block_move SHARED = { 0, 0, 0, 0 };
+
+unsigned int g_blocked_zchange_serial SHARED = 0;
 HWND g_blocked_zchange[2] SHARED = { NULL, NULL };
+
+unsigned int g_blocked_focus_serial SHARED = 0;
 HWND g_blocked_focus SHARED = NULL;
+
+unsigned int g_blocked_state_serial SHARED = 0;
 HWND g_blocked_state_hwnd SHARED = NULL;
 int g_blocked_state SHARED = -1;
 
@@ -72,6 +79,7 @@ update_position(HWND hwnd)
 {
 	RECT rect, blocked;
 	HWND blocked_hwnd;
+	unsigned int serial;
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
@@ -80,17 +88,19 @@ update_position(HWND hwnd)
 	}
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	blocked_hwnd = hwnd;
+	blocked_hwnd = g_block_move_hwnd;
+	serial = g_block_move_serial;
 	memcpy(&blocked, &g_block_move, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 
 	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left) && (rect.top == blocked.top)
 	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
-		return;
-
-	vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
-		       hwnd,
-		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+		vchannel_write("ACK", "%u", serial);
+	else
+		vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
+			       hwnd,
+			       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+			       0);
 }
 
 static void
@@ -98,8 +108,10 @@ update_zorder(HWND hwnd)
 {
 	HWND behind;
 	HWND block_hwnd, block_behind;
+	unsigned int serial;
 
 	WaitForSingleObject(g_mutex, INFINITE);
+	serial = g_blocked_zchange_serial;
 	block_hwnd = g_blocked_zchange[0];
 	block_behind = g_blocked_zchange[1];
 	ReleaseMutex(g_mutex);
@@ -118,9 +130,9 @@ update_zorder(HWND hwnd)
 	}
 
 	if ((hwnd == block_hwnd) && (behind == block_behind))
-		return;
-
-	vchannel_write("ZCHANGE", "0x%p,0x%p,0x%x", hwnd, behind, 0);
+		vchannel_write("ACK", "%u", serial);
+	else
+		vchannel_write("ZCHANGE", "0x%p,0x%p,0x%x", hwnd, behind, 0);
 }
 
 static LRESULT CALLBACK
@@ -298,6 +310,8 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		   way to solve this. */
 		if ((GetActiveWindow() != hwnd) && !parent)
 			SetActiveWindow(hwnd);
+
+		vchannel_write("ACK", "%u", g_blocked_focus_serial);
 	}
 
       end:
@@ -316,9 +330,11 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 			{
 				int show, state, blocked;
 				HWND blocked_hwnd;
+				unsigned int serial;
 
 				WaitForSingleObject(g_mutex, INFINITE);
 				blocked_hwnd = g_blocked_state_hwnd;
+				serial = g_blocked_state_serial;
 				blocked = g_blocked_state;
 				ReleaseMutex(g_mutex);
 
@@ -337,7 +353,9 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				if ((blocked_hwnd != (HWND) wparam) || (blocked != state))
+				if ((blocked_hwnd == (HWND) wparam) && (blocked == state))
+					vchannel_write("ACK", "%u", serial);
+				else
 					vchannel_write("STATE", "0x%p,0x%x,0x%x", (HWND) wparam,
 						       state, 0);
 
@@ -380,15 +398,36 @@ RemoveHooks(void)
 }
 
 DLL_EXPORT void
-SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
+SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int height)
 {
+	RECT rect;
+
+	vchannel_block();
+
+	if (!GetWindowRect(hwnd, &rect))
+	{
+		vchannel_unblock();
+		debug("GetWindowRect failed!\n");
+		return;
+	}
+
+	if ((rect.left == x) && (rect.top == y) && (rect.right == x + width)
+	    && (rect.bottom == y + height))
+	{
+		vchannel_write("ACK", "%u", serial);
+		vchannel_unblock();
+	}
+
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_block_move_hwnd = hwnd;
+	g_block_move_serial = serial;
 	g_block_move.left = x;
 	g_block_move.top = y;
 	g_block_move.right = x + width;
 	g_block_move.bottom = y + height;
 	ReleaseMutex(g_mutex);
+
+	vchannel_unblock();
 
 	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
 
@@ -399,9 +438,10 @@ SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
 }
 
 DLL_EXPORT void
-SafeZChange(HWND hwnd, HWND behind)
+SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_zchange_serial = serial;
 	g_blocked_zchange[0] = hwnd;
 	g_blocked_zchange[1] = behind;
 	ReleaseMutex(g_mutex);
@@ -418,9 +458,10 @@ SafeZChange(HWND hwnd, HWND behind)
 }
 
 DLL_EXPORT void
-SafeFocus(HWND hwnd)
+SafeFocus(unsigned int serial, HWND hwnd)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
+	g_blocked_focus_serial = serial;
 	g_blocked_focus = hwnd;
 	ReleaseMutex(g_mutex);
 
@@ -432,12 +473,35 @@ SafeFocus(HWND hwnd)
 }
 
 DLL_EXPORT void
-SafeSetState(HWND hwnd, int state)
+SafeSetState(unsigned int serial, HWND hwnd, int state)
 {
+	LONG style;
+	int curstate;
+
+	vchannel_block();
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
+
+	if (style & WS_MAXIMIZE)
+		curstate = 2;
+	else if (style & WS_MINIMIZE)
+		curstate = 1;
+	else
+		curstate = 0;
+
+	if (state == curstate)
+	{
+		vchannel_write("ACK", "%u", serial);
+		vchannel_unblock();
+	}
+
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_blocked_state_hwnd = hwnd;
+	g_blocked_state_serial = serial;
 	g_blocked_state = state;
 	ReleaseMutex(g_mutex);
+
+	vchannel_unblock();
 
 	if (state == 0)
 		ShowWindow(hwnd, SW_RESTORE);

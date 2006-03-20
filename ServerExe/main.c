@@ -48,10 +48,11 @@ typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
 
-typedef void (*move_window_proc_t) (HWND hwnd, int x, int y, int width, int height);
-typedef void (*zchange_proc_t) (HWND hwnd, HWND behind);
-typedef void (*focus_proc_t) (HWND hwnd);
-typedef void (*set_state_proc_t) (HWND hwnd, int state);
+typedef void (*move_window_proc_t) (unsigned int serial, HWND hwnd, int x, int y, int width,
+				    int height);
+typedef void (*zchange_proc_t) (unsigned int serial, HWND hwnd, HWND behind);
+typedef void (*focus_proc_t) (unsigned int serial, HWND hwnd);
+typedef void (*set_state_proc_t) (unsigned int serial, HWND hwnd, int state);
 
 static move_window_proc_t g_move_window_fn = NULL;
 static zchange_proc_t g_zchange_fn = NULL;
@@ -151,25 +152,25 @@ do_sync(void)
 static void
 do_state(unsigned int serial, HWND hwnd, int state)
 {
-	g_set_state_fn(hwnd, state);
+	g_set_state_fn(serial, hwnd, state);
 }
 
 static void
 do_position(unsigned int serial, HWND hwnd, int x, int y, int width, int height)
 {
-	g_move_window_fn(hwnd, x, y, width, height);
+	g_move_window_fn(serial, hwnd, x, y, width, height);
 }
 
 static void
 do_zchange(unsigned int serial, HWND hwnd, HWND behind)
 {
-	g_zchange_fn(hwnd, behind);
+	g_zchange_fn(serial, hwnd, behind);
 }
 
 static void
 do_focus(unsigned int serial, HWND hwnd)
 {
-	g_focus_fn(hwnd);
+	g_focus_fn(serial, hwnd);
 }
 
 static void
