@@ -93,6 +93,36 @@ update_position(HWND hwnd)
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 }
 
+static void
+update_zorder(HWND hwnd)
+{
+	HWND behind;
+	HWND block_hwnd, block_behind;
+
+	WaitForSingleObject(g_mutex, INFINITE);
+	block_hwnd = g_blocked_zchange[0];
+	block_behind = g_blocked_zchange[1];
+	ReleaseMutex(g_mutex);
+
+	behind = GetNextWindow(hwnd, GW_HWNDPREV);
+	while (behind)
+	{
+		LONG style;
+
+		style = GetWindowLong(behind, GWL_STYLE);
+
+		if ((!(style & WS_CHILD) || (style & WS_POPUP)) && (style & WS_VISIBLE))
+			break;
+
+		behind = GetNextWindow(behind, GW_HWNDPREV);
+	}
+
+	if ((hwnd == block_hwnd) && (behind == block_behind))
+		return;
+
+	vchannel_write("ZCHANGE,0x%p,0x%p,0x%x", hwnd, behind, 0);
+}
+
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
@@ -166,24 +196,6 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
 					update_position(hwnd);
 
-				if (!(wp->flags & SWP_NOZORDER))
-				{
-					HWND block_hwnd, block_behind;
-					WaitForSingleObject(g_mutex, INFINITE);
-					block_hwnd = g_blocked_zchange[0];
-					block_behind = g_blocked_zchange[1];
-					ReleaseMutex(g_mutex);
-
-					if ((hwnd != block_hwnd)
-					    || (wp->hwndInsertAfter != block_behind))
-					{
-						vchannel_write("ZCHANGE,0x%p,0x%p,0x%x",
-							       hwnd,
-							       wp->flags & SWP_NOACTIVATE ? wp->
-							       hwndInsertAfter : 0, 0);
-					}
-				}
-
 				break;
 			}
 
@@ -249,6 +261,20 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	switch (msg)
 	{
+		case WM_WINDOWPOSCHANGED:
+			{
+				WINDOWPOS *wp = (WINDOWPOS *) lparam;
+
+				if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
+					break;
+
+				if (!(wp->flags & SWP_NOZORDER))
+					update_zorder(hwnd);
+
+				break;
+			}
+
+
 		case WM_SETTEXT:
 			{
 				unsigned short title[150];
@@ -375,13 +401,13 @@ SafeMoveWindow(HWND hwnd, int x, int y, int width, int height)
 DLL_EXPORT void
 SafeZChange(HWND hwnd, HWND behind)
 {
-	if (behind == NULL)
-		behind = HWND_TOP;
-
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_blocked_zchange[0] = hwnd;
 	g_blocked_zchange[1] = behind;
 	ReleaseMutex(g_mutex);
+
+	if (behind == NULL)
+		behind = HWND_TOP;
 
 	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
