@@ -81,26 +81,30 @@ update_position(HWND hwnd)
 	HWND blocked_hwnd;
 	unsigned int serial;
 
-	if (!GetWindowRect(hwnd, &rect))
-	{
-		debug("GetWindowRect failed!\n");
-		return;
-	}
-
 	WaitForSingleObject(g_mutex, INFINITE);
 	blocked_hwnd = g_block_move_hwnd;
 	serial = g_block_move_serial;
 	memcpy(&blocked, &g_block_move, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 
+	vchannel_block();
+
+	if (!GetWindowRect(hwnd, &rect))
+	{
+		debug("GetWindowRect failed!\n");
+		goto end;
+	}
+
 	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left) && (rect.top == blocked.top)
 	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
-		vchannel_write("ACK", "%u", serial);
-	else
-		vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
-			       hwnd,
-			       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
-			       0);
+		goto end;
+
+	vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
+		       hwnd,
+		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+
+      end:
+	vchannel_unblock();
 }
 
 static void
@@ -115,6 +119,8 @@ update_zorder(HWND hwnd)
 	block_hwnd = g_blocked_zchange[0];
 	block_behind = g_blocked_zchange[1];
 	ReleaseMutex(g_mutex);
+
+	vchannel_block();
 
 	behind = GetNextWindow(hwnd, GW_HWNDPREV);
 	while (behind)
@@ -133,6 +139,8 @@ update_zorder(HWND hwnd)
 		vchannel_write("ACK", "%u", serial);
 	else
 		vchannel_write("ZCHANGE", "0x%p,0x%p,0x%x", hwnd, behind, 0);
+
+	vchannel_unblock();
 }
 
 static LRESULT CALLBACK
@@ -402,22 +410,6 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 {
 	RECT rect;
 
-	vchannel_block();
-
-	if (!GetWindowRect(hwnd, &rect))
-	{
-		vchannel_unblock();
-		debug("GetWindowRect failed!\n");
-		return;
-	}
-
-	if ((rect.left == x) && (rect.top == y) && (rect.right == x + width)
-	    && (rect.bottom == y + height))
-	{
-		vchannel_write("ACK", "%u", serial);
-		vchannel_unblock();
-	}
-
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_block_move_hwnd = hwnd;
 	g_block_move_serial = serial;
@@ -427,9 +419,15 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 	g_block_move.bottom = y + height;
 	ReleaseMutex(g_mutex);
 
-	vchannel_unblock();
-
 	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+
+	vchannel_write("ACK", "%u", serial);
+
+	if (!GetWindowRect(hwnd, &rect))
+		debug("GetWindowRect failed!\n");
+	else if ((rect.left != x) || (rect.top != y) || (rect.right != x + width)
+		 || (rect.bottom != y + height))
+		update_position(hwnd);
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_block_move_hwnd = NULL;
@@ -493,6 +491,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	{
 		vchannel_write("ACK", "%u", serial);
 		vchannel_unblock();
+		return;
 	}
 
 	WaitForSingleObject(g_mutex, INFINITE);
