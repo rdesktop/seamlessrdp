@@ -187,8 +187,18 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				{
 					unsigned short title[150];
 					int state;
+					DWORD pid;
+					int flags;
 
-					vchannel_write("CREATE", "0x%p,0x%p,0x%x", hwnd, parent, 0);
+					GetWindowThreadProcessId(hwnd, &pid);
+
+					flags = 0;
+					if (style & DS_MODALFRAME)
+						flags |= SEAMLESS_CREATE_MODAL;
+
+					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
+						       (long) hwnd, (long) pid, (long) parent,
+						       flags);
 
 					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 

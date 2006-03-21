@@ -96,6 +96,8 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	LONG styles;
 	int state;
 	HWND parent;
+	DWORD pid;
+	int flags;
 
 	styles = GetWindowLong(hwnd, GWL_STYLE);
 
@@ -107,7 +109,14 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		parent = NULL;
 
-	vchannel_write("CREATE", "0x%p,0x%p,0x%x", hwnd, parent, 0);
+	GetWindowThreadProcessId(hwnd, &pid);
+
+	flags = 0;
+	if (styles & DS_MODALFRAME)
+		flags |= SEAMLESS_CREATE_MODAL;
+
+	vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x", (long) hwnd, (long) pid,
+		       (long) parent, flags);
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
