@@ -143,6 +143,44 @@ update_zorder(HWND hwnd)
 	vchannel_unblock();
 }
 
+static HWND
+get_parent(HWND hwnd)
+{
+	LONG style;
+	HWND parent;
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
+
+	if (style & (WS_POPUP | DS_MODALFRAME))
+	{
+		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+
+		if (parent)
+		{
+			style = GetWindowLong(parent, GWL_STYLE);
+			if (((style & WS_CHILD) && !(style & WS_POPUP)) || !(style & WS_VISIBLE))
+				parent = NULL;
+		}
+
+		if (!parent)
+			parent = GetWindow(hwnd, GW_OWNER);
+
+		if (parent)
+		{
+			style = GetWindowLong(parent, GWL_STYLE);
+			if (((style & WS_CHILD) && !(style & WS_POPUP)) || !(style & WS_VISIBLE))
+				parent = NULL;
+		}
+
+		if (!parent)
+			parent = (HWND) - 1;
+	}
+	else
+		parent = NULL;
+
+	return parent;
+}
+
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
@@ -168,14 +206,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	if ((style & WS_CHILD) && !(style & WS_POPUP))
 		goto end;
 
-	if (style & WS_POPUP)
-	{
-		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
-		if (!parent)
-			parent = (HWND) - 1;
-	}
-	else
-		parent = NULL;
+	parent = get_parent(hwnd);
 
 	switch (msg)
 	{
@@ -280,14 +311,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	if ((style & WS_CHILD) && !(style & WS_POPUP))
 		goto end;
 
-	if (style & WS_POPUP)
-	{
-		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
-		if (!parent)
-			parent = (HWND) - 1;
-	}
-	else
-		parent = NULL;
+	parent = get_parent(hwnd);
 
 	switch (msg)
 	{
