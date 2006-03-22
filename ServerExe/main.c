@@ -237,6 +237,7 @@ wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 			/* These get reset on each reconnect */
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
+			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 			vchannel_write("HELLO", "0x%08x", 1);
 		}
 	}
