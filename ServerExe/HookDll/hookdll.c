@@ -348,10 +348,10 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	if (msg == g_wm_seamless_focus)
 	{
-		/* FIXME: SetActiveWindow() kills menus. Need to find a clean
-		   way to solve this. */
-		if ((GetActiveWindow() != hwnd) && !parent)
-			SetActiveWindow(hwnd);
+		/* FIXME: SetForegroundWindow() kills menus. Need to find a
+		   clean way to solve this. */
+		if ((GetForegroundWindow() != hwnd) && !parent)
+			SetForegroundWindow(hwnd);
 
 		vchannel_write("ACK", "%u", g_blocked_focus_serial);
 	}

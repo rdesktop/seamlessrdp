@@ -22,6 +22,8 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#define WINVER 0x0501
+
 #include <windows.h>
 #include <stdio.h>
 #include <wtsapi32.h>
@@ -336,6 +338,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	/* Disable screen saver since we cannot catch its windows. */
 	SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
+
+	/* We don't want windows denying requests to activate windows. */
+	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
 	if (strlen(cmdline) == 0)
 	{
