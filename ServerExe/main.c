@@ -46,6 +46,10 @@
 static HINSTANCE g_instance;
 static HWND g_hwnd;
 
+static DWORD g_session_id;
+static DWORD *g_startup_procs;
+static int g_startup_num_procs;
+
 typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
@@ -275,6 +279,83 @@ create_wnd(void)
 	return TRUE;
 }
 
+static BOOL
+build_startup_procs(void)
+{
+	PWTS_PROCESS_INFO pinfo;
+	DWORD i, j, count;
+
+	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
+		return FALSE;
+
+	g_startup_num_procs = 0;
+
+	for (i = 0; i < count; i++)
+	{
+		if (pinfo[i].SessionId != g_session_id)
+			continue;
+
+		g_startup_num_procs++;
+	}
+
+	g_startup_procs = malloc(sizeof(DWORD) * g_startup_num_procs);
+
+	j = 0;
+	for (i = 0; i < count; i++)
+	{
+		if (pinfo[i].SessionId != g_session_id)
+			continue;
+
+		g_startup_procs[j] = pinfo[i].ProcessId;
+		j++;
+	}
+
+	WTSFreeMemory(pinfo);
+
+	return TRUE;
+}
+
+static void
+free_startup_procs(void)
+{
+	free(g_startup_procs);
+
+	g_startup_procs = NULL;
+	g_startup_num_procs = 0;
+}
+
+static BOOL
+should_terminate(void)
+{
+	PWTS_PROCESS_INFO pinfo;
+	DWORD i, j, count;
+
+	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
+		return TRUE;
+
+	for (i = 0; i < count; i++)
+	{
+		if (pinfo[i].SessionId != g_session_id)
+			continue;
+
+		for (j = 0; j < g_startup_num_procs; j++)
+		{
+			if (pinfo[i].ProcessId == g_startup_procs[j])
+				break;
+		}
+
+		if (j == g_startup_num_procs)
+		{
+			WTSFreeMemory(pinfo);
+			return FALSE;
+		}
+	}
+
+	WTSFreeMemory(pinfo);
+
+	return TRUE;
+}
+
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
@@ -326,6 +407,10 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	WTSRegisterSessionNotification(g_hwnd, NOTIFY_FOR_THIS_SESSION);
 
+	ProcessIdToSessionId(GetCurrentProcessId(), &g_session_id);
+
+	build_startup_procs();
+
 	vchannel_open();
 
 	vchannel_write("HELLO", "0x%08x", 0);
@@ -350,7 +435,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	else
 	{
 		BOOL result;
-		DWORD exitcode;
 		PROCESS_INFORMATION proc_info;
 		STARTUPINFO startup_info;
 		MSG msg;
@@ -360,11 +444,20 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 		result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
 				       NULL, NULL, &startup_info, &proc_info);
+		// Release handles
+		CloseHandle(proc_info.hProcess);
+		CloseHandle(proc_info.hThread);
 
 		if (result)
 		{
-			do
+			int check_counter;
+
+			check_counter = 5;
+			while (check_counter-- || !should_terminate())
 			{
+				if (check_counter < 0)
+					check_counter = 5;
+
 				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 				{
 					TranslateMessage(&msg);
@@ -372,13 +465,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 				}
 				process_cmds();
 				Sleep(100);
-				GetExitCodeProcess(proc_info.hProcess, &exitcode);
 			}
-			while (exitcode == STILL_ACTIVE);
-
-			// Release handles
-			CloseHandle(proc_info.hProcess);
-			CloseHandle(proc_info.hThread);
 		}
 		else
 		{
@@ -397,6 +484,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	FreeLibrary(hookdll);
 
 	vchannel_close();
+
+	free_startup_procs();
 
 	return 1;
 }
