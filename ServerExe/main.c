@@ -126,7 +126,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		return TRUE;
 	}
 
-	vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
+	vchannel_write("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
@@ -141,7 +141,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	vchannel_write("STATE", "0x%p,0x%x,0x%x", hwnd, state, 0);
+	vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x", hwnd, state, 0);
 
 	return TRUE;
 }

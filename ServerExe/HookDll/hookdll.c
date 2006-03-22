@@ -99,7 +99,7 @@ update_position(HWND hwnd)
 	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
 		goto end;
 
-	vchannel_write("POSITION", "0x%p,%d,%d,%d,%d,0x%x",
+	vchannel_write("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
 		       hwnd,
 		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
@@ -138,7 +138,7 @@ update_zorder(HWND hwnd)
 	if ((hwnd == block_hwnd) && (behind == block_behind))
 		vchannel_write("ACK", "%u", serial);
 	else
-		vchannel_write("ZCHANGE", "0x%p,0x%p,0x%x", hwnd, behind, 0);
+		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind, 0);
 
 	vchannel_unblock();
 }
@@ -233,7 +233,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-					vchannel_write("TITLE", "0x%x,%s,0x%x", hwnd,
+					vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
 						       vchannel_strfilter_unicode(title), 0);
 
 					if (style & WS_MAXIMIZE)
@@ -245,11 +245,12 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 					update_position(hwnd);
 
-					vchannel_write("STATE", "0x%p,0x%x,0x%x", hwnd, state, 0);
+					vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x", hwnd,
+						       state, 0);
 				}
 
 				if (wp->flags & SWP_HIDEWINDOW)
-					vchannel_write("DESTROY", "0x%p,0x%x", hwnd, 0);
+					vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
 
 				if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 					break;
@@ -275,7 +276,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		case WM_DESTROY:
 			if (!(style & WS_VISIBLE))
 				break;
-			vchannel_write("DESTROY", "0x%p,0x%x", hwnd, 0);
+			vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
 			break;
 
 		default:
@@ -337,7 +338,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				/* We cannot use the string in lparam because
 				   we need unicode. */
 				GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
-				vchannel_write("TITLE", "0x%p,%s,0x%x", hwnd,
+				vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
 					       vchannel_strfilter_unicode(title), 0);
 				break;
 			}
@@ -398,8 +399,8 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 				if ((blocked_hwnd == (HWND) wparam) && (blocked == state))
 					vchannel_write("ACK", "%u", serial);
 				else
-					vchannel_write("STATE", "0x%p,0x%x,0x%x", (HWND) wparam,
-						       state, 0);
+					vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x",
+						       (HWND) wparam, state, 0);
 
 				break;
 			}
