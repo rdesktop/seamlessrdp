@@ -50,6 +50,8 @@ static DWORD g_session_id;
 static DWORD *g_startup_procs;
 static int g_startup_num_procs;
 
+static BOOL g_desktop_hidden;
+
 typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
@@ -234,11 +236,16 @@ wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	{
 		if (wparam == WTS_REMOTE_CONNECT)
 		{
+			int flags;
 			/* These get reset on each reconnect */
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
 			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
-			vchannel_write("HELLO", "0x%08x", 1);
+
+			flags = SEAMLESS_HELLO_RECONNECT;
+			if (g_desktop_hidden)
+				flags |= SEAMLESS_HELLO_HIDDEN;
+			vchannel_write("HELLO", "0x%08x", flags);
 		}
 	}
 
@@ -357,6 +364,21 @@ should_terminate(void)
 	return TRUE;
 }
 
+static BOOL
+is_desktop_hidden(void)
+{
+	HDESK desk;
+
+	/* We cannot get current desktop. But we can try to open the current
+	   desktop, which will most likely be a secure desktop (if it isn't
+	   ours), and will thus fail. */
+	desk = OpenInputDesktop(0, FALSE, GENERIC_READ);
+	if (desk)
+		CloseDesktop(desk);
+
+	return desk == NULL;
+}
+
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
@@ -414,7 +436,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	vchannel_open();
 
-	vchannel_write("HELLO", "0x%08x", 0);
+	g_desktop_hidden = is_desktop_hidden();
+
+	vchannel_write("HELLO", "0x%08x", g_desktop_hidden ? SEAMLESS_HELLO_HIDDEN : 0);
 
 	set_hooks_fn();
 
@@ -457,7 +481,19 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			while (check_counter-- || !should_terminate())
 			{
 				if (check_counter < 0)
+				{
+					BOOL hidden;
+
+					hidden = is_desktop_hidden();
+					if (hidden && !g_desktop_hidden)
+						vchannel_write("HIDE", "0x%08x", 0);
+					else if (!hidden && g_desktop_hidden)
+						vchannel_write("UNHIDE", "0x%08x", 0);
+
+					g_desktop_hidden = hidden;
+
 					check_counter = 5;
+				}
 
 				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 				{

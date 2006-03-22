@@ -28,6 +28,9 @@
 
 #define SEAMLESS_CREATE_MODAL	0x0001
 
+#define SEAMLESS_HELLO_RECONNECT	0x0001
+#define SEAMLESS_HELLO_HIDDEN		0x0002
+
 DLL_EXPORT void debug(char *format, ...);
 
 DLL_EXPORT const char *unicode_to_utf8(const unsigned short *string);
