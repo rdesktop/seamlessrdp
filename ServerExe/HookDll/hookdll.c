@@ -372,14 +372,22 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 		case HCBT_MINMAX:
 			{
 				int show, state, blocked;
-				HWND blocked_hwnd;
+				HWND hwnd, blocked_hwnd;
 				unsigned int serial;
+				LONG style;
 
 				WaitForSingleObject(g_mutex, INFINITE);
 				blocked_hwnd = g_blocked_state_hwnd;
 				serial = g_blocked_state_serial;
 				blocked = g_blocked_state;
 				ReleaseMutex(g_mutex);
+
+				hwnd = (HWND) wparam;
+
+				style = GetWindowLong(hwnd, GWL_STYLE);
+
+				if (!(style & WS_VISIBLE))
+					break;
 
 				show = LOWORD(lparam);
 
@@ -396,11 +404,11 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 					break;
 				}
 
-				if ((blocked_hwnd == (HWND) wparam) && (blocked == state))
+				if ((blocked_hwnd == hwnd) && (blocked == state))
 					vchannel_write("ACK", "%u", serial);
 				else
 					vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x",
-						       (HWND) wparam, state, 0);
+						       hwnd, state, 0);
 
 				break;
 			}
