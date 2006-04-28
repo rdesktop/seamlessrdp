@@ -596,6 +596,8 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			break;
 
 		case DLL_PROCESS_DETACH:
+			vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx", GetCurrentProcessId(), 0);
+
 			WaitForSingleObject(g_mutex, INFINITE);
 			--g_instance_count;
 			ReleaseMutex(g_mutex);
