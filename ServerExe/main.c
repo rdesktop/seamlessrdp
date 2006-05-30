@@ -35,21 +35,14 @@
 
 #define APP_NAME "SeamlessRDP Shell"
 
-#ifndef WM_WTSSESSION_CHANGE
-#define WM_WTSSESSION_CHANGE 0x02B1
-#endif
-#ifndef WTS_REMOTE_CONNECT
-#define WTS_REMOTE_CONNECT 0x3
-#endif
-
 /* Global data */
 static HINSTANCE g_instance;
-static HWND g_hwnd;
 
 static DWORD g_session_id;
 static DWORD *g_startup_procs;
 static int g_startup_num_procs;
 
+static BOOL g_connected;
 static BOOL g_desktop_hidden;
 
 typedef void (*set_hooks_proc_t) ();
@@ -229,64 +222,6 @@ process_cmds(void)
 	}
 }
 
-static LRESULT CALLBACK
-wndproc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
-{
-	if (message == WM_WTSSESSION_CHANGE)
-	{
-		if (wparam == WTS_REMOTE_CONNECT)
-		{
-			int flags;
-			/* These get reset on each reconnect */
-			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
-			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
-			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
-
-			flags = SEAMLESS_HELLO_RECONNECT;
-			if (g_desktop_hidden)
-				flags |= SEAMLESS_HELLO_HIDDEN;
-			vchannel_write("HELLO", "0x%08x", flags);
-		}
-	}
-
-	return DefWindowProc(hwnd, message, wparam, lparam);
-}
-
-static BOOL
-register_class(void)
-{
-	WNDCLASSEX wcx;
-
-	memset(&wcx, 0, sizeof(wcx));
-
-	wcx.cbSize = sizeof(wcx);
-	wcx.lpfnWndProc = wndproc;
-	wcx.hInstance = g_instance;
-	wcx.lpszClassName = "SeamlessClass";
-
-	return RegisterClassEx(&wcx);
-}
-
-static BOOL
-create_wnd(void)
-{
-	if (!register_class())
-		return FALSE;
-
-	g_hwnd = CreateWindow("SeamlessClass",
-			      "Seamless Window",
-			      WS_OVERLAPPEDWINDOW,
-			      CW_USEDEFAULT,
-			      CW_USEDEFAULT,
-			      CW_USEDEFAULT,
-			      CW_USEDEFAULT, (HWND) NULL, (HMENU) NULL, g_instance, (LPVOID) NULL);
-
-	if (!g_hwnd)
-		return FALSE;
-
-	return TRUE;
-}
-
 static BOOL
 build_startup_procs(void)
 {
@@ -365,6 +300,26 @@ should_terminate(void)
 }
 
 static BOOL
+is_connected(void)
+{
+	BOOL res;
+	INT *state;
+	DWORD size;
+
+	res = WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
+					 WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *) & state,
+					 &size);
+	if (!res)
+		return TRUE;
+
+	res = *state == WTSActive;
+
+	WTSFreeMemory(state);
+
+	return res;
+}
+
+static BOOL
 is_desktop_hidden(void)
 {
 	HDESK desk;
@@ -421,21 +376,13 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		return -1;
 	}
 
-	if (!create_wnd())
-	{
-		FreeLibrary(hookdll);
-		message("Couldn't create a window to catch events.");
-		return -1;
-	}
-
-	WTSRegisterSessionNotification(g_hwnd, NOTIFY_FOR_THIS_SESSION);
-
 	ProcessIdToSessionId(GetCurrentProcessId(), &g_session_id);
 
 	build_startup_procs();
 
 	vchannel_open();
 
+	g_connected = is_connected();
 	g_desktop_hidden = is_desktop_hidden();
 
 	vchannel_write("HELLO", "0x%08x", g_desktop_hidden ? SEAMLESS_HELLO_HIDDEN : 0);
@@ -480,6 +427,26 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			check_counter = 5;
 			while (check_counter-- || !should_terminate())
 			{
+				BOOL connected;
+
+				connected = is_connected();
+				if (connected && !g_connected)
+				{
+					int flags;
+					/* These get reset on each reconnect */
+					SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
+					SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL,
+							     0);
+					SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
+
+					flags = SEAMLESS_HELLO_RECONNECT;
+					if (g_desktop_hidden)
+						flags |= SEAMLESS_HELLO_HIDDEN;
+					vchannel_write("HELLO", "0x%08x", flags);
+				}
+
+				g_connected = connected;
+
 				if (check_counter < 0)
 				{
 					BOOL hidden;
@@ -513,8 +480,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			message(msg);
 		}
 	}
-
-	WTSUnRegisterSessionNotification(g_hwnd);
 
 	remove_hooks_fn();
 
