@@ -52,6 +52,7 @@ unsigned int g_vchannel_serial SHARED = 0;
 
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
+static unsigned int g_opencount = 0;
 
 DLL_EXPORT void
 debug(char *format, ...)
@@ -119,6 +120,10 @@ unicode_to_utf8(const unsigned short *string)
 DLL_EXPORT int
 vchannel_open()
 {
+	g_opencount++;
+	if (g_opencount > 1)
+		return 0;
+
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
 					   WTS_CURRENT_SESSION, CHANNELNAME);
 
@@ -139,6 +144,10 @@ vchannel_open()
 DLL_EXPORT void
 vchannel_close()
 {
+	g_opencount--;
+	if (g_opencount > 0)
+		return;
+
 	if (g_mutex)
 		CloseHandle(g_mutex);
 
