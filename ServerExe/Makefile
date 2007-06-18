@@ -24,7 +24,7 @@ seamlessrdp.dll: HookDll/seamlessrdp.dll
 	cp $^ $@
 
 HookDll/seamlessrdp.dll: HookDll/hookdll.c vchannel.dll
-	$(CC) $(CFLAGS) -shared -o $@ $^
+	$(CC) $(CFLAGS) -shared -o $@ $^ -lgdi32
 
 clean:
 	-rm -f *.o HookDll/*.o

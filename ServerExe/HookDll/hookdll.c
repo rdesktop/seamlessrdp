@@ -4,8 +4,8 @@
 
    Based on code copyright (C) 2004-2005 Martin Wickett
 
-   Copyright (C) Peter Åstrand <astrand@cendio.se> 2005-2006
-   Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
+   Copyright 2005-2006 Peter Åstrand <astrand@cendio.se> for Cendio AB
+   Copyright 2006-2007 Pierre Ossman <ossman@cendio.se> for Cendio AB
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -181,6 +182,172 @@ get_parent(HWND hwnd)
 	return parent;
 }
 
+static HICON
+get_icon(HWND hwnd, int large)
+{
+	HICON icon;
+
+	if (!SendMessageTimeout(hwnd, WM_GETICON, large ? ICON_BIG : ICON_SMALL,
+				0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
+		return NULL;
+
+	if (icon)
+		return icon;
+
+	/*
+	 * Modern versions of Windows uses the voodoo value of 2 instead of 0
+	 * for the small icons.
+	 */
+	if (!large)
+	{
+		if (!SendMessageTimeout(hwnd, WM_GETICON, 2,
+					0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
+			return NULL;
+	}
+
+	if (icon)
+		return icon;
+
+	icon = (HICON) GetClassLong(hwnd, large ? GCL_HICON : GCL_HICONSM);
+
+	if (icon)
+		return icon;
+
+	return NULL;
+}
+
+static int
+extract_icon(HICON icon, char *buffer, int maxlen)
+{
+	ICONINFO info;
+	HDC hdc;
+	BITMAP mask_bmp, color_bmp;
+	BITMAPINFO bmi;
+	int size, i;
+	char *mask_buf, *color_buf;
+	char *o, *m, *c;
+	int ret = -1;
+
+	assert(buffer);
+	assert(maxlen > 0);
+
+	if (!GetIconInfo(icon, &info))
+		goto fail;
+
+	if (!GetObject(info.hbmMask, sizeof(BITMAP), &mask_bmp))
+		goto free_bmps;
+	if (!GetObject(info.hbmColor, sizeof(BITMAP), &color_bmp))
+		goto free_bmps;
+
+	if (mask_bmp.bmWidth != color_bmp.bmWidth)
+		goto free_bmps;
+	if (mask_bmp.bmHeight != color_bmp.bmHeight)
+		goto free_bmps;
+
+	if ((mask_bmp.bmWidth * mask_bmp.bmHeight * 4) > maxlen)
+		goto free_bmps;
+
+	size = (mask_bmp.bmWidth + 3) / 4 * 4;
+	size *= mask_bmp.bmHeight;
+	size *= 4;
+
+	mask_buf = malloc(size);
+	if (!mask_buf)
+		goto free_bmps;
+	color_buf = malloc(size);
+	if (!color_buf)
+		goto free_mbuf;
+
+	memset(&bmi, 0, sizeof(BITMAPINFO));
+
+	bmi.bmiHeader.biSize = sizeof(BITMAPINFO);
+	bmi.bmiHeader.biWidth = mask_bmp.bmWidth;
+	bmi.bmiHeader.biHeight = -mask_bmp.bmHeight;
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 32;
+	bmi.bmiHeader.biCompression = BI_RGB;
+	bmi.bmiHeader.biSizeImage = size;
+
+	hdc = CreateCompatibleDC(NULL);
+	if (!hdc)
+		goto free_cbuf;
+
+	if (!GetDIBits(hdc, info.hbmMask, 0, mask_bmp.bmHeight, mask_buf, &bmi, DIB_RGB_COLORS))
+		goto del_dc;
+	if (!GetDIBits(hdc, info.hbmColor, 0, color_bmp.bmHeight, color_buf, &bmi, DIB_RGB_COLORS))
+		goto del_dc;
+
+	o = buffer;
+	m = mask_buf;
+	c = color_buf;
+	for (i = 0; i < size / 4; i++)
+	{
+		o[0] = c[2];
+		o[1] = c[1];
+		o[2] = c[0];
+
+		o[3] = ((int) (unsigned char) m[0] + (unsigned char) m[1] +
+			(unsigned char) m[2]) / 3;
+		o[3] = 0xff - o[3];
+
+		o += 4;
+		m += 4;
+		c += 4;
+	}
+
+	ret = size;
+
+      del_dc:
+	DeleteDC(hdc);
+
+      free_cbuf:
+	free(color_buf);
+      free_mbuf:
+	free(mask_buf);
+
+      free_bmps:
+	DeleteObject(info.hbmMask);
+	DeleteObject(info.hbmColor);
+
+      fail:
+	return ret;
+}
+
+#define ICON_CHUNK 400
+
+static void
+update_icon(HWND hwnd, HICON icon, int large)
+{
+	int i, j, size, chunks;
+	char buf[32 * 32 * 4];
+	char asciibuf[ICON_CHUNK * 2 + 1];
+
+	size = extract_icon(icon, buf, sizeof(buf));
+	if (size <= 0)
+		return;
+
+	if ((!large && size != 16 * 16 * 4) || (large && size != 32 * 32 * 4))
+	{
+		debug("Unexpected icon size.");
+		return;
+	}
+
+	chunks = (size + ICON_CHUNK - 1) / ICON_CHUNK;
+	for (i = 0; i < chunks; i++)
+	{
+		for (j = 0; j < ICON_CHUNK; j++)
+		{
+			if (i * ICON_CHUNK + j >= size)
+				break;
+			sprintf(asciibuf + j * 2, "%02x",
+				(int) (unsigned char) buf[i * ICON_CHUNK + j]);
+		}
+
+		vchannel_write("SETICON", "0x%08lx,%d,RGBA,%d,%d,%s", hwnd, i,
+			       large ? 32 : 16, large ? 32 : 16, asciibuf);
+	}
+}
+
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
@@ -220,6 +387,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 					int state;
 					DWORD pid;
 					int flags;
+					HICON icon;
 
 					GetWindowThreadProcessId(hwnd, &pid);
 
@@ -235,6 +403,20 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 					vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
 						       vchannel_strfilter_unicode(title), 0);
+
+					icon = get_icon(hwnd, 1);
+					if (icon)
+					{
+						update_icon(hwnd, icon, 1);
+						DeleteObject(icon);
+					}
+
+					icon = get_icon(hwnd, 0);
+					if (icon)
+					{
+						update_icon(hwnd, icon, 0);
+						DeleteObject(icon);
+					}
 
 					if (style & WS_MAXIMIZE)
 						state = 2;
@@ -260,6 +442,33 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 				break;
 			}
+
+		case WM_SETICON:
+			if (!(style & WS_VISIBLE))
+				break;
+
+			switch (wparam)
+			{
+				case ICON_BIG:
+					if (lparam)
+						update_icon(hwnd, (HICON) lparam, 1);
+					else
+						vchannel_write("DELICON", "0x%08lx,RGBA,32,32",
+							       hwnd);
+					break;
+				case ICON_SMALL:
+				case 2:
+					if (lparam)
+						update_icon(hwnd, (HICON) lparam, 0);
+					else
+						vchannel_write("DELICON", "0x%08lx,RGBA,16,16",
+							       hwnd);
+					break;
+				default:
+					debug("Weird icon size %d", (int) wparam);
+			}
+
+			break;
 
 		case WM_SIZE:
 			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
@@ -341,6 +550,23 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
 					       vchannel_strfilter_unicode(title), 0);
 				break;
+			}
+
+		case WM_SETICON:
+			{
+				HICON icon;
+
+				/*
+				 * Somehow, we never get WM_SETICON for the small icon.
+				 * So trigger a read of it every time the large one is
+				 * changed.
+				 */
+				icon = get_icon(hwnd, 0);
+				if (icon)
+				{
+					update_icon(hwnd, icon, 0);
+					DeleteObject(icon);
+				}
 			}
 
 		default:
