@@ -4,8 +4,8 @@
 
    Based on code copyright (C) 2004-2005 Martin Wickett
 
-   Copyright 2005-2006 Peter Åstrand <astrand@cendio.se> for Cendio AB
-   Copyright 2006-2007 Pierre Ossman <ossman@cendio.se> for Cendio AB
+   Copyright 2005-2008 Peter Åstrand <astrand@cendio.se> for Cendio AB
+   Copyright 2006-2008 Pierre Ossman <ossman@cendio.se> for Cendio AB
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -75,6 +75,50 @@ static HINSTANCE g_instance = NULL;
 
 static HANDLE g_mutex = NULL;
 
+static BOOL is_toplevel(HWND hwnd)
+{
+	BOOL toplevel;
+	HWND parent;
+	parent = GetAncestor(hwnd, GA_PARENT);
+
+	/* According to MS: "A window that has no parent, or whose
+	   parent is the desktop window, is called a top-level
+	   window." See http://msdn2.microsoft.com/en-us/library/ms632597(VS.85).aspx. */
+	toplevel = (!parent || parent == GetDesktopWindow());
+	return toplevel;
+}
+
+/* Determine the "parent" field for the CREATE response. */
+static HWND
+get_parent(HWND hwnd)
+{
+	HWND result;
+	HWND owner;
+	LONG exstyle;
+
+	/* Use the same logic to determine if the window should be
+	   "transient" (ie have no task icon) as MS uses. This is documented at 
+	   http://msdn2.microsoft.com/en-us/library/bb776822.aspx */
+	owner = GetWindow(hwnd, GW_OWNER);
+	exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	if (!owner && !(exstyle & WS_EX_TOOLWINDOW)) {
+		/* display taskbar icon */
+		HWND parent;
+		parent = GetAncestor(hwnd, GA_PARENT);
+		if (parent == GetDesktopWindow()) {
+			/* top-level without parent */
+			result = NULL;
+		} else {
+			result = parent;
+		}
+	} else {
+		/* no taskbar icon */
+		result = (HWND) - 1;
+	}
+
+	return result;
+}
+
 static void
 update_position(HWND hwnd)
 {
@@ -142,44 +186,6 @@ update_zorder(HWND hwnd)
 		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind, 0);
 
 	vchannel_unblock();
-}
-
-static HWND
-get_parent(HWND hwnd)
-{
-	LONG style;
-	HWND parent;
-
-	style = GetWindowLong(hwnd, GWL_STYLE);
-
-	if (style & (WS_POPUP | DS_MODALFRAME))
-	{
-		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
-
-		if (parent)
-		{
-			style = GetWindowLong(parent, GWL_STYLE);
-			if (((style & WS_CHILD) && !(style & WS_POPUP)) || !(style & WS_VISIBLE))
-				parent = NULL;
-		}
-
-		if (!parent)
-			parent = GetWindow(hwnd, GW_OWNER);
-
-		if (parent)
-		{
-			style = GetWindowLong(parent, GWL_STYLE);
-			if (((style & WS_CHILD) && !(style & WS_POPUP)) || !(style & WS_VISIBLE))
-				parent = NULL;
-		}
-
-		if (!parent)
-			parent = (HWND) - 1;
-	}
-	else
-		parent = NULL;
-
-	return parent;
 }
 
 static HICON
@@ -351,7 +357,7 @@ update_icon(HWND hwnd, HICON icon, int large)
 static LRESULT CALLBACK
 wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
-	HWND hwnd, parent;
+	HWND hwnd;
 	UINT msg;
 	WPARAM wparam;
 	LPARAM lparam;
@@ -368,12 +374,9 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	/* Docs say that WS_CHILD and WS_POPUP is an illegal combination,
-	   but they exist nonetheless. */
-	if ((style & WS_CHILD) && !(style & WS_POPUP))
+	if (!is_toplevel(hwnd)) {
 		goto end;
-
-	parent = get_parent(hwnd);
+	}
 
 	switch (msg)
 	{
@@ -396,7 +399,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 						flags |= SEAMLESS_CREATE_MODAL;
 
 					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
-						       (long) hwnd, (long) pid, (long) parent,
+						       (long) hwnd, (long) pid, (long) get_parent(hwnd),
 						       flags);
 
 					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
@@ -499,7 +502,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 static LRESULT CALLBACK
 wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 {
-	HWND hwnd, parent;
+	HWND hwnd;
 	UINT msg;
 	WPARAM wparam;
 	LPARAM lparam;
@@ -516,12 +519,9 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	/* Docs say that WS_CHILD and WS_POPUP is an illegal combination,
-	   but they exist nonetheless. */
-	if ((style & WS_CHILD) && !(style & WS_POPUP))
+	if (!is_toplevel(hwnd)) {
 		goto end;
-
-	parent = get_parent(hwnd);
+	}
 
 	switch (msg)
 	{
@@ -577,7 +577,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	{
 		/* FIXME: SetForegroundWindow() kills menus. Need to find a
 		   clean way to solve this. */
-		if ((GetForegroundWindow() != hwnd) && !parent)
+		if ((GetForegroundWindow() != hwnd) && !get_parent(hwnd))
 			SetForegroundWindow(hwnd);
 
 		vchannel_write("ACK", "%u", g_blocked_focus_serial);
