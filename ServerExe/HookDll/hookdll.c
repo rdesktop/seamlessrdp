@@ -379,12 +379,12 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	wparam = ((CWPSTRUCT *) details)->wParam;
 	lparam = ((CWPSTRUCT *) details)->lParam;
 
-	style = GetWindowLong(hwnd, GWL_STYLE);
-
 	if (!is_toplevel(hwnd))
 	{
 		goto end;
 	}
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
 
 	switch (msg)
 	{
@@ -530,12 +530,12 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	wparam = ((CWPRETSTRUCT *) details)->wParam;
 	lparam = ((CWPRETSTRUCT *) details)->lParam;
 
-	style = GetWindowLong(hwnd, GWL_STYLE);
-
 	if (!is_toplevel(hwnd))
 	{
 		goto end;
 	}
+
+	style = GetWindowLong(hwnd, GWL_STYLE);
 
 	switch (msg)
 	{
