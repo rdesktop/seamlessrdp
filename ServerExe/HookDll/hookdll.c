@@ -75,7 +75,8 @@ static HINSTANCE g_instance = NULL;
 
 static HANDLE g_mutex = NULL;
 
-static BOOL is_toplevel(HWND hwnd)
+static BOOL
+is_toplevel(HWND hwnd)
 {
 	BOOL toplevel;
 	HWND parent;
@@ -101,17 +102,17 @@ get_parent(HWND hwnd)
 	   http://msdn2.microsoft.com/en-us/library/bb776822.aspx */
 	owner = GetWindow(hwnd, GW_OWNER);
 	exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-	if (!owner && !(exstyle & WS_EX_TOOLWINDOW)) 
+	if (!owner && !(exstyle & WS_EX_TOOLWINDOW))
 	{
 		/* display taskbar icon */
 		result = NULL;
-	} 
-	else 
+	}
+	else
 	{
 		/* no taskbar icon */
-		if (owner) 
+		if (owner)
 			result = owner;
-		else 
+		else
 			result = (HWND) - 1;
 	}
 
@@ -373,7 +374,8 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	if (!is_toplevel(hwnd)) {
+	if (!is_toplevel(hwnd))
+	{
 		goto end;
 	}
 
@@ -398,8 +400,8 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 						flags |= SEAMLESS_CREATE_MODAL;
 
 					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
-						       (long) hwnd, (long) pid, (long) get_parent(hwnd),
-						       flags);
+						       (long) hwnd, (long) pid,
+						       (long) get_parent(hwnd), flags);
 
 					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
@@ -518,7 +520,8 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	if (!is_toplevel(hwnd)) {
+	if (!is_toplevel(hwnd))
+	{
 		goto end;
 	}
 
