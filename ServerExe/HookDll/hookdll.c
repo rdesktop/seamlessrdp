@@ -101,19 +101,18 @@ get_parent(HWND hwnd)
 	   http://msdn2.microsoft.com/en-us/library/bb776822.aspx */
 	owner = GetWindow(hwnd, GW_OWNER);
 	exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-	if (!owner && !(exstyle & WS_EX_TOOLWINDOW)) {
+	if (!owner && !(exstyle & WS_EX_TOOLWINDOW)) 
+	{
 		/* display taskbar icon */
-		HWND parent;
-		parent = GetAncestor(hwnd, GA_PARENT);
-		if (parent == GetDesktopWindow()) {
-			/* top-level without parent */
-			result = NULL;
-		} else {
-			result = parent;
-		}
-	} else {
+		result = NULL;
+	} 
+	else 
+	{
 		/* no taskbar icon */
-		result = (HWND) - 1;
+		if (owner) 
+			result = owner;
+		else 
+			result = (HWND) - 1;
 	}
 
 	return result;
