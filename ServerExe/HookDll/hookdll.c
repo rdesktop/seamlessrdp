@@ -183,7 +183,14 @@ update_zorder(HWND hwnd)
 	if ((hwnd == block_hwnd) && (behind == block_behind))
 		vchannel_write("ACK", "%u", serial);
 	else
-		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind, 0);
+	{
+		int flags = 0;
+		LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+		// handle always on top
+		if (exstyle & WS_EX_TOPMOST)
+			flags |= SEAMLESS_CREATE_TOPMOST;
+		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind, flags);
+	}
 
 	vchannel_unblock();
 }
@@ -392,12 +399,17 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 					DWORD pid;
 					int flags;
 					HICON icon;
+					LONG exstyle;
 
+					exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
 					GetWindowThreadProcessId(hwnd, &pid);
 
 					flags = 0;
 					if (style & DS_MODALFRAME)
 						flags |= SEAMLESS_CREATE_MODAL;
+					// handle always on top
+					if (exstyle & WS_EX_TOPMOST)
+						flags |= SEAMLESS_CREATE_TOPMOST;
 
 					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
 						       (long) hwnd, (long) pid,
