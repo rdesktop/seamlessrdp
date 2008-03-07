@@ -183,6 +183,14 @@ do_focus(unsigned int serial, HWND hwnd)
 	g_focus_fn(serial, hwnd);
 }
 
+/* No need for locking, since this is a request rather than a message
+   that needs to indicate what has already happened. */
+static void
+do_destroy(HWND hwnd)
+{
+	SendMessage(hwnd, WM_CLOSE, 0, 0);
+}
+
 static void
 process_cmds(void)
 {
@@ -219,6 +227,8 @@ process_cmds(void)
 				   (HWND) strtoul(tok4, NULL, 0));
 		else if (strcmp(tok1, "FOCUS") == 0)
 			do_focus(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
+		else if (strcmp(tok1, "DESTROY") == 0)
+			do_destroy((HWND) strtoul(tok3, NULL, 0));
 	}
 }
 
