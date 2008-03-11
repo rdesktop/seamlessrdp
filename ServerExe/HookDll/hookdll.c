@@ -89,6 +89,16 @@ is_toplevel(HWND hwnd)
 	return toplevel;
 }
 
+/* Returns true if a window is a menu window. */
+static BOOL
+is_menu(HWND hwnd)
+{
+	HWND owner = GetWindow(hwnd, GW_OWNER);
+	LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	return (exstyle & (WS_EX_TOOLWINDOW | WS_EX_TOPMOST)) && owner;
+
+}
+
 /* Determine the "parent" field for the CREATE response. */
 static HWND
 get_parent(HWND hwnd)
@@ -589,9 +599,9 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	if (msg == g_wm_seamless_focus)
 	{
-		/* FIXME: SetForegroundWindow() kills menus. Need to find a
-		   clean way to solve this. */
-		if ((GetForegroundWindow() != hwnd) && !get_parent(hwnd))
+		/* For some reason, SetForegroundWindow() on menus
+		   closes them. Ignore focus requests for menu windows. */
+		if ((GetForegroundWindow() != hwnd) && !is_menu(hwnd))
 			SetForegroundWindow(hwnd);
 
 		vchannel_write("ACK", "%u", g_blocked_focus_serial);
