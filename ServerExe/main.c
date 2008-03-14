@@ -105,6 +105,14 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	if (!(styles & WS_VISIBLE))
 		return TRUE;
 
+	/* Since WH_CALLWNDPROC is not effective on cmd.exe, make sure
+	   we ignore it during enumeration as well. Make sure to
+	   remove this when cmd.exe support has been added, though. */
+	char classname[32];
+	if (GetClassName(hwnd, classname, sizeof(classname))
+	    && !strcmp(classname, "ConsoleWindowClass"))
+		return TRUE;
+
 	if (styles & WS_POPUP)
 		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
 	else
