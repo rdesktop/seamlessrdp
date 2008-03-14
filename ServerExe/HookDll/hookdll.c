@@ -93,10 +93,12 @@ is_toplevel(HWND hwnd)
 static BOOL
 is_menu(HWND hwnd)
 {
-	HWND owner = GetWindow(hwnd, GW_OWNER);
-	LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-	return (exstyle & (WS_EX_TOOLWINDOW | WS_EX_TOPMOST)) && owner;
+	/* Notepad menus have an owner, but Seamonkey menus does not,
+	   so we cannot use the owner in our check. This leaves us with 
+	   checking WS_EX_TOOLWINDOW and WS_EX_TOPMOST. */
 
+	LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	return (exstyle & (WS_EX_TOOLWINDOW | WS_EX_TOPMOST));
 }
 
 /* Determine the "parent" field for the CREATE response. */
