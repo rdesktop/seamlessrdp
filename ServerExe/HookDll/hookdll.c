@@ -581,6 +581,8 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		case WM_SETICON:
 			{
 				HICON icon;
+				if (!(style & WS_VISIBLE))
+					break;
 
 				/*
 				 * Somehow, we never get WM_SETICON for the small icon.
