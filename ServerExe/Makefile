@@ -20,12 +20,9 @@ seamlessrdpshell.exe: main.c vchannel.dll
 vchannel.dll: vchannel.c
 	$(CC) $(CFLAGS) -shared -o $@ $^ -lwtsapi32
 
-seamlessrdp.dll: HookDll/seamlessrdp.dll
-	cp $^ $@
-
-HookDll/seamlessrdp.dll: HookDll/hookdll.c vchannel.dll
+seamlessrdp.dll: hookdll.c vchannel.dll
 	$(CC) $(CFLAGS) -shared -o $@ $^ -lgdi32
 
 clean:
-	-rm -f *.o HookDll/*.o
-	-rm -f seamlessrdpshell.exe vchannel.dll HookDll/seamlessrdp.dll seamlessrdp.dll seamlessrdp.zip
+	-rm -f *.o
+	-rm -f seamlessrdpshell.exe vchannel.dll seamlessrdp.dll seamlessrdp.zip

@@ -29,7 +29,7 @@
 #include <windows.h>
 #include <winuser.h>
 
-#include "../vchannel.h"
+#include "vchannel.h"
 
 #define DLL_EXPORT __declspec(dllexport)
 
