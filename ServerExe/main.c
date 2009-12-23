@@ -355,19 +355,35 @@ is_desktop_hidden(void)
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
+	int success = 0;
+
 	HMODULE hookdll;
 
 	set_hooks_proc_t set_hooks_fn;
 	remove_hooks_proc_t remove_hooks_fn;
 	get_instance_count_proc_t instance_count_fn;
 
+	int check_counter;
+
 	g_instance = instance;
+
+	if (strlen(cmdline) == 0)
+	{
+		message("No command line specified.");
+		return -1;
+	}
+
+	if (vchannel_open())
+	{
+		message("Unable to set up the virtual channel.");
+		return -1;
+	}
 
 	hookdll = LoadLibrary("seamlessrdp.dll");
 	if (!hookdll)
 	{
 		message("Could not load hook DLL. Unable to continue.");
-		return -1;
+		goto close_vchannel;
 	}
 
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
@@ -381,24 +397,20 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn
 	    || !g_zchange_fn || !g_focus_fn || !g_set_state_fn)
 	{
-		FreeLibrary(hookdll);
 		message("Hook DLL doesn't contain the correct functions. Unable to continue.");
-		return -1;
+		goto close_hookdll;
 	}
 
 	/* Check if the DLL is already loaded */
 	if (instance_count_fn() != 1)
 	{
-		FreeLibrary(hookdll);
 		message("Another running instance of Seamless RDP detected.");
-		return -1;
+		goto close_hookdll;
 	}
 
 	ProcessIdToSessionId(GetCurrentProcessId(), &g_session_id);
 
 	build_startup_procs();
-
-	vchannel_open();
 
 	g_connected = is_connected();
 	g_desktop_hidden = is_desktop_hidden();
@@ -417,95 +429,91 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	/* We don't want windows denying requests to activate windows. */
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
-	if (strlen(cmdline) == 0)
-	{
-		message("No command line specified.");
-		return -1;
+	BOOL result;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFO startup_info;
+	MSG msg;
+
+	memset(&startup_info, 0, sizeof(STARTUPINFO));
+	startup_info.cb = sizeof(STARTUPINFO);
+
+	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
+			       NULL, NULL, &startup_info, &proc_info);
+	// Release handles
+	CloseHandle(proc_info.hProcess);
+	CloseHandle(proc_info.hThread);
+
+	if (!result) {
+		// CreateProcess failed.
+		char msg[256];
+		_snprintf(msg, sizeof(msg),
+			  "Unable to launch the requested application:\n%s", cmdline);
+		message(msg);
+		goto unhook;
 	}
-	else
+
+	check_counter = 5;
+	while (check_counter-- || !should_terminate())
 	{
-		BOOL result;
-		PROCESS_INFORMATION proc_info;
-		STARTUPINFO startup_info;
-		MSG msg;
+		BOOL connected;
 
-		memset(&startup_info, 0, sizeof(STARTUPINFO));
-		startup_info.cb = sizeof(STARTUPINFO);
-
-		result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
-				       NULL, NULL, &startup_info, &proc_info);
-		// Release handles
-		CloseHandle(proc_info.hProcess);
-		CloseHandle(proc_info.hThread);
-
-		if (result)
+		connected = is_connected();
+		if (connected && !g_connected)
 		{
-			int check_counter;
+			int flags;
+			/* These get reset on each reconnect */
+			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
+			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL,
+					     0);
+			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
+
+			flags = SEAMLESS_HELLO_RECONNECT;
+			if (g_desktop_hidden)
+				flags |= SEAMLESS_HELLO_HIDDEN;
+			vchannel_write("HELLO", "0x%08x", flags);
+		}
+
+		g_connected = connected;
+
+		if (check_counter < 0)
+		{
+			BOOL hidden;
+
+			hidden = is_desktop_hidden();
+			if (hidden && !g_desktop_hidden)
+				vchannel_write("HIDE", "0x%08x", 0);
+			else if (!hidden && g_desktop_hidden)
+				vchannel_write("UNHIDE", "0x%08x", 0);
+
+			g_desktop_hidden = hidden;
 
 			check_counter = 5;
-			while (check_counter-- || !should_terminate())
-			{
-				BOOL connected;
-
-				connected = is_connected();
-				if (connected && !g_connected)
-				{
-					int flags;
-					/* These get reset on each reconnect */
-					SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
-					SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL,
-							     0);
-					SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
-
-					flags = SEAMLESS_HELLO_RECONNECT;
-					if (g_desktop_hidden)
-						flags |= SEAMLESS_HELLO_HIDDEN;
-					vchannel_write("HELLO", "0x%08x", flags);
-				}
-
-				g_connected = connected;
-
-				if (check_counter < 0)
-				{
-					BOOL hidden;
-
-					hidden = is_desktop_hidden();
-					if (hidden && !g_desktop_hidden)
-						vchannel_write("HIDE", "0x%08x", 0);
-					else if (!hidden && g_desktop_hidden)
-						vchannel_write("UNHIDE", "0x%08x", 0);
-
-					g_desktop_hidden = hidden;
-
-					check_counter = 5;
-				}
-
-				while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
-				process_cmds();
-				Sleep(100);
-			}
 		}
-		else
+
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			// CreateProcess failed.
-			char msg[256];
-			_snprintf(msg, sizeof(msg),
-				  "Unable to launch the requested application:\n%s", cmdline);
-			message(msg);
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
 		}
+		process_cmds();
+		Sleep(100);
 	}
 
+	success = 1;
+
+unhook:
 	remove_hooks_fn();
-
-	FreeLibrary(hookdll);
-
-	vchannel_close();
 
 	free_startup_procs();
 
-	return 1;
+close_hookdll:
+	FreeLibrary(hookdll);
+
+close_vchannel:
+	vchannel_close();
+
+	if (success)
+	 	return 1;
+	else
+		return -1;
 }

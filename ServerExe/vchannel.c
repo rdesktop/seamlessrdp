@@ -120,10 +120,6 @@ unicode_to_utf8(const unsigned short *string)
 DLL_EXPORT int
 vchannel_open()
 {
-	g_opencount++;
-	if (g_opencount > 1)
-		return 0;
-
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
 					   WTS_CURRENT_SESSION, CHANNELNAME);
 
@@ -137,6 +133,10 @@ vchannel_open()
 		g_vchannel = NULL;
 		return -1;
 	}
+
+	g_opencount++;
+	if (g_opencount > 1)
+		return 0;
 
 	return 0;
 }

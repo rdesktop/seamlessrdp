@@ -833,13 +833,16 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			if (!g_mutex)
 				return FALSE;
 
+			if (vchannel_open()) {
+				CloseHandle(g_mutex);
+				return FALSE;
+			}
+
 			WaitForSingleObject(g_mutex, INFINITE);
 			++g_instance_count;
 			ReleaseMutex(g_mutex);
 
 			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
-
-			vchannel_open();
 
 			break;
 
