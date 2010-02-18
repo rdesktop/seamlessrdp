@@ -21,7 +21,7 @@
 #ifndef __VCHANNEL_H__
 #define __VCHANNEL_H__
 
-#define DLL_EXPORT __declspec(dllexport)
+#define EXTERN __declspec(dllexport)
 
 #define VCHANNEL_MAX_LINE 1024
 
@@ -31,23 +31,23 @@
 #define SEAMLESS_HELLO_RECONNECT	0x0001
 #define SEAMLESS_HELLO_HIDDEN		0x0002
 
-DLL_EXPORT void debug(char *format, ...);
+EXTERN void debug(char *format, ...);
 
-DLL_EXPORT const char *unicode_to_utf8(const unsigned short *string);
+EXTERN const char *unicode_to_utf8(const unsigned short *string);
 
-DLL_EXPORT int vchannel_open();
-DLL_EXPORT void vchannel_close();
+EXTERN int vchannel_open();
+EXTERN void vchannel_close();
 
-DLL_EXPORT int vchannel_is_open();
+EXTERN int vchannel_is_open();
 
 /* read may only be used by a single process. write is completely safe */
-DLL_EXPORT int vchannel_read(char *line, size_t length);
-DLL_EXPORT int vchannel_write(const char *command, const char *format, ...);
+EXTERN int vchannel_read(char *line, size_t length);
+EXTERN int vchannel_write(const char *command, const char *format, ...);
 
-DLL_EXPORT void vchannel_block();
-DLL_EXPORT void vchannel_unblock();
+EXTERN void vchannel_block();
+EXTERN void vchannel_unblock();
 
-DLL_EXPORT const char *vchannel_strfilter(char *string);
-DLL_EXPORT const char *vchannel_strfilter_unicode(const unsigned short *string);
+EXTERN const char *vchannel_strfilter(char *string);
+EXTERN const char *vchannel_strfilter_unicode(const unsigned short *string);
 
 #endif

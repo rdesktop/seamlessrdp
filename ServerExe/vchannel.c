@@ -53,7 +53,7 @@ static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
 static unsigned int g_opencount = 0;
 
-DLL_EXPORT void
+EXTERN void
 debug(char *format, ...)
 {
 	va_list argp;
@@ -71,7 +71,7 @@ debug(char *format, ...)
 #define CONVERT_BUFFER_SIZE 1024
 static char convert_buffer[CONVERT_BUFFER_SIZE];
 
-DLL_EXPORT const char *
+EXTERN const char *
 unicode_to_utf8(const unsigned short *string)
 {
 	unsigned char *buf;
@@ -116,7 +116,7 @@ unicode_to_utf8(const unsigned short *string)
 	return convert_buffer;
 }
 
-DLL_EXPORT int
+EXTERN int
 vchannel_open()
 {
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
@@ -140,7 +140,7 @@ vchannel_open()
 	return 0;
 }
 
-DLL_EXPORT void
+EXTERN void
 vchannel_close()
 {
 	g_opencount--;
@@ -157,7 +157,7 @@ vchannel_close()
 	g_vchannel = NULL;
 }
 
-DLL_EXPORT int
+EXTERN int
 vchannel_is_open()
 {
 	if (g_vchannel == NULL)
@@ -166,7 +166,7 @@ vchannel_is_open()
 		return 1;
 }
 
-DLL_EXPORT int
+EXTERN int
 vchannel_read(char *line, size_t length)
 {
 	static BOOL overflow_mode = FALSE;
@@ -236,7 +236,7 @@ vchannel_read(char *line, size_t length)
 	return 0;
 }
 
-DLL_EXPORT int
+EXTERN int
 vchannel_write(const char *command, const char *format, ...)
 {
 	BOOL result;
@@ -272,19 +272,19 @@ vchannel_write(const char *command, const char *format, ...)
 	return bytes_written;
 }
 
-DLL_EXPORT void
+EXTERN void
 vchannel_block()
 {
 	WaitForSingleObject(g_mutex, INFINITE);
 }
 
-DLL_EXPORT void
+EXTERN void
 vchannel_unblock()
 {
 	ReleaseMutex(g_mutex);
 }
 
-DLL_EXPORT const char *
+EXTERN const char *
 vchannel_strfilter(char *string)
 {
 	char *c;
@@ -298,7 +298,7 @@ vchannel_strfilter(char *string)
 	return string;
 }
 
-DLL_EXPORT const char *
+EXTERN const char *
 vchannel_strfilter_unicode(const unsigned short *string)
 {
 	return vchannel_strfilter((char *) unicode_to_utf8(string));

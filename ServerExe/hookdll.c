@@ -30,7 +30,7 @@
 
 #include "vchannel.h"
 
-#define DLL_EXPORT __declspec(dllexport)
+#define EXTERN __declspec(dllexport)
 
 #ifdef __GNUC__
 #define SHARED __attribute__((section ("SHAREDDATA"), shared))
@@ -674,7 +674,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	return CallNextHookEx(g_cbt_hook, code, wparam, lparam);
 }
 
-DLL_EXPORT void
+EXTERN void
 SetHooks(void)
 {
 	if (!g_cbt_hook)
@@ -688,7 +688,7 @@ SetHooks(void)
 			SetWindowsHookEx(WH_CALLWNDPROCRET, wndprocret_hook_proc, g_instance, 0);
 }
 
-DLL_EXPORT void
+EXTERN void
 RemoveHooks(void)
 {
 	if (g_cbt_hook)
@@ -701,7 +701,7 @@ RemoveHooks(void)
 		UnhookWindowsHookEx(g_wndprocret_hook);
 }
 
-DLL_EXPORT void
+EXTERN void
 SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int height)
 {
 	RECT rect;
@@ -731,7 +731,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 	ReleaseMutex(g_mutex);
 }
 
-DLL_EXPORT void
+EXTERN void
 SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
@@ -751,7 +751,7 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 	ReleaseMutex(g_mutex);
 }
 
-DLL_EXPORT void
+EXTERN void
 SafeFocus(unsigned int serial, HWND hwnd)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
@@ -766,7 +766,7 @@ SafeFocus(unsigned int serial, HWND hwnd)
 	ReleaseMutex(g_mutex);
 }
 
-DLL_EXPORT void
+EXTERN void
 SafeSetState(unsigned int serial, HWND hwnd, int state)
 {
 	LONG style;
@@ -813,7 +813,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	ReleaseMutex(g_mutex);
 }
 
-DLL_EXPORT int
+EXTERN int
 GetInstanceCount()
 {
 	return g_instance_count;
