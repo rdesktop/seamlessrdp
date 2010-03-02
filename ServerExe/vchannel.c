@@ -34,23 +34,9 @@
 #define INVALID_CHARS ","
 #define REPLACEMENT_CHAR '_'
 
-#ifdef __GNUC__
-#define SHARED __attribute__((section ("SHAREDDATA"), shared))
-#else
-#define SHARED
-#endif
-
-// Shared DATA
-#pragma data_seg ( "SHAREDDATA" )
-
-unsigned int g_vchannel_serial SHARED = 0;
-
-#pragma data_seg ()
-
-#pragma comment(linker, "/section:SHAREDDATA,rws")
-
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
+static HANDLE g_vchannel_serial = NULL;
 static unsigned int g_opencount = 0;
 
 EXTERN void
@@ -147,7 +133,10 @@ vchannel_open()
 		return -1;
 
 	g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessChannel");
-	if (!g_mutex)
+
+	g_vchannel_serial = CreateSemaphore(NULL, 0, INT_MAX, "Local\\SeamlessRDPSerial");
+
+	if (!g_mutex || !g_vchannel_serial)
 	{
 		WTSVirtualChannelClose(g_vchannel);
 		g_vchannel = NULL;
@@ -265,13 +254,27 @@ vchannel_write(const char *command, const char *format, ...)
 	char buf[VCHANNEL_MAX_LINE];
 	int size;
 	ULONG bytes_written;
+	LONG prev_serial;
 
 	assert(vchannel_is_open());
 
 	WaitForSingleObject(g_mutex, INFINITE);
 
-	size = _snprintf(buf, sizeof(buf), "%s,%u,", command, g_vchannel_serial);
+	/* Increase serial */
+	if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial))
+	{
+		if (GetLastError() == ERROR_TOO_MANY_POSTS)
+		{
+			/* Reset serial to zero */
+			while (WaitForSingleObject(g_vchannel_serial, 0) == WAIT_OBJECT_0);
+			if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial))
+			{
+				return -1;
+			}
+		}
+	}
 
+	size = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
 	assert(size < sizeof(buf));
 
 	va_start(argp, format);
@@ -282,8 +285,6 @@ vchannel_write(const char *command, const char *format, ...)
 
 	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
 	result = WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
-
-	g_vchannel_serial++;
 
 	ReleaseMutex(g_mutex);
 
