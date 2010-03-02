@@ -832,7 +832,8 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			if (!g_mutex)
 				return FALSE;
 
-			if (vchannel_open()) {
+			if (vchannel_open())
+			{
 				CloseHandle(g_mutex);
 				return FALSE;
 			}

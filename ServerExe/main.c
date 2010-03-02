@@ -442,7 +442,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	CloseHandle(proc_info.hProcess);
 	CloseHandle(proc_info.hThread);
 
-	if (!result) {
+	if (!result)
+	{
 		// CreateProcess failed.
 		char msg[256];
 		_snprintf(msg, sizeof(msg),
@@ -462,8 +463,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			int flags;
 			/* These get reset on each reconnect */
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
-			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL,
-					     0);
+			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
 			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
 			flags = SEAMLESS_HELLO_RECONNECT;
@@ -500,19 +500,19 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	success = 1;
 
-unhook:
+      unhook:
 	remove_hooks_fn();
 
 	free_startup_procs();
 
-close_hookdll:
+      close_hookdll:
 	FreeLibrary(hookdll);
 
-close_vchannel:
+      close_vchannel:
 	vchannel_close();
 
 	if (success)
-	 	return 1;
+		return 1;
 	else
 		return -1;
 }
