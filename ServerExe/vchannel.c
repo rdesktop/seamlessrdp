@@ -68,6 +68,27 @@ debug(char *format, ...)
 	vchannel_write("DEBUG", buf);
 }
 
+/* 
+   From http://msdn.microsoft.com/en-us/library/aa384203(VS.85).aspx:
+   "64-bit versions of Windows use 32-bit handles for interoperability."
+ */
+long
+hwnd_to_long(HWND hwnd)
+{
+	DWORD_PTR val;
+	val = (DWORD_PTR) hwnd;
+	return val;
+}
+
+HWND
+long_to_hwnd(long l)
+{
+	DWORD_PTR val;
+	val = l;
+	return (HWND) val;
+}
+
+
 #define CONVERT_BUFFER_SIZE 1024
 static char convert_buffer[CONVERT_BUFFER_SIZE];
 

@@ -33,6 +33,9 @@
 
 EXTERN void debug(char *format, ...);
 
+EXTERN long hwnd_to_long(HWND hwnd);
+EXTERN HWND long_to_hwnd(long val);
+
 EXTERN const char *unicode_to_utf8(const unsigned short *string);
 
 EXTERN int vchannel_open();

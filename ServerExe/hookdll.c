@@ -232,7 +232,7 @@ get_icon(HWND hwnd, int large)
 	if (icon)
 		return icon;
 
-	icon = (HICON) GetClassLong(hwnd, large ? GCL_HICON : GCL_HICONSM);
+	icon = (HICON) GetClassLongPtr(hwnd, large ? GCLP_HICON : GCLP_HICONSM);
 
 	if (icon)
 		return icon;
@@ -423,8 +423,8 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 						flags |= SEAMLESS_CREATE_TOPMOST;
 
 					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
-						       (long) hwnd, (long) pid,
-						       (long) get_parent(hwnd), flags);
+						       hwnd_to_long(hwnd), (long) pid,
+						       hwnd_to_long(get_parent(hwnd)), flags);
 
 					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 

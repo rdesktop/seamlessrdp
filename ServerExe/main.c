@@ -113,7 +113,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		return TRUE;
 
 	if (styles & WS_POPUP)
-		parent = (HWND) GetWindowLong(hwnd, GWL_HWNDPARENT);
+		parent = (HWND) GetWindowLongPtr(hwnd, GWLP_HWNDPARENT);
 	else
 		parent = NULL;
 
@@ -123,8 +123,8 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	if (styles & DS_MODALFRAME)
 		flags |= SEAMLESS_CREATE_MODAL;
 
-	vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x", (long) hwnd, (long) pid,
-		       (long) parent, flags);
+	vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
+		       hwnd_to_long(hwnd), (long) pid, hwnd_to_long(parent), flags);
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
@@ -222,20 +222,20 @@ process_cmds(void)
 		if (strcmp(tok1, "SYNC") == 0)
 			do_sync();
 		else if (strcmp(tok1, "STATE") == 0)
-			do_state(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
+			do_state(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
 				 strtol(tok4, NULL, 0));
 		else if (strcmp(tok1, "POSITION") == 0)
-			do_position(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
+			do_position(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
 				    strtol(tok4, NULL, 0), strtol(tok5, NULL, 0), strtol(tok6, NULL,
 											 0),
 				    strtol(tok7, NULL, 0));
 		else if (strcmp(tok1, "ZCHANGE") == 0)
-			do_zchange(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0),
-				   (HWND) strtoul(tok4, NULL, 0));
+			do_zchange(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
+				   long_to_hwnd(strtoul(tok4, NULL, 0)));
 		else if (strcmp(tok1, "FOCUS") == 0)
-			do_focus(strtoul(tok2, NULL, 0), (HWND) strtoul(tok3, NULL, 0));
+			do_focus(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)));
 		else if (strcmp(tok1, "DESTROY") == 0)
-			do_destroy((HWND) strtoul(tok3, NULL, 0));
+			do_destroy(long_to_hwnd(strtoul(tok3, NULL, 0)));
 	}
 }
 
