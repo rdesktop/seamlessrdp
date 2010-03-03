@@ -1,17 +1,16 @@
 bin_PROGRAMS = seamlessrdpshell
 
 lib_LTLIBRARIES = \
-	vchannel.la \
 	seamlessrdp.la
 
+noinst_LTLIBRARIES = libvchannel.la
+libvchannel_la_SOURCES = vchannel.c
+libvchannel_la_LIBADD = -lwtsapi32
+
 seamlessrdpshell_SOURCES = main.c
-seamlessrdpshell_LDADD = vchannel.la
+seamlessrdpshell_LDADD = libvchannel.la -lwtsapi32
 seamlessrdpshell_LDFLAGS = -mwindows
 
-vchannel_la_SOURCES = vchannel.c vchannel.h
-vchannel_la_LDFLAGS = -avoid-version -module -no-undefined -lwtsapi32
-
 seamlessrdp_la_SOURCES = hookdll.c
-seamlessrdp_la_LIBADD = vchannel.la
-seamlessrdp_la_LDFLAGS = -avoid-version -module -no-undefined -lgdi32
-
+seamlessrdp_la_LDFLAGS = -avoid-version -module -no-undefined 
+seamlessrdp_la_LIBADD = libvchannel.la -lgdi32
