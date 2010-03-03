@@ -6,6 +6,9 @@ AM_INIT_AUTOMAKE
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_PROG_CC
+if test "$GCC" = yes; then
+    CFLAGS="$CFLAGS -Wall"
+fi
 AC_PROG_LIBTOOL
 
 AC_LIBTOOL_WIN32_DLL
