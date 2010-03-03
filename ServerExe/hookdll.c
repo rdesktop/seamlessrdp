@@ -147,7 +147,7 @@ update_position(HWND hwnd)
 
 	if (!GetWindowRect(hwnd, &rect))
 	{
-		debug("GetWindowRect failed!\n");
+		debug("GetWindowRect failed!");
 		goto end;
 	}
 
@@ -720,7 +720,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 	vchannel_write("ACK", "%u", serial);
 
 	if (!GetWindowRect(hwnd, &rect))
-		debug("GetWindowRect failed!\n");
+		debug("GetWindowRect failed!");
 	else if ((rect.left != x) || (rect.top != y) || (rect.right != x + width)
 		 || (rect.bottom != y + height))
 		update_position(hwnd);
