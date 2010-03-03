@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <limits.h>
 
 #include <windows.h>
 #include <wtsapi32.h>
