@@ -349,6 +349,25 @@ is_desktop_hidden(void)
 	return desk == NULL;
 }
 
+static BOOL
+launch_app(LPSTR cmdline)
+{
+	BOOL result;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFO startup_info;
+
+	memset(&startup_info, 0, sizeof(STARTUPINFO));
+	startup_info.cb = sizeof(STARTUPINFO);
+
+	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
+			       NULL, NULL, &startup_info, &proc_info);
+	// Release handles
+	CloseHandle(proc_info.hProcess);
+	CloseHandle(proc_info.hThread);
+
+	return result;
+}
+
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
@@ -424,21 +443,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	/* We don't want windows denying requests to activate windows. */
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
-	BOOL result;
-	PROCESS_INFORMATION proc_info;
-	STARTUPINFO startup_info;
-	MSG msg;
-
-	memset(&startup_info, 0, sizeof(STARTUPINFO));
-	startup_info.cb = sizeof(STARTUPINFO);
-
-	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
-			       NULL, NULL, &startup_info, &proc_info);
-	// Release handles
-	CloseHandle(proc_info.hProcess);
-	CloseHandle(proc_info.hThread);
-
-	if (!result)
+	if (!launch_app(cmdline))
 	{
 		// CreateProcess failed.
 		char msg[256];
@@ -452,6 +457,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	while (check_counter-- || !should_terminate())
 	{
 		BOOL connected;
+		MSG msg;
 
 		connected = is_connected();
 		if (connected && !g_connected)
