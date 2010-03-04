@@ -4,7 +4,7 @@
 
    Based on code copyright (C) 2004-2005 Martin Wickett
 
-   Copyright (C) Peter Åstrand <astrand@cendio.se> 2005-2006
+   Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
 
    This program is free software: you can redistribute it and/or modify
