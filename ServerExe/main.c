@@ -35,8 +35,6 @@
 #define APP_NAME "SeamlessRDP Shell"
 
 /* Global data */
-static HINSTANCE g_instance;
-
 static DWORD g_session_id;
 static DWORD *g_startup_procs;
 static int g_startup_num_procs;
@@ -363,8 +361,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	get_instance_count_proc_t instance_count_fn;
 
 	int check_counter;
-
-	g_instance = instance;
 
 	if (strlen(cmdline) == 0)
 	{
