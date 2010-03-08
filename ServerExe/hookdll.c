@@ -32,37 +32,6 @@
 
 #define EXTERN __declspec(dllexport)
 
-#ifdef __GNUC__
-#define SHARED __attribute__((section ("SHAREDDATA"), shared))
-#else
-#define SHARED
-#endif
-
-// Shared DATA
-#pragma data_seg ( "SHAREDDATA" )
-
-// this is the total number of processes this dll is currently attached to
-int g_instance_count SHARED = 0;
-
-// blocks for locally generated events
-HWND g_block_move_hwnd SHARED = NULL;
-unsigned int g_block_move_serial SHARED = 0;
-RECT g_block_move SHARED = { 0, 0, 0, 0 };
-
-unsigned int g_blocked_zchange_serial SHARED = 0;
-HWND g_blocked_zchange[2] SHARED = { NULL, NULL };
-
-unsigned int g_blocked_focus_serial SHARED = 0;
-HWND g_blocked_focus SHARED = NULL;
-
-unsigned int g_blocked_state_serial SHARED = 0;
-HWND g_blocked_state_hwnd SHARED = NULL;
-int g_blocked_state SHARED = -1;
-
-#pragma data_seg ()
-
-#pragma comment(linker, "/section:SHAREDDATA,rws")
-
 #define FOCUS_MSG_NAME "WM_SEAMLESS_FOCUS"
 static UINT g_wm_seamless_focus;
 
@@ -72,7 +41,38 @@ static HHOOK g_wndprocret_hook = NULL;
 
 static HINSTANCE g_instance = NULL;
 
+/* 
+   The data shared between 32 and 64 bit processes contains HWNDs. On
+   win64, HWND is 64 bit but only 32 bits are used. Thus, our
+   structure only contains 32 bit, using this data type. The structure
+   alignment is the same on win32 and win64 (the default being 8 byte
+   boundaries). 
+ */
+typedef ULONG32 HWND32;
+
+typedef struct _shared_variables
+{
+	int instance_count;
+
+	// blocks for locally generated events
+	HWND32 block_move_hwnd;
+	unsigned int block_move_serial;
+	RECT block_move;
+
+	unsigned int blocked_zchange_serial;
+	HWND32 blocked_zchange[2];
+
+	unsigned int blocked_focus_serial;
+	HWND32 blocked_focus;
+
+	unsigned int blocked_state_serial;
+	HWND32 blocked_state_hwnd;
+	int blocked_state;
+
+} shared_variables;
+
 static HANDLE g_mutex = NULL;
+static shared_variables *g_shdata = NULL;
 
 static BOOL
 is_toplevel(HWND hwnd)
@@ -138,9 +138,9 @@ update_position(HWND hwnd)
 	unsigned int serial;
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	blocked_hwnd = g_block_move_hwnd;
-	serial = g_block_move_serial;
-	memcpy(&blocked, &g_block_move, sizeof(RECT));
+	blocked_hwnd = long_to_hwnd(g_shdata->block_move_hwnd);
+	serial = g_shdata->block_move_serial;
+	memcpy(&blocked, &g_shdata->block_move, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 
 	vchannel_block();
@@ -171,9 +171,9 @@ update_zorder(HWND hwnd)
 	unsigned int serial;
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	serial = g_blocked_zchange_serial;
-	block_hwnd = g_blocked_zchange[0];
-	block_behind = g_blocked_zchange[1];
+	serial = g_shdata->blocked_zchange_serial;
+	block_hwnd = long_to_hwnd(g_shdata->blocked_zchange[0]);
+	block_behind = long_to_hwnd(g_shdata->blocked_zchange[1]);
 	ReleaseMutex(g_mutex);
 
 	vchannel_block();
@@ -607,7 +607,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		if ((GetForegroundWindow() != hwnd) && !is_menu(hwnd))
 			SetForegroundWindow(hwnd);
 
-		vchannel_write("ACK", "%u", g_blocked_focus_serial);
+		vchannel_write("ACK", "%u", g_shdata->blocked_focus_serial);
 	}
 
       end:
@@ -630,9 +630,9 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 				LONG style;
 
 				WaitForSingleObject(g_mutex, INFINITE);
-				blocked_hwnd = g_blocked_state_hwnd;
-				serial = g_blocked_state_serial;
-				blocked = g_blocked_state;
+				blocked_hwnd = long_to_hwnd(g_shdata->blocked_state_hwnd);
+				serial = g_shdata->blocked_state_serial;
+				blocked = g_shdata->blocked_state;
 				ReleaseMutex(g_mutex);
 
 				hwnd = (HWND) wparam;
@@ -707,12 +707,12 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 	RECT rect;
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_block_move_hwnd = hwnd;
-	g_block_move_serial = serial;
-	g_block_move.left = x;
-	g_block_move.top = y;
-	g_block_move.right = x + width;
-	g_block_move.bottom = y + height;
+	g_shdata->block_move_hwnd = hwnd_to_long(hwnd);
+	g_shdata->block_move_serial = serial;
+	g_shdata->block_move.left = x;
+	g_shdata->block_move.top = y;
+	g_shdata->block_move.right = x + width;
+	g_shdata->block_move.bottom = y + height;
 	ReleaseMutex(g_mutex);
 
 	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
@@ -726,8 +726,8 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 		update_position(hwnd);
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_block_move_hwnd = NULL;
-	memset(&g_block_move, 0, sizeof(RECT));
+	g_shdata->block_move_hwnd = 0;
+	memset(&g_shdata->block_move, 0, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 }
 
@@ -735,9 +735,9 @@ EXTERN void
 SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_zchange_serial = serial;
-	g_blocked_zchange[0] = hwnd;
-	g_blocked_zchange[1] = behind;
+	g_shdata->blocked_zchange_serial = serial;
+	g_shdata->blocked_zchange[0] = hwnd_to_long(hwnd);
+	g_shdata->blocked_zchange[1] = hwnd_to_long(behind);
 	ReleaseMutex(g_mutex);
 
 	if (behind == NULL)
@@ -746,8 +746,8 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_zchange[0] = NULL;
-	g_blocked_zchange[1] = NULL;
+	g_shdata->blocked_zchange[0] = 0;
+	g_shdata->blocked_zchange[1] = 0;
 	ReleaseMutex(g_mutex);
 }
 
@@ -755,14 +755,14 @@ EXTERN void
 SafeFocus(unsigned int serial, HWND hwnd)
 {
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_focus_serial = serial;
-	g_blocked_focus = hwnd;
+	g_shdata->blocked_focus_serial = serial;
+	g_shdata->blocked_focus = hwnd_to_long(hwnd);
 	ReleaseMutex(g_mutex);
 
 	SendMessage(hwnd, g_wm_seamless_focus, 0, 0);
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_focus = NULL;
+	g_shdata->blocked_focus = 0;
 	ReleaseMutex(g_mutex);
 }
 
@@ -791,9 +791,9 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	}
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_state_hwnd = hwnd;
-	g_blocked_state_serial = serial;
-	g_blocked_state = state;
+	g_shdata->blocked_state_hwnd = hwnd_to_long(hwnd);
+	g_shdata->blocked_state_serial = serial;
+	g_shdata->blocked_state = state;
 	ReleaseMutex(g_mutex);
 
 	vchannel_unblock();
@@ -808,20 +808,21 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 		debug("Invalid state %d sent.", state);
 
 	WaitForSingleObject(g_mutex, INFINITE);
-	g_blocked_state_hwnd = NULL;
-	g_blocked_state = -1;
+	g_shdata->blocked_state_hwnd = 0;
+	g_shdata->blocked_state = -1;
 	ReleaseMutex(g_mutex);
 }
 
 EXTERN int
 GetInstanceCount()
 {
-	return g_instance_count;
+	return g_shdata->instance_count;
 }
 
 BOOL APIENTRY
 DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
+	HANDLE filemapping = NULL;
 	switch (ul_reason_for_call)
 	{
 		case DLL_PROCESS_ATTACH:
@@ -829,17 +830,43 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			g_instance = hinstDLL;
 
 			g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessDLL");
-			if (!g_mutex)
-				return FALSE;
 
-			if (vchannel_open())
+			filemapping = CreateFileMapping(INVALID_HANDLE_VALUE,
+							NULL,
+							PAGE_READWRITE,
+							0,
+							sizeof(shared_variables),
+							"Local\\SeamlessRDPData");
+
+			if (filemapping)
 			{
-				CloseHandle(g_mutex);
+				/* From MSDN: The initial contents of
+				   the pages in a file mapping object
+				   backed by the paging file are 0
+				   (zero)." */
+				g_shdata = MapViewOfFile(filemapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+			}
+
+			if (!g_mutex || !filemapping || !g_shdata || vchannel_open())
+			{
+				/* Clean up in reverse order */
+				if (g_shdata)
+				{
+					UnmapViewOfFile(g_shdata);
+				}
+				if (filemapping)
+				{
+					CloseHandle(filemapping);
+				}
+				if (g_mutex)
+				{
+					CloseHandle(g_mutex);
+				}
 				return FALSE;
 			}
 
 			WaitForSingleObject(g_mutex, INFINITE);
-			++g_instance_count;
+			++g_shdata->instance_count;
 			ReleaseMutex(g_mutex);
 
 			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
@@ -856,11 +883,13 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx", GetCurrentProcessId(), 0);
 
 			WaitForSingleObject(g_mutex, INFINITE);
-			--g_instance_count;
+			--g_shdata->instance_count;
 			ReleaseMutex(g_mutex);
 
 			vchannel_close();
 
+			UnmapViewOfFile(g_shdata);
+			CloseHandle(filemapping);
 			CloseHandle(g_mutex);
 
 			break;
