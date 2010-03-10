@@ -33,6 +33,7 @@
 #include "resource.h"
 
 #define APP_NAME "SeamlessRDP Shell"
+#define HELPER_TIMEOUT 2000
 
 /* Global data */
 static DWORD g_session_id;
@@ -349,7 +350,8 @@ is_desktop_hidden(void)
 	return desk == NULL;
 }
 
-static BOOL
+// Returns process handle on success, or NULL on failure
+static HANDLE
 launch_app(LPSTR cmdline)
 {
 	BOOL result;
@@ -362,18 +364,94 @@ launch_app(LPSTR cmdline)
 	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
 			       NULL, NULL, &startup_info, &proc_info);
 	// Release handles
-	CloseHandle(proc_info.hProcess);
 	CloseHandle(proc_info.hThread);
 
-	return result;
+	if (result)
+	{
+		return proc_info.hProcess;
+	}
+	else
+	{
+		return NULL;
+	}
 }
+
+static HANDLE
+launch_helper()
+{
+	HANDLE app = NULL;
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+
+	/* If we are running on a x64 system, hook 32 bit apps as well
+	   by launching a 32 bit helper process. */
+	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+	{
+		char cmd[] = "seamlessrdphook32.exe";
+		app = launch_app(cmd);
+		if (!app)
+		{
+			char msg[256];
+			_snprintf(msg, sizeof(msg),
+				  "Unable to launch the requested application:\n%s", cmd);
+			message(msg);
+		}
+
+		/* Wait until helper is started, so that it gets included in
+		   the process enum */
+		DWORD ret;
+		ret = WaitForInputIdle(app, HELPER_TIMEOUT);
+		switch (ret)
+		{
+			case 0:
+				break;
+			case WAIT_TIMEOUT:
+			case WAIT_FAILED:
+				message("Hooking helper failed to start within time limit");
+				break;
+		}
+	}
+	return app;
+}
+
+
+// Ask process to quit, otherwise kill it
+static void
+kill_15_9(HANDLE proc, const char *wndname, DWORD timeout)
+{
+	HWND procwnd;
+	DWORD ret;
+	procwnd = FindWindowEx(HWND_MESSAGE, NULL, "Message", wndname);
+	if (procwnd)
+	{
+		PostMessage(procwnd, WM_CLOSE, 0, 0);
+	}
+	ret = WaitForSingleObject(proc, timeout);
+	switch (ret)
+	{
+		case WAIT_ABANDONED:
+		case WAIT_OBJECT_0:
+			break;
+		case WAIT_TIMEOUT:
+			// Still running, kill hard
+			if (!TerminateProcess(proc, 1))
+			{
+				message("Unable to terminate process");
+			}
+			break;
+		case WAIT_FAILED:
+			message("Unable to wait for process");
+			break;
+	}
+}
+
 
 int WINAPI
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 {
 	int success = 0;
-
-	HMODULE hookdll;
+	HANDLE helper = NULL;
+	HMODULE hookdll = NULL;
 
 	set_hooks_proc_t set_hooks_fn;
 	remove_hooks_proc_t remove_hooks_fn;
@@ -393,7 +471,22 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		return -1;
 	}
 
-	hookdll = LoadLibrary("seamlessrdp.dll");
+	SYSTEM_INFO si;
+	GetSystemInfo(&si);
+	switch (si.wProcessorArchitecture)
+	{
+		case PROCESSOR_ARCHITECTURE_INTEL:
+			hookdll = LoadLibrary("seamlessrdp32.dll");
+			break;
+		case PROCESSOR_ARCHITECTURE_AMD64:
+			hookdll = LoadLibrary("seamlessrdp64.dll");
+			break;
+		default:
+			message("Unsupported processor architecture.");
+			break;
+
+	}
+
 	if (!hookdll)
 	{
 		message("Could not load hook DLL. Unable to continue.");
@@ -421,6 +514,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		message("Another running instance of Seamless RDP detected.");
 		goto close_hookdll;
 	}
+
+	helper = launch_helper();
 
 	ProcessIdToSessionId(GetCurrentProcessId(), &g_session_id);
 
@@ -506,6 +601,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	remove_hooks_fn();
 
 	free_startup_procs();
+	if (helper)
+	{
+		// Terminate seamlessrdphook32.exe
+		kill_15_9(helper, "SeamlessRDPHook", HELPER_TIMEOUT);
+	}
 
       close_hookdll:
 	FreeLibrary(hookdll);
