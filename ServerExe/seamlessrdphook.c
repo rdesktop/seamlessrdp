@@ -42,32 +42,31 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	switch (si.wProcessorArchitecture)
-	{
-		case PROCESSOR_ARCHITECTURE_INTEL:
-			hookdll = LoadLibrary("seamlessrdp32.dll");
-			break;
-		case PROCESSOR_ARCHITECTURE_AMD64:
-			hookdll = LoadLibrary("seamlessrdp64.dll");
-			break;
-		default:
-			message("Unsupported processor architecture.");
-			break;
+	switch (si.wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_INTEL:
+		hookdll = LoadLibrary("seamlessrdp32.dll");
+		break;
+	case PROCESSOR_ARCHITECTURE_AMD64:
+		hookdll = LoadLibrary("seamlessrdp64.dll");
+		break;
+	default:
+		message("Unsupported processor architecture.");
+		break;
 
 	}
 
-	if (!hookdll)
-	{
+	if (!hookdll) {
 		message("Could not load hook DLL. Unable to continue.");
 		return 1;
 	}
 
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
-	instance_count_fn = (get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
+	instance_count_fn =
+		(get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
 
-	if (!set_hooks_fn || !instance_count_fn)
-	{
-		message("Hook DLL doesn't contain the correct functions. Unable to continue.");
+	if (!set_hooks_fn || !instance_count_fn) {
+		message
+			("Hook DLL doesn't contain the correct functions. Unable to continue.");
 		goto close_hookdll;
 	}
 
@@ -79,27 +78,23 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	   dialog, such messages are lost. Instead, we need to create
 	   a "Message-Only Window". */
 	CreateWindow("Message", "SeamlessRDPHook", 0, 0, 0, 0, 0,
-		     HWND_MESSAGE, NULL, instance, NULL);
+		HWND_MESSAGE, NULL, instance, NULL);
 
 	MSG msg;
-	while (1)
-	{
+	while (1) {
 		BOOL ret;
 		ret = GetMessage(&msg, NULL, 0, 0);
-		if (ret == -1)
-		{
+		if (ret == -1) {
 			message("GetMessage failed");
 			break;
-		}
-		else if (ret == 0)
-		{
+		} else if (ret == 0) {
 			break;
 		}
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
-      close_hookdll:
+  close_hookdll:
 	FreeLibrary(hookdll);
 
 	return 0;

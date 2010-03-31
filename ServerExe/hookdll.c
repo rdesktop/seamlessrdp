@@ -113,13 +113,10 @@ get_parent(HWND hwnd)
 	   http://msdn2.microsoft.com/en-us/library/bb776822.aspx */
 	owner = GetWindow(hwnd, GW_OWNER);
 	exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-	if (!owner && !(exstyle & WS_EX_TOOLWINDOW))
-	{
+	if (!owner && !(exstyle & WS_EX_TOOLWINDOW)) {
 		/* display taskbar icon */
 		result = NULL;
-	}
-	else
-	{
+	} else {
 		/* no taskbar icon */
 		if (owner)
 			result = owner;
@@ -145,21 +142,21 @@ update_position(HWND hwnd)
 
 	vchannel_block();
 
-	if (!GetWindowRect(hwnd, &rect))
-	{
+	if (!GetWindowRect(hwnd, &rect)) {
 		debug("GetWindowRect failed!");
 		goto end;
 	}
 
-	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left) && (rect.top == blocked.top)
-	    && (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
+	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left)
+		&& (rect.top == blocked.top)
+		&& (rect.right == blocked.right) && (rect.bottom == blocked.bottom))
 		goto end;
 
 	vchannel_write("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
-		       hwnd,
-		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+		hwnd,
+		rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
-      end:
+  end:
 	vchannel_unblock();
 }
 
@@ -179,8 +176,7 @@ update_zorder(HWND hwnd)
 	vchannel_block();
 
 	behind = GetNextWindow(hwnd, GW_HWNDPREV);
-	while (behind)
-	{
+	while (behind) {
 		LONG style;
 
 		style = GetWindowLong(behind, GWL_STYLE);
@@ -193,14 +189,14 @@ update_zorder(HWND hwnd)
 
 	if ((hwnd == block_hwnd) && (behind == block_behind))
 		vchannel_write("ACK", "%u", serial);
-	else
-	{
+	else {
 		int flags = 0;
 		LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
 		// handle always on top
 		if (exstyle & WS_EX_TOPMOST)
 			flags |= SEAMLESS_CREATE_TOPMOST;
-		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind, flags);
+		vchannel_write("ZCHANGE", "0x%08lx,0x%08lx,0x%08x", hwnd, behind,
+			flags);
 	}
 
 	vchannel_unblock();
@@ -212,7 +208,7 @@ get_icon(HWND hwnd, int large)
 	HICON icon;
 
 	if (!SendMessageTimeout(hwnd, WM_GETICON, large ? ICON_BIG : ICON_SMALL,
-				0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
+			0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
 		return NULL;
 
 	if (icon)
@@ -222,10 +218,9 @@ get_icon(HWND hwnd, int large)
 	 * Modern versions of Windows uses the voodoo value of 2 instead of 0
 	 * for the small icons.
 	 */
-	if (!large)
-	{
+	if (!large) {
 		if (!SendMessageTimeout(hwnd, WM_GETICON, 2,
-					0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
+				0, SMTO_ABORTIFHUNG, 1000, (PDWORD_PTR) & icon))
 			return NULL;
 	}
 
@@ -296,16 +291,17 @@ extract_icon(HICON icon, char *buffer, int maxlen)
 	if (!hdc)
 		goto free_cbuf;
 
-	if (!GetDIBits(hdc, info.hbmMask, 0, mask_bmp.bmHeight, mask_buf, &bmi, DIB_RGB_COLORS))
+	if (!GetDIBits(hdc, info.hbmMask, 0, mask_bmp.bmHeight, mask_buf, &bmi,
+			DIB_RGB_COLORS))
 		goto del_dc;
-	if (!GetDIBits(hdc, info.hbmColor, 0, color_bmp.bmHeight, color_buf, &bmi, DIB_RGB_COLORS))
+	if (!GetDIBits(hdc, info.hbmColor, 0, color_bmp.bmHeight, color_buf, &bmi,
+			DIB_RGB_COLORS))
 		goto del_dc;
 
 	o = buffer;
 	m = mask_buf;
 	c = color_buf;
-	for (i = 0; i < size / 4; i++)
-	{
+	for (i = 0; i < size / 4; i++) {
 		o[0] = c[2];
 		o[1] = c[1];
 		o[2] = c[0];
@@ -321,19 +317,19 @@ extract_icon(HICON icon, char *buffer, int maxlen)
 
 	ret = size;
 
-      del_dc:
+  del_dc:
 	DeleteDC(hdc);
 
-      free_cbuf:
+  free_cbuf:
 	free(color_buf);
-      free_mbuf:
+  free_mbuf:
 	free(mask_buf);
 
-      free_bmps:
+  free_bmps:
 	DeleteObject(info.hbmMask);
 	DeleteObject(info.hbmColor);
 
-      fail:
+  fail:
 	return ret;
 }
 
@@ -350,17 +346,14 @@ update_icon(HWND hwnd, HICON icon, int large)
 	if (size <= 0)
 		return;
 
-	if ((!large && size != 16 * 16 * 4) || (large && size != 32 * 32 * 4))
-	{
+	if ((!large && size != 16 * 16 * 4) || (large && size != 32 * 32 * 4)) {
 		debug("Unexpected icon size.");
 		return;
 	}
 
 	chunks = (size + ICON_CHUNK - 1) / ICON_CHUNK;
-	for (i = 0; i < chunks; i++)
-	{
-		for (j = 0; j < ICON_CHUNK; j++)
-		{
+	for (i = 0; i < chunks; i++) {
+		for (j = 0; j < ICON_CHUNK; j++) {
 			if (i * ICON_CHUNK + j >= size)
 				break;
 			sprintf(asciibuf + j * 2, "%02x",
@@ -368,7 +361,7 @@ update_icon(HWND hwnd, HICON icon, int large)
 		}
 
 		vchannel_write("SETICON", "0x%08lx,%d,RGBA,%d,%d,%s", hwnd, i,
-			       large ? 32 : 16, large ? 32 : 16, asciibuf);
+			large ? 32 : 16, large ? 32 : 16, asciibuf);
 	}
 }
 
@@ -393,136 +386,128 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	wparam = ((CWPSTRUCT *) details)->wParam;
 	lparam = ((CWPSTRUCT *) details)->lParam;
 
-	if (!is_toplevel(hwnd))
-	{
+	if (!is_toplevel(hwnd)) {
 		goto end;
 	}
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	switch (msg)
-	{
-		case WM_WINDOWPOSCHANGED:
-			{
-				WINDOWPOS *wp = (WINDOWPOS *) lparam;
+	switch (msg) {
+	case WM_WINDOWPOSCHANGED:
+		{
+			WINDOWPOS *wp = (WINDOWPOS *) lparam;
 
-				if (wp->flags & SWP_SHOWWINDOW)
-				{
-					unsigned short title[150];
-					int state;
-					DWORD pid;
-					int flags;
-					HICON icon;
-					LONG exstyle;
+			if (wp->flags & SWP_SHOWWINDOW) {
+				unsigned short title[150];
+				int state;
+				DWORD pid;
+				int flags;
+				HICON icon;
+				LONG exstyle;
 
-					exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-					GetWindowThreadProcessId(hwnd, &pid);
+				exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+				GetWindowThreadProcessId(hwnd, &pid);
 
-					flags = 0;
-					if (style & DS_MODALFRAME)
-						flags |= SEAMLESS_CREATE_MODAL;
-					// handle always on top
-					if (exstyle & WS_EX_TOPMOST)
-						flags |= SEAMLESS_CREATE_TOPMOST;
+				flags = 0;
+				if (style & DS_MODALFRAME)
+					flags |= SEAMLESS_CREATE_MODAL;
+				// handle always on top
+				if (exstyle & WS_EX_TOPMOST)
+					flags |= SEAMLESS_CREATE_TOPMOST;
 
-					vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
-						       hwnd_to_long(hwnd), (long) pid,
-						       hwnd_to_long(get_parent(hwnd)), flags);
+				vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
+					hwnd_to_long(hwnd), (long) pid,
+					hwnd_to_long(get_parent(hwnd)), flags);
 
-					GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
+				GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-					vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
-						       vchannel_strfilter_unicode(title), 0);
+				vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
+					vchannel_strfilter_unicode(title), 0);
 
-					icon = get_icon(hwnd, 1);
-					if (icon)
-					{
-						update_icon(hwnd, icon, 1);
-						DeleteObject(icon);
-					}
-
-					icon = get_icon(hwnd, 0);
-					if (icon)
-					{
-						update_icon(hwnd, icon, 0);
-						DeleteObject(icon);
-					}
-
-					if (style & WS_MAXIMIZE)
-						state = 2;
-					else if (style & WS_MINIMIZE)
-						state = 1;
-					else
-						state = 0;
-
-					update_position(hwnd);
-
-					vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x", hwnd,
-						       state, 0);
+				icon = get_icon(hwnd, 1);
+				if (icon) {
+					update_icon(hwnd, icon, 1);
+					DeleteObject(icon);
 				}
 
-				if (wp->flags & SWP_HIDEWINDOW)
-					vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
+				icon = get_icon(hwnd, 0);
+				if (icon) {
+					update_icon(hwnd, icon, 0);
+					DeleteObject(icon);
+				}
 
-				if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
-					break;
+				if (style & WS_MAXIMIZE)
+					state = 2;
+				else if (style & WS_MINIMIZE)
+					state = 1;
+				else
+					state = 0;
 
-				if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
-					update_position(hwnd);
+				update_position(hwnd);
 
-				break;
+				vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x", hwnd,
+					state, 0);
 			}
 
-		case WM_SETICON:
-			if (!(style & WS_VISIBLE))
-				break;
+			if (wp->flags & SWP_HIDEWINDOW)
+				vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
 
-			switch (wparam)
-			{
-				case ICON_BIG:
-					if (lparam)
-						update_icon(hwnd, (HICON) lparam, 1);
-					else
-						vchannel_write("DELICON", "0x%08lx,RGBA,32,32",
-							       hwnd);
-					break;
-				case ICON_SMALL:
-				case 2:
-					if (lparam)
-						update_icon(hwnd, (HICON) lparam, 0);
-					else
-						vchannel_write("DELICON", "0x%08lx,RGBA,16,16",
-							       hwnd);
-					break;
-				default:
-					debug("Weird icon size %d", (int) wparam);
-			}
-
-			break;
-
-		case WM_SIZE:
 			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 				break;
-			update_position(hwnd);
+
+			if (!(wp->flags & SWP_NOMOVE && wp->flags & SWP_NOSIZE))
+				update_position(hwnd);
+
+			break;
+		}
+
+	case WM_SETICON:
+		if (!(style & WS_VISIBLE))
 			break;
 
-		case WM_MOVE:
-			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
-				break;
-			update_position(hwnd);
+		switch (wparam) {
+		case ICON_BIG:
+			if (lparam)
+				update_icon(hwnd, (HICON) lparam, 1);
+			else
+				vchannel_write("DELICON", "0x%08lx,RGBA,32,32", hwnd);
 			break;
-
-		case WM_DESTROY:
-			if (!(style & WS_VISIBLE))
-				break;
-			vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
+		case ICON_SMALL:
+		case 2:
+			if (lparam)
+				update_icon(hwnd, (HICON) lparam, 0);
+			else
+				vchannel_write("DELICON", "0x%08lx,RGBA,16,16", hwnd);
 			break;
-
 		default:
+			debug("Weird icon size %d", (int) wparam);
+		}
+
+		break;
+
+	case WM_SIZE:
+		if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 			break;
+		update_position(hwnd);
+		break;
+
+	case WM_MOVE:
+		if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
+			break;
+		update_position(hwnd);
+		break;
+
+	case WM_DESTROY:
+		if (!(style & WS_VISIBLE))
+			break;
+		vchannel_write("DESTROY", "0x%08lx,0x%08x", hwnd, 0);
+		break;
+
+	default:
+		break;
 	}
 
-      end:
+  end:
 	return CallNextHookEx(g_wndproc_hook, code, cur_thread, details);
 }
 
@@ -547,67 +532,63 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	wparam = ((CWPRETSTRUCT *) details)->wParam;
 	lparam = ((CWPRETSTRUCT *) details)->lParam;
 
-	if (!is_toplevel(hwnd))
-	{
+	if (!is_toplevel(hwnd)) {
 		goto end;
 	}
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
-	switch (msg)
-	{
-		case WM_WINDOWPOSCHANGED:
-			{
-				WINDOWPOS *wp = (WINDOWPOS *) lparam;
+	switch (msg) {
+	case WM_WINDOWPOSCHANGED:
+		{
+			WINDOWPOS *wp = (WINDOWPOS *) lparam;
 
-				if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
-					break;
-
-				if (!(wp->flags & SWP_NOZORDER))
-					update_zorder(hwnd);
-
+			if (!(style & WS_VISIBLE) || (style & WS_MINIMIZE))
 				break;
-			}
 
+			if (!(wp->flags & SWP_NOZORDER))
+				update_zorder(hwnd);
 
-		case WM_SETTEXT:
-			{
-				unsigned short title[150];
-				if (!(style & WS_VISIBLE))
-					break;
-				/* We cannot use the string in lparam because
-				   we need unicode. */
-				GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
-				vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
-					       vchannel_strfilter_unicode(title), 0);
-				break;
-			}
-
-		case WM_SETICON:
-			{
-				HICON icon;
-				if (!(style & WS_VISIBLE))
-					break;
-
-				/*
-				 * Somehow, we never get WM_SETICON for the small icon.
-				 * So trigger a read of it every time the large one is
-				 * changed.
-				 */
-				icon = get_icon(hwnd, 0);
-				if (icon)
-				{
-					update_icon(hwnd, icon, 0);
-					DeleteObject(icon);
-				}
-			}
-
-		default:
 			break;
+		}
+
+
+	case WM_SETTEXT:
+		{
+			unsigned short title[150];
+			if (!(style & WS_VISIBLE))
+				break;
+			/* We cannot use the string in lparam because
+			   we need unicode. */
+			GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
+			vchannel_write("TITLE", "0x%08lx,%s,0x%08x", hwnd,
+				vchannel_strfilter_unicode(title), 0);
+			break;
+		}
+
+	case WM_SETICON:
+		{
+			HICON icon;
+			if (!(style & WS_VISIBLE))
+				break;
+
+			/*
+			 * Somehow, we never get WM_SETICON for the small icon.
+			 * So trigger a read of it every time the large one is
+			 * changed.
+			 */
+			icon = get_icon(hwnd, 0);
+			if (icon) {
+				update_icon(hwnd, icon, 0);
+				DeleteObject(icon);
+			}
+		}
+
+	default:
+		break;
 	}
 
-	if (msg == g_wm_seamless_focus)
-	{
+	if (msg == g_wm_seamless_focus) {
 		/* For some reason, SetForegroundWindow() on menus
 		   closes them. Ignore focus requests for menu windows. */
 		if ((GetForegroundWindow() != hwnd) && !is_menu(hwnd))
@@ -616,7 +597,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 		vchannel_write("ACK", "%u", g_shdata->blocked_focus_serial);
 	}
 
-      end:
+  end:
 	return CallNextHookEx(g_wndprocret_hook, code, cur_thread, details);
 }
 
@@ -629,57 +610,55 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	if (code < 0)
 		goto end;
 
-	switch (code)
-	{
-		case HCBT_MINMAX:
-			{
-				int show, state, blocked;
-				HWND hwnd, blocked_hwnd;
-				unsigned int serial;
-				LONG style;
+	switch (code) {
+	case HCBT_MINMAX:
+		{
+			int show, state, blocked;
+			HWND hwnd, blocked_hwnd;
+			unsigned int serial;
+			LONG style;
 
-				WaitForSingleObject(g_mutex, INFINITE);
-				blocked_hwnd = long_to_hwnd(g_shdata->blocked_state_hwnd);
-				serial = g_shdata->blocked_state_serial;
-				blocked = g_shdata->blocked_state;
-				ReleaseMutex(g_mutex);
+			WaitForSingleObject(g_mutex, INFINITE);
+			blocked_hwnd = long_to_hwnd(g_shdata->blocked_state_hwnd);
+			serial = g_shdata->blocked_state_serial;
+			blocked = g_shdata->blocked_state;
+			ReleaseMutex(g_mutex);
 
-				hwnd = (HWND) wparam;
+			hwnd = (HWND) wparam;
 
-				style = GetWindowLong(hwnd, GWL_STYLE);
+			style = GetWindowLong(hwnd, GWL_STYLE);
 
-				if (!(style & WS_VISIBLE))
-					break;
+			if (!(style & WS_VISIBLE))
+				break;
 
-				show = LOWORD(lparam);
+			show = LOWORD(lparam);
 
-				if ((show == SW_NORMAL) || (show == SW_SHOWNORMAL)
-				    || (show == SW_RESTORE))
-					state = 0;
-				else if ((show == SW_MINIMIZE) || (show == SW_SHOWMINIMIZED))
-					state = 1;
-				else if ((show == SW_MAXIMIZE) || (show == SW_SHOWMAXIMIZED))
-					state = 2;
-				else
-				{
-					debug("Unexpected show: %d", show);
-					break;
-				}
-
-				if ((blocked_hwnd == hwnd) && (blocked == state))
-					vchannel_write("ACK", "%u", serial);
-				else
-					vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x",
-						       hwnd, state, 0);
-
+			if ((show == SW_NORMAL) || (show == SW_SHOWNORMAL)
+				|| (show == SW_RESTORE))
+				state = 0;
+			else if ((show == SW_MINIMIZE) || (show == SW_SHOWMINIMIZED))
+				state = 1;
+			else if ((show == SW_MAXIMIZE) || (show == SW_SHOWMAXIMIZED))
+				state = 2;
+			else {
+				debug("Unexpected show: %d", show);
 				break;
 			}
 
-		default:
+			if ((blocked_hwnd == hwnd) && (blocked == state))
+				vchannel_write("ACK", "%u", serial);
+			else
+				vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x",
+					hwnd, state, 0);
+
 			break;
+		}
+
+	default:
+		break;
 	}
 
-      end:
+  end:
 	return CallNextHookEx(g_cbt_hook, code, wparam, lparam);
 }
 
@@ -690,11 +669,13 @@ SetHooks(void)
 		g_cbt_hook = SetWindowsHookEx(WH_CBT, cbt_hook_proc, g_instance, 0);
 
 	if (!g_wndproc_hook)
-		g_wndproc_hook = SetWindowsHookEx(WH_CALLWNDPROC, wndproc_hook_proc, g_instance, 0);
+		g_wndproc_hook =
+			SetWindowsHookEx(WH_CALLWNDPROC, wndproc_hook_proc, g_instance, 0);
 
 	if (!g_wndprocret_hook)
 		g_wndprocret_hook =
-			SetWindowsHookEx(WH_CALLWNDPROCRET, wndprocret_hook_proc, g_instance, 0);
+			SetWindowsHookEx(WH_CALLWNDPROCRET, wndprocret_hook_proc,
+			g_instance, 0);
 }
 
 EXTERN void
@@ -711,7 +692,8 @@ RemoveHooks(void)
 }
 
 EXTERN void
-SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int height)
+SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
+	int height)
 {
 	RECT rect;
 
@@ -727,14 +709,15 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 	g_shdata->block_move.bottom = y + height;
 	ReleaseMutex(g_mutex);
 
-	SetWindowPos(hwnd, NULL, x, y, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+	SetWindowPos(hwnd, NULL, x, y, width, height,
+		SWP_NOACTIVATE | SWP_NOZORDER);
 
 	vchannel_write("ACK", "%u", serial);
 
 	if (!GetWindowRect(hwnd, &rect))
 		debug("GetWindowRect failed!");
 	else if ((rect.left != x) || (rect.top != y) || (rect.right != x + width)
-		 || (rect.bottom != y + height))
+		|| (rect.bottom != y + height))
 		update_position(hwnd);
 
 	WaitForSingleObject(g_mutex, INFINITE);
@@ -758,7 +741,8 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 	if (behind == NULL)
 		behind = HWND_TOP;
 
-	SetWindowPos(hwnd, behind, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
+	SetWindowPos(hwnd, behind, 0, 0, 0, 0,
+		SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->blocked_zchange[0] = 0;
@@ -804,8 +788,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	else
 		curstate = 0;
 
-	if (state == curstate)
-	{
+	if (state == curstate) {
 		vchannel_write("ACK", "%u", serial);
 		vchannel_unblock();
 		return;
@@ -847,70 +830,61 @@ BOOL APIENTRY
 DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
 	HANDLE filemapping = NULL;
-	switch (ul_reason_for_call)
-	{
-		case DLL_PROCESS_ATTACH:
-			// remember our instance handle
-			g_instance = hinstDLL;
+	switch (ul_reason_for_call) {
+	case DLL_PROCESS_ATTACH:
+		// remember our instance handle
+		g_instance = hinstDLL;
 
-			g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessDLL");
+		g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessDLL");
 
-			filemapping = CreateFileMapping(INVALID_HANDLE_VALUE,
-							NULL,
-							PAGE_READWRITE,
-							0,
-							sizeof(shared_variables),
-							"Local\\SeamlessRDPData");
+		filemapping = CreateFileMapping(INVALID_HANDLE_VALUE,
+			NULL,
+			PAGE_READWRITE,
+			0, sizeof(shared_variables), "Local\\SeamlessRDPData");
 
-			if (filemapping)
-			{
-				/* From MSDN: The initial contents of
-				   the pages in a file mapping object
-				   backed by the paging file are 0
-				   (zero)." */
-				g_shdata = MapViewOfFile(filemapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		if (filemapping) {
+			/* From MSDN: The initial contents of
+			   the pages in a file mapping object
+			   backed by the paging file are 0
+			   (zero)." */
+			g_shdata = MapViewOfFile(filemapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		}
+
+		if (g_mutex && filemapping && g_shdata && vchannel_open() == 0) {
+			WaitForSingleObject(g_mutex, INFINITE);
+			++g_shdata->instance_count;
+			ReleaseMutex(g_mutex);
+			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
+		}
+		break;
+
+	case DLL_THREAD_ATTACH:
+		break;
+
+	case DLL_THREAD_DETACH:
+		break;
+
+	case DLL_PROCESS_DETACH:
+		if (vchannel_is_open()) {
+			vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx",
+				GetCurrentProcessId(), 0);
+			vchannel_close();
+		}
+
+		if (g_mutex) {
+			WaitForSingleObject(g_mutex, INFINITE);
+			if (g_shdata) {
+				--g_shdata->instance_count;
+				UnmapViewOfFile(g_shdata);
 			}
+			ReleaseMutex(g_mutex);
+			CloseHandle(g_mutex);
+		}
 
-			if (g_mutex && filemapping && g_shdata && vchannel_open() == 0)
-			{
-				WaitForSingleObject(g_mutex, INFINITE);
-				++g_shdata->instance_count;
-				ReleaseMutex(g_mutex);
-				g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
-			}
-			break;
-
-		case DLL_THREAD_ATTACH:
-			break;
-
-		case DLL_THREAD_DETACH:
-			break;
-
-		case DLL_PROCESS_DETACH:
-			if (vchannel_is_open())
-			{
-				vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx",
-					       GetCurrentProcessId(), 0);
-				vchannel_close();
-			}
-
-			if (g_mutex)
-			{
-				WaitForSingleObject(g_mutex, INFINITE);
-				if (g_shdata)
-				{
-					--g_shdata->instance_count;
-					UnmapViewOfFile(g_shdata);
-				}
-				ReleaseMutex(g_mutex);
-				CloseHandle(g_mutex);
-			}
-
-			if (filemapping)
-			{
-				CloseHandle(filemapping);
-			}
-			break;
+		if (filemapping) {
+			CloseHandle(filemapping);
+		}
+		break;
 	}
 
 	return TRUE;

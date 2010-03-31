@@ -90,25 +90,19 @@ unicode_to_utf8(const unsigned short *string)
 	size = sizeof(convert_buffer) - 1;
 
 	/* We do not handle characters outside BMP (i.e. we can't do UTF-16) */
-	while (*string != 0x0000)
-	{
-		if (*string < 0x80)
-		{
+	while (*string != 0x0000) {
+		if (*string < 0x80) {
 			if (size < 1)
 				break;
 			*buf++ = (unsigned char) *string;
 			size--;
-		}
-		else if (*string < 0x800)
-		{
+		} else if (*string < 0x800) {
 			if (size < 2)
 				break;
 			*buf++ = 0xC0 | (*string >> 6);
 			*buf++ = 0x80 | (*string & 0x3F);
 			size -= 2;
-		}
-		else if ((*string < 0xD800) || (*string > 0xDFFF))
-		{
+		} else if ((*string < 0xD800) || (*string > 0xDFFF)) {
 			if (size < 3)
 				break;
 			*buf++ = 0xE0 | (*string >> 12);
@@ -133,17 +127,17 @@ vchannel_open()
 		return 0;
 
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
-					   WTS_CURRENT_SESSION, CHANNELNAME);
+		WTS_CURRENT_SESSION, CHANNELNAME);
 
 	if (g_vchannel == NULL)
 		return -1;
 
 	g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessChannel");
 
-	g_vchannel_serial = CreateSemaphore(NULL, 0, INT_MAX, "Local\\SeamlessRDPSerial");
+	g_vchannel_serial =
+		CreateSemaphore(NULL, 0, INT_MAX, "Local\\SeamlessRDPSerial");
 
-	if (!g_mutex || !g_vchannel_serial)
-	{
+	if (!g_mutex || !g_vchannel_serial) {
 		WTSVirtualChannelClose(g_vchannel);
 		g_vchannel = NULL;
 		return -1;
@@ -192,38 +186,31 @@ vchannel_read(char *line, size_t length)
 	ULONG bytes_read;
 
 	result = WTSVirtualChannelRead(g_vchannel, 0, buffer + size,
-				       sizeof(buffer) - size, &bytes_read);
+		sizeof(buffer) - size, &bytes_read);
 
-	if (!result)
-	{
+	if (!result) {
 		errno = EIO;
 		return -1;
 	}
 
-	if (overflow_mode)
-	{
+	if (overflow_mode) {
 		newline = strchr(buffer, '\n');
-		if (newline && (newline - buffer) < bytes_read)
-		{
+		if (newline && (newline - buffer) < bytes_read) {
 			size = bytes_read - (newline - buffer) - 1;
 			memmove(buffer, newline + 1, size);
 			overflow_mode = FALSE;
 		}
-	}
-	else
+	} else
 		size += bytes_read;
 
-	if (overflow_mode)
-	{
+	if (overflow_mode) {
 		errno = -EAGAIN;
 		return -1;
 	}
 
 	newline = strchr(buffer, '\n');
-	if (!newline || (newline - buffer) >= size)
-	{
-		if (size == sizeof(buffer))
-		{
+	if (!newline || (newline - buffer) >= size) {
+		if (size == sizeof(buffer)) {
 			overflow_mode = TRUE;
 			size = 0;
 		}
@@ -231,8 +218,7 @@ vchannel_read(char *line, size_t length)
 		return -1;
 	}
 
-	if ((newline - buffer) >= length)
-	{
+	if ((newline - buffer) >= length) {
 		errno = ENOMEM;
 		return -1;
 	}
@@ -263,14 +249,11 @@ vchannel_write(const char *command, const char *format, ...)
 	WaitForSingleObject(g_mutex, INFINITE);
 
 	/* Increase serial */
-	if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial))
-	{
-		if (GetLastError() == ERROR_TOO_MANY_POSTS)
-		{
+	if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
+		if (GetLastError() == ERROR_TOO_MANY_POSTS) {
 			/* Reset serial to zero */
 			while (WaitForSingleObject(g_vchannel_serial, 0) == WAIT_OBJECT_0);
-			if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial))
-			{
+			if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
 				return -1;
 			}
 		}
@@ -278,14 +261,11 @@ vchannel_write(const char *command, const char *format, ...)
 
 	ret = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
 
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		// If the command and serial didn't fit, let's skip
 		// this message
 		return -1;
-	}
-	else
-	{
+	} else {
 		size = ret;
 	}
 	assert(size <= sizeof(buf));
@@ -295,20 +275,20 @@ vchannel_write(const char *command, const char *format, ...)
 	ret = _vsnprintf(buf + size, sizeof(buf) - size, format, argp);
 	va_end(argp);
 
-	if (ret < 0)
-	{
+	if (ret < 0) {
 		// Truncated, but let's write what we have              
 		size = sizeof(buf) - 1;
-	}
-	else
-	{
+	} else {
 		size = ret;
 	}
 	buf[sizeof(buf) - 1] = '\0';
 	assert(size < sizeof(buf));
 
-	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
-	result = WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
+	result =
+		WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf),
+		&bytes_written);
+	result =
+		WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
 
 	ReleaseMutex(g_mutex);
 
@@ -335,8 +315,7 @@ vchannel_strfilter(char *string)
 {
 	char *c;
 
-	for (c = string; *c != '\0'; c++)
-	{
+	for (c = string; *c != '\0'; c++) {
 		if (((unsigned char) *c < 0x20) || (strchr(INVALID_CHARS, *c) != NULL))
 			*c = REPLACEMENT_CHAR;
 	}

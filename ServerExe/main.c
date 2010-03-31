@@ -47,8 +47,8 @@ typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
 
-typedef void (*move_window_proc_t) (unsigned int serial, HWND hwnd, int x, int y, int width,
-				    int height);
+typedef void (*move_window_proc_t) (unsigned int serial, HWND hwnd, int x,
+	int y, int width, int height);
 typedef void (*zchange_proc_t) (unsigned int serial, HWND hwnd, HWND behind);
 typedef void (*focus_proc_t) (unsigned int serial, HWND hwnd);
 typedef void (*set_state_proc_t) (unsigned int serial, HWND hwnd, int state);
@@ -74,13 +74,10 @@ get_token(char **s)
 		return NULL;
 
 	comma = strchr(head, ',');
-	if (comma)
-	{
+	if (comma) {
 		*comma = '\0';
 		*s = comma + 1;
-	}
-	else
-	{
+	} else {
 		*s = NULL;
 	}
 
@@ -108,7 +105,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	   remove this when cmd.exe support has been added, though. */
 	char classname[32];
 	if (GetClassName(hwnd, classname, sizeof(classname))
-	    && !strcmp(classname, "ConsoleWindowClass"))
+		&& !strcmp(classname, "ConsoleWindowClass"))
 		return TRUE;
 
 	if (styles & WS_POPUP)
@@ -123,21 +120,21 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		flags |= SEAMLESS_CREATE_MODAL;
 
 	vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
-		       hwnd_to_long(hwnd), (long) pid, hwnd_to_long(parent), flags);
+		hwnd_to_long(hwnd), (long) pid, hwnd_to_long(parent), flags);
 
-	if (!GetWindowRect(hwnd, &rect))
-	{
+	if (!GetWindowRect(hwnd, &rect)) {
 		debug("GetWindowRect failed!");
 		return TRUE;
 	}
 
 	vchannel_write("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
-		       hwnd,
-		       rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
+		hwnd,
+		rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
 	GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-	vchannel_write("TITLE", "0x%x,%s,0x%x", hwnd, vchannel_strfilter_unicode(title), 0);
+	vchannel_write("TITLE", "0x%x,%s,0x%x", hwnd,
+		vchannel_strfilter_unicode(title), 0);
 
 	if (styles & WS_MAXIMIZE)
 		state = 2;
@@ -205,8 +202,7 @@ process_cmds(void)
 
 	char *p, *tok1, *tok2, *tok3, *tok4, *tok5, *tok6, *tok7, *tok8;
 
-	while ((size = vchannel_read(line, sizeof(line))) >= 0)
-	{
+	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
 		p = line;
 
 		tok1 = get_token(&p);
@@ -221,18 +217,18 @@ process_cmds(void)
 		if (strcmp(tok1, "SYNC") == 0)
 			do_sync();
 		else if (strcmp(tok1, "STATE") == 0)
-			do_state(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
-				 strtol(tok4, NULL, 0));
+			do_state(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL,
+						0)), strtol(tok4, NULL, 0));
 		else if (strcmp(tok1, "POSITION") == 0)
-			do_position(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
-				    strtol(tok4, NULL, 0), strtol(tok5, NULL, 0), strtol(tok6, NULL,
-											 0),
-				    strtol(tok7, NULL, 0));
+			do_position(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL,
+						0)), strtol(tok4, NULL, 0), strtol(tok5, NULL, 0),
+				strtol(tok6, NULL, 0), strtol(tok7, NULL, 0));
 		else if (strcmp(tok1, "ZCHANGE") == 0)
-			do_zchange(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)),
-				   long_to_hwnd(strtoul(tok4, NULL, 0)));
+			do_zchange(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL,
+						0)), long_to_hwnd(strtoul(tok4, NULL, 0)));
 		else if (strcmp(tok1, "FOCUS") == 0)
-			do_focus(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL, 0)));
+			do_focus(strtoul(tok2, NULL, 0), long_to_hwnd(strtoul(tok3, NULL,
+						0)));
 		else if (strcmp(tok1, "DESTROY") == 0)
 			do_destroy(long_to_hwnd(strtoul(tok3, NULL, 0)));
 	}
@@ -249,8 +245,7 @@ build_startup_procs(void)
 
 	g_startup_num_procs = 0;
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
@@ -260,8 +255,7 @@ build_startup_procs(void)
 	g_startup_procs = malloc(sizeof(DWORD) * g_startup_num_procs);
 
 	j = 0;
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
@@ -292,25 +286,21 @@ should_terminate(void)
 	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
 		return TRUE;
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
 		// ieuser.exe hangs around even after IE has exited
-		if (0 == _stricmp(pinfo[i].pProcessName, "ieuser.exe"))
-		{
+		if (0 == _stricmp(pinfo[i].pProcessName, "ieuser.exe")) {
 			continue;
 		}
 
-		for (j = 0; j < g_startup_num_procs; j++)
-		{
+		for (j = 0; j < g_startup_num_procs; j++) {
 			if (pinfo[i].ProcessId == g_startup_procs[j])
 				break;
 		}
 
-		if (j == g_startup_num_procs)
-		{
+		if (j == g_startup_num_procs) {
 			WTSFreeMemory(pinfo);
 			return FALSE;
 		}
@@ -329,8 +319,7 @@ is_connected(void)
 	DWORD size;
 
 	res = WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
-					 WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *) & state,
-					 &size);
+		WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *) & state, &size);
 	if (!res)
 		return TRUE;
 
@@ -368,16 +357,13 @@ launch_app(LPSTR cmdline)
 	startup_info.cb = sizeof(STARTUPINFO);
 
 	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
-			       NULL, NULL, &startup_info, &proc_info);
+		NULL, NULL, &startup_info, &proc_info);
 	// Release handles
 	CloseHandle(proc_info.hThread);
 
-	if (result)
-	{
+	if (result) {
 		return proc_info.hProcess;
-	}
-	else
-	{
+	} else {
 		return NULL;
 	}
 }
@@ -391,15 +377,13 @@ launch_helper()
 
 	/* If we are running on a x64 system, hook 32 bit apps as well
 	   by launching a 32 bit helper process. */
-	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-	{
+	if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
 		char cmd[] = "seamlessrdphook32.exe";
 		app = launch_app(cmd);
-		if (!app)
-		{
+		if (!app) {
 			char msg[256];
 			_snprintf(msg, sizeof(msg),
-				  "Unable to launch the requested application:\n%s", cmd);
+				"Unable to launch the requested application:\n%s", cmd);
 			message(msg);
 		}
 
@@ -407,14 +391,13 @@ launch_helper()
 		   the process enum */
 		DWORD ret;
 		ret = WaitForInputIdle(app, HELPER_TIMEOUT);
-		switch (ret)
-		{
-			case 0:
-				break;
-			case WAIT_TIMEOUT:
-			case WAIT_FAILED:
-				message("Hooking helper failed to start within time limit");
-				break;
+		switch (ret) {
+		case 0:
+			break;
+		case WAIT_TIMEOUT:
+		case WAIT_FAILED:
+			message("Hooking helper failed to start within time limit");
+			break;
 		}
 	}
 	return app;
@@ -428,26 +411,23 @@ kill_15_9(HANDLE proc, const char *wndname, DWORD timeout)
 	HWND procwnd;
 	DWORD ret;
 	procwnd = FindWindowEx(HWND_MESSAGE, NULL, "Message", wndname);
-	if (procwnd)
-	{
+	if (procwnd) {
 		PostMessage(procwnd, WM_CLOSE, 0, 0);
 	}
 	ret = WaitForSingleObject(proc, timeout);
-	switch (ret)
-	{
-		case WAIT_ABANDONED:
-		case WAIT_OBJECT_0:
-			break;
-		case WAIT_TIMEOUT:
-			// Still running, kill hard
-			if (!TerminateProcess(proc, 1))
-			{
-				message("Unable to terminate process");
-			}
-			break;
-		case WAIT_FAILED:
-			message("Unable to wait for process");
-			break;
+	switch (ret) {
+	case WAIT_ABANDONED:
+	case WAIT_OBJECT_0:
+		break;
+	case WAIT_TIMEOUT:
+		// Still running, kill hard
+		if (!TerminateProcess(proc, 1)) {
+			message("Unable to terminate process");
+		}
+		break;
+	case WAIT_FAILED:
+		message("Unable to wait for process");
+		break;
 	}
 }
 
@@ -465,67 +445,66 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	int check_counter;
 
-	if (strlen(cmdline) == 0)
-	{
+	if (strlen(cmdline) == 0) {
 		message("No command line specified.");
 		return -1;
 	}
 
-	if (vchannel_open())
-	{
+	if (vchannel_open()) {
 		message("Unable to set up the virtual channel.");
 		return -1;
 	}
 
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	switch (si.wProcessorArchitecture)
-	{
-		case PROCESSOR_ARCHITECTURE_INTEL:
-			hookdll = LoadLibrary("seamlessrdp32.dll");
-			break;
-		case PROCESSOR_ARCHITECTURE_AMD64:
-			hookdll = LoadLibrary("seamlessrdp64.dll");
-			break;
-		default:
-			message("Unsupported processor architecture.");
-			break;
+	switch (si.wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_INTEL:
+		hookdll = LoadLibrary("seamlessrdp32.dll");
+		break;
+	case PROCESSOR_ARCHITECTURE_AMD64:
+		hookdll = LoadLibrary("seamlessrdp64.dll");
+		break;
+	default:
+		message("Unsupported processor architecture.");
+		break;
 
 	}
 
-	if (!hookdll)
-	{
+	if (!hookdll) {
 		message("Could not load hook DLL. Unable to continue.");
 		goto close_vchannel;
 	}
 
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
-	remove_hooks_fn = (remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
-	instance_count_fn = (get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
-	g_move_window_fn = (move_window_proc_t) GetProcAddress(hookdll, "SafeMoveWindow");
+	remove_hooks_fn =
+		(remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
+	instance_count_fn =
+		(get_instance_count_proc_t) GetProcAddress(hookdll, "GetInstanceCount");
+	g_move_window_fn =
+		(move_window_proc_t) GetProcAddress(hookdll, "SafeMoveWindow");
 	g_zchange_fn = (zchange_proc_t) GetProcAddress(hookdll, "SafeZChange");
 	g_focus_fn = (focus_proc_t) GetProcAddress(hookdll, "SafeFocus");
 	g_set_state_fn = (set_state_proc_t) GetProcAddress(hookdll, "SafeSetState");
 
-	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn || !g_move_window_fn
-	    || !g_zchange_fn || !g_focus_fn || !g_set_state_fn)
-	{
-		message("Hook DLL doesn't contain the correct functions. Unable to continue.");
+	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn
+		|| !g_move_window_fn || !g_zchange_fn || !g_focus_fn
+		|| !g_set_state_fn) {
+		message
+			("Hook DLL doesn't contain the correct functions. Unable to continue.");
 		goto close_hookdll;
 	}
 
 	/* Check if the DLL is already loaded */
-	switch (instance_count_fn())
-	{
-		case 0:
-			message("Hook DLL failed to initialize.");
-			goto close_hookdll;
-			break;
-		case 1:
-			break;
-		default:
-			message("Another running instance of Seamless RDP detected.");
-			goto close_hookdll;
+	switch (instance_count_fn()) {
+	case 0:
+		message("Hook DLL failed to initialize.");
+		goto close_hookdll;
+		break;
+	case 1:
+		break;
+	default:
+		message("Another running instance of Seamless RDP detected.");
+		goto close_hookdll;
 	}
 
 	helper = launch_helper();
@@ -537,7 +516,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	g_connected = is_connected();
 	g_desktop_hidden = is_desktop_hidden();
 
-	vchannel_write("HELLO", "0x%08x", g_desktop_hidden ? SEAMLESS_HELLO_HIDDEN : 0);
+	vchannel_write("HELLO", "0x%08x",
+		g_desktop_hidden ? SEAMLESS_HELLO_HIDDEN : 0);
 
 	set_hooks_fn();
 
@@ -551,25 +531,22 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	/* We don't want windows denying requests to activate windows. */
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
-	if (!launch_app(cmdline))
-	{
+	if (!launch_app(cmdline)) {
 		// CreateProcess failed.
 		char msg[256];
 		_snprintf(msg, sizeof(msg),
-			  "Unable to launch the requested application:\n%s", cmdline);
+			"Unable to launch the requested application:\n%s", cmdline);
 		message(msg);
 		goto unhook;
 	}
 
 	check_counter = 5;
-	while (check_counter-- || !should_terminate())
-	{
+	while (check_counter-- || !should_terminate()) {
 		BOOL connected;
 		MSG msg;
 
 		connected = is_connected();
-		if (connected && !g_connected)
-		{
+		if (connected && !g_connected) {
 			int flags;
 			/* These get reset on each reconnect */
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
@@ -584,8 +561,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 		g_connected = connected;
 
-		if (check_counter < 0)
-		{
+		if (check_counter < 0) {
 			BOOL hidden;
 
 			hidden = is_desktop_hidden();
@@ -599,8 +575,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			check_counter = 5;
 		}
 
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -610,20 +585,19 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	success = 1;
 
-      unhook:
+  unhook:
 	remove_hooks_fn();
 
 	free_startup_procs();
-	if (helper)
-	{
+	if (helper) {
 		// Terminate seamlessrdphook32.exe
 		kill_15_9(helper, "SeamlessRDPHook", HELPER_TIMEOUT);
 	}
 
-      close_hookdll:
+  close_hookdll:
 	FreeLibrary(hookdll);
 
-      close_vchannel:
+  close_vchannel:
 	vchannel_close();
 
 	// Logoff the user. This is necessary because the session may

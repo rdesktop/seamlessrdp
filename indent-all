@@ -1,2 +1,2 @@
 #!/bin/sh
-indent -bli0 -i8 -cli8 -npcs -l100 ServerExe/*.h ServerExe/*.c
+indent -bli0 -i4 -ts4 -cli0 -npcs -nlp -br -ce -l80 ServerExe/*.h ServerExe/*.c
