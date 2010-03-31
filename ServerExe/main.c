@@ -297,6 +297,12 @@ should_terminate(void)
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
+		// ieuser.exe hangs around even after IE has exited
+		if (0 == _stricmp(pinfo[i].pProcessName, "ieuser.exe"))
+		{
+			continue;
+		}
+
 		for (j = 0; j < g_startup_num_procs; j++)
 		{
 			if (pinfo[i].ProcessId == g_startup_procs[j])
@@ -612,6 +618,11 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
       close_vchannel:
 	vchannel_close();
+
+	// Logoff the user. This is necessary because the session may
+	// have started processes that are not included in Microsofts
+	// list of processes to ignore. Typically ieuser.exe.
+	ExitWindows(0, 0);
 
 	if (success)
 		return 1;
