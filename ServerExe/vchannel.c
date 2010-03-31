@@ -254,7 +254,7 @@ vchannel_write(const char *command, const char *format, ...)
 	BOOL result;
 	va_list argp;
 	char buf[VCHANNEL_MAX_LINE];
-	int size;
+	int size, ret;
 	ULONG bytes_written;
 	LONG prev_serial;
 
@@ -276,18 +276,35 @@ vchannel_write(const char *command, const char *format, ...)
 		}
 	}
 
-	size = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
-	if (size < 0)
+	ret = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
+
+	if (ret < 0)
 	{
-		// Truncated, but let's write what we have
-		size = sizeof(buf);
+		// If the command and serial didn't fit, let's skip
+		// this message
+		return -1;
 	}
-	assert(size < sizeof(buf));
+	else
+	{
+		size = ret;
+	}
+	assert(size <= sizeof(buf));
+	buf[sizeof(buf) - 1] = '\0';
 
 	va_start(argp, format);
-	size += _vsnprintf(buf + size, sizeof(buf) - size, format, argp);
+	ret = _vsnprintf(buf + size, sizeof(buf) - size, format, argp);
 	va_end(argp);
 
+	if (ret < 0)
+	{
+		// Truncated, but let's write what we have              
+		size = sizeof(buf) - 1;
+	}
+	else
+	{
+		size = ret;
+	}
+	buf[sizeof(buf) - 1] = '\0';
 	assert(size < sizeof(buf));
 
 	result = WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf), &bytes_written);
