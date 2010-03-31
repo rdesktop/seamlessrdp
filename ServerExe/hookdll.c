@@ -33,7 +33,7 @@
 #define EXTERN __declspec(dllexport)
 
 #define FOCUS_MSG_NAME "WM_SEAMLESS_FOCUS"
-static UINT g_wm_seamless_focus;
+static UINT g_wm_seamless_focus = 0;	// Non-zero if DLL is initialized
 
 static HHOOK g_cbt_hook = NULL;
 static HHOOK g_wndproc_hook = NULL;
@@ -382,6 +382,9 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	LONG style;
 
+	if (!g_wm_seamless_focus)
+		goto end;
+
 	if (code < 0)
 		goto end;
 
@@ -533,6 +536,9 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	LONG style;
 
+	if (!g_wm_seamless_focus)
+		goto end;
+
 	if (code < 0)
 		goto end;
 
@@ -617,6 +623,9 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 static LRESULT CALLBACK
 cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 {
+	if (!g_wm_seamless_focus)
+		goto end;
+
 	if (code < 0)
 		goto end;
 
@@ -706,6 +715,9 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 {
 	RECT rect;
 
+	if (!g_wm_seamless_focus)
+		return;
+
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->block_move_hwnd = hwnd_to_long(hwnd);
 	g_shdata->block_move_serial = serial;
@@ -734,6 +746,9 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width, int heig
 EXTERN void
 SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 {
+	if (!g_wm_seamless_focus)
+		return;
+
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->blocked_zchange_serial = serial;
 	g_shdata->blocked_zchange[0] = hwnd_to_long(hwnd);
@@ -754,6 +769,9 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 EXTERN void
 SafeFocus(unsigned int serial, HWND hwnd)
 {
+	if (!g_wm_seamless_focus)
+		return;
+
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->blocked_focus_serial = serial;
 	g_shdata->blocked_focus = hwnd_to_long(hwnd);
@@ -771,6 +789,9 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 {
 	LONG style;
 	int curstate;
+
+	if (!g_wm_seamless_focus)
+		return;
 
 	vchannel_block();
 
@@ -816,6 +837,9 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 EXTERN int
 GetInstanceCount()
 {
+	if (!g_wm_seamless_focus)
+		return 0;
+
 	return g_shdata->instance_count;
 }
 
@@ -847,30 +871,13 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 				g_shdata = MapViewOfFile(filemapping, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 			}
 
-			if (!g_mutex || !filemapping || !g_shdata || vchannel_open())
+			if (g_mutex && filemapping && g_shdata && vchannel_open() == 0)
 			{
-				/* Clean up in reverse order */
-				if (g_shdata)
-				{
-					UnmapViewOfFile(g_shdata);
-				}
-				if (filemapping)
-				{
-					CloseHandle(filemapping);
-				}
-				if (g_mutex)
-				{
-					CloseHandle(g_mutex);
-				}
-				return FALSE;
+				WaitForSingleObject(g_mutex, INFINITE);
+				++g_shdata->instance_count;
+				ReleaseMutex(g_mutex);
+				g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
 			}
-
-			WaitForSingleObject(g_mutex, INFINITE);
-			++g_shdata->instance_count;
-			ReleaseMutex(g_mutex);
-
-			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
-
 			break;
 
 		case DLL_THREAD_ATTACH:
@@ -880,18 +887,29 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			break;
 
 		case DLL_PROCESS_DETACH:
-			vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx", GetCurrentProcessId(), 0);
+			if (vchannel_is_open())
+			{
+				vchannel_write("DESTROYGRP", "0x%08lx, 0x%08lx",
+					       GetCurrentProcessId(), 0);
+				vchannel_close();
+			}
 
-			WaitForSingleObject(g_mutex, INFINITE);
-			--g_shdata->instance_count;
-			ReleaseMutex(g_mutex);
+			if (g_mutex)
+			{
+				WaitForSingleObject(g_mutex, INFINITE);
+				if (g_shdata)
+				{
+					--g_shdata->instance_count;
+					UnmapViewOfFile(g_shdata);
+				}
+				ReleaseMutex(g_mutex);
+				CloseHandle(g_mutex);
+			}
 
-			vchannel_close();
-
-			UnmapViewOfFile(g_shdata);
-			CloseHandle(filemapping);
-			CloseHandle(g_mutex);
-
+			if (filemapping)
+			{
+				CloseHandle(filemapping);
+			}
 			break;
 	}
 
