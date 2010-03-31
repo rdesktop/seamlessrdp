@@ -515,10 +515,17 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	}
 
 	/* Check if the DLL is already loaded */
-	if (instance_count_fn() != 1)
+	switch (instance_count_fn())
 	{
-		message("Another running instance of Seamless RDP detected.");
-		goto close_hookdll;
+		case 0:
+			message("Hook DLL failed to initialize.");
+			goto close_hookdll;
+			break;
+		case 1:
+			break;
+		default:
+			message("Another running instance of Seamless RDP detected.");
+			goto close_hookdll;
 	}
 
 	helper = launch_helper();
