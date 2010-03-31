@@ -629,6 +629,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	// Logoff the user. This is necessary because the session may
 	// have started processes that are not included in Microsofts
 	// list of processes to ignore. Typically ieuser.exe.
+	// FIXME: Only do this if WTSQuerySessionInformation indicates
+	// that we are the initial program. 
 	ExitWindows(0, 0);
 
 	if (success)
