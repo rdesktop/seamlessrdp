@@ -277,6 +277,11 @@ vchannel_write(const char *command, const char *format, ...)
 	}
 
 	size = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
+	if (size < 0)
+	{
+		// Truncated, but let's write what we have
+		size = sizeof(buf);
+	}
 	assert(size < sizeof(buf));
 
 	va_start(argp, format);
