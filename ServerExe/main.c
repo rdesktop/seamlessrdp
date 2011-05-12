@@ -294,6 +294,10 @@ should_terminate(void)
 		if (0 == _stricmp(pinfo[i].pProcessName, "ieuser.exe")) {
 			continue;
 		}
+		// ctfmon.exe also likes to stay around
+		if (0 == _stricmp(pinfo[i].pProcessName, "ctfmon.exe")) {
+			continue;
+		}
 
 		for (j = 0; j < g_startup_num_procs; j++) {
 			if (pinfo[i].ProcessId == g_startup_procs[j])
