@@ -2,7 +2,7 @@
    rdesktop: A Remote Desktop Protocol client.
    Seamless windows - Virtual channel handling
 
-   Copyright (C) Pierre Ossman <ossman@cendio.se> 2006
+   Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
