@@ -6,6 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
+   Copyright 2012 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,6 +40,9 @@
 static DWORD g_session_id;
 static DWORD *g_startup_procs;
 static int g_startup_num_procs;
+
+static char **g_system_procs;
+static DWORD g_system_num_procs;
 
 static BOOL g_connected;
 static BOOL g_desktop_hidden;
@@ -235,6 +239,58 @@ process_cmds(void)
 }
 
 static BOOL
+build_system_procs(void)
+{
+	HKEY hKey;
+	DWORD j, res, spsize;
+
+	res = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+			   "SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\SysProcs",
+			   0, KEY_READ, &hKey);
+
+	if (res == ERROR_SUCCESS)
+		RegQueryInfoKey(hKey, NULL, NULL, NULL,
+				NULL, NULL, NULL, &g_system_num_procs, &spsize,
+				NULL, NULL, NULL );
+
+	if(!g_system_num_procs)
+	{
+		g_system_num_procs = 2;
+		g_system_procs = malloc(sizeof(char *) * g_system_num_procs);
+		g_system_procs[0] = strdup("ieuser.exe");
+		g_system_procs[1] = strdup("ctfmon.exe");
+	}
+	else
+	{
+		spsize = spsize+1;
+		g_system_procs = malloc(sizeof(char *) * g_system_num_procs);
+		for (j = 0; j < g_system_num_procs; j++) {
+			DWORD s = spsize;
+			g_system_procs[j] = malloc(s);
+			memset(g_system_procs[j], 0, s);
+			RegEnumValue(hKey, j, g_system_procs[j], &s,
+				     NULL, NULL, NULL, NULL);
+		}
+	}
+
+	if (hKey)
+		RegCloseKey(hKey);
+
+	return TRUE;
+}
+
+static void
+free_system_procs(void)
+{
+	DWORD j;
+
+	for (j = 0;j < g_system_num_procs; j++)
+		free(g_system_procs[j]);
+
+	free(g_system_procs);
+}
+
+static BOOL
 build_startup_procs(void)
 {
 	PWTS_PROCESS_INFO pinfo;
@@ -290,13 +346,9 @@ should_terminate(void)
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
-		// ieuser.exe hangs around even after IE has exited
-		if (0 == _stricmp(pinfo[i].pProcessName, "ieuser.exe")) {
-			continue;
-		}
-		// ctfmon.exe also likes to stay around
-		if (0 == _stricmp(pinfo[i].pProcessName, "ctfmon.exe")) {
-			continue;
+		for(j = 0; j < g_system_num_procs; j++) {
+			if (0 == _stricmp(pinfo[i].pProcessName, g_system_procs[j]))
+				goto skip_to_next_process;
 		}
 
 		for (j = 0; j < g_startup_num_procs; j++) {
@@ -308,6 +360,9 @@ should_terminate(void)
 			WTSFreeMemory(pinfo);
 			return FALSE;
 		}
+
+skip_to_next_process:
+		continue;
 	}
 
 	WTSFreeMemory(pinfo);
@@ -517,6 +572,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	build_startup_procs();
 
+	build_system_procs();
+
 	g_connected = is_connected();
 	g_desktop_hidden = is_desktop_hidden();
 
@@ -591,6 +648,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
   unhook:
 	remove_hooks_fn();
+
+	free_system_procs();
 
 	free_startup_procs();
 	if (helper) {
