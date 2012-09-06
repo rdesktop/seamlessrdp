@@ -592,6 +592,13 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	/* We don't want windows denying requests to activate windows. */
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
+	/* Prevent start of a stand alone console window which is not supported. */
+	if ( (!strncmp(cmdline,"cmd ",4) || !strncmp(cmdline,"cmd.exe",7)) &&
+	     !strstr(cmdline," /c ")) {
+		message("Running a seamless console window is not supported.");
+		goto unhook;
+	}
+
 	if (!launch_app(cmdline)) {
 		// CreateProcess failed.
 		char msg[256];

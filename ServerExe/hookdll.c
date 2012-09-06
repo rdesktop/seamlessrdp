@@ -392,6 +392,16 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	style = GetWindowLong(hwnd, GWL_STYLE);
 
+	/* cmd.exe console window belongs to CSRSS.exe process which is not
+	   owned by user and therefor hooking into it will fail in several ways,
+	   we do ignore them upon vchannel SYNC command when enumerating windows
+	   but we should also ignore them here if they exists at this point.
+	 */
+	char classname[32];
+	if (GetClassName(hwnd, classname, sizeof(classname))
+		&& !strcmp(classname, "ConsoleWindowClass"))
+		goto end;
+
 	switch (msg) {
 	case WM_WINDOWPOSCHANGED:
 		{
