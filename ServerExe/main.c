@@ -6,7 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
-   Copyright 2012 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2012-2013 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -65,7 +65,59 @@ static set_state_proc_t g_set_state_fn = NULL;
 static void
 message(const char *text)
 {
-	MessageBox(GetDesktopWindow(), text, "SeamlessRDP Shell", MB_OK);
+	wchar_t *wtext;
+	size_t size;
+
+	wtext = NULL;
+
+	/* convert utf-8 to unicode*/
+	size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+				   text, strlen(text) + 1, NULL, 0) * 2;
+
+	if (size) {
+	    wtext = malloc(size);
+	    memset(wtext, 0, size);
+	    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+				text, strlen(text) + 1, wtext, size);
+	}
+
+	MessageBoxW(GetDesktopWindow(), wtext, L"SeamlessRDP Shell", MB_OK);
+
+	free(wtext);
+}
+
+static char *
+unescape(const char *str)
+{
+	char *ns, *ps, *pd;
+	unsigned int c;
+
+	ns = malloc(strlen(str) + 1);
+	memcpy(ns, str, strlen(str) + 1);
+	ps = pd = ns;
+
+	while (*ps != '\0')
+	{
+		/* check if found escaped character */
+		if (ps[0] == '%')
+		{
+			if (sscanf(ps, "%%%2X", &c) == 1)
+			{
+				pd[0] = c;
+				ps += 3;
+				pd++;
+				continue;
+			}
+		}
+
+		/* just copy over the char */
+		*pd = *ps;
+		ps++;
+		pd++;
+	}
+	pd[0] = '\0';
+
+	return ns;
 }
 
 static char *
@@ -152,6 +204,52 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	return TRUE;
 }
 
+// Returns process handle on success, or NULL on failure
+static HANDLE
+launch_app(LPSTR cmdline)
+{
+	BOOL result;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFO startup_info;
+
+	memset(&startup_info, 0, sizeof(STARTUPINFO));
+	startup_info.cb = sizeof(STARTUPINFO);
+
+	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
+		NULL, NULL, &startup_info, &proc_info);
+	// Release handles
+	CloseHandle(proc_info.hThread);
+
+	if (result) {
+		return proc_info.hProcess;
+	} else {
+		return NULL;
+	}
+}
+
+static HANDLE
+launch_appW(LPWSTR cmdline)
+{
+	BOOL result;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFOW startup_info;
+
+	memset(&startup_info, 0, sizeof(STARTUPINFO));
+	startup_info.cb = sizeof(STARTUPINFO);
+
+	result = CreateProcessW(NULL, cmdline, NULL, NULL, FALSE, 0,
+		NULL, NULL, &startup_info, &proc_info);
+
+	// Release handles
+	CloseHandle(proc_info.hThread);
+
+	if (result) {
+		return proc_info.hProcess;
+	} else {
+		return NULL;
+	}
+}
+
 static void
 do_sync(void)
 {
@@ -199,6 +297,35 @@ do_destroy(HWND hwnd)
 }
 
 static void
+do_spawn(unsigned int serial, char *cmd)
+{
+	HANDLE app = NULL;
+	wchar_t *wcmd;
+	size_t size;
+
+	/* convert utf-8 to unicode*/
+	size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+				   cmd, strlen(cmd) + 1, NULL, 0) * 2;
+
+	if (size) {
+	    wcmd = malloc(size);
+	    memset(wcmd, 0, size);
+	    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+				cmd, strlen(cmd) + 1, wcmd, size);
+	}
+
+	app = launch_appW(wcmd);
+	if (!app) {
+		char msg[256];
+		_snprintf(msg, sizeof(msg),
+			  "Unable to launch the requested application:\n%s", cmd);
+		message(msg);
+	}
+
+	free(wcmd);
+}
+
+static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
@@ -207,7 +334,8 @@ process_cmds(void)
 	char *p, *tok1, *tok2, *tok3, *tok4, *tok5, *tok6, *tok7, *tok8;
 
 	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
-		p = line;
+
+		p = unescape(line);
 
 		tok1 = get_token(&p);
 		tok2 = get_token(&p);
@@ -235,6 +363,10 @@ process_cmds(void)
 						0)));
 		else if (strcmp(tok1, "DESTROY") == 0)
 			do_destroy(long_to_hwnd(strtoul(tok3, NULL, 0)));
+		else if (strcmp(tok1, "SPAWN") == 0)
+			do_spawn(strtoul(tok2, NULL, 0), tok3);
+
+		free(p);
 	}
 }
 
@@ -402,29 +534,6 @@ is_desktop_hidden(void)
 		CloseDesktop(desk);
 
 	return desk == NULL;
-}
-
-// Returns process handle on success, or NULL on failure
-static HANDLE
-launch_app(LPSTR cmdline)
-{
-	BOOL result;
-	PROCESS_INFORMATION proc_info;
-	STARTUPINFO startup_info;
-
-	memset(&startup_info, 0, sizeof(STARTUPINFO));
-	startup_info.cb = sizeof(STARTUPINFO);
-
-	result = CreateProcess(NULL, cmdline, NULL, NULL, FALSE, 0,
-		NULL, NULL, &startup_info, &proc_info);
-	// Release handles
-	CloseHandle(proc_info.hThread);
-
-	if (result) {
-		return proc_info.hProcess;
-	} else {
-		return NULL;
-	}
 }
 
 static HANDLE
