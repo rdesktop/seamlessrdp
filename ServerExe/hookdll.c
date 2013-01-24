@@ -6,6 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006-2008 Pierre Ossman <ossman@cendio.se> for Cendio AB
+   Copyright 2013 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,6 +42,8 @@ static HHOOK g_wndprocret_hook = NULL;
 
 static HINSTANCE g_instance = NULL;
 
+static unsigned int g_conn_serial;
+
 /* 
    The data shared between 32 and 64 bit processes contains HWNDs. On
    win64, HWND is 64 bit but only 32 bits are used. Thus, our
@@ -69,6 +72,8 @@ typedef struct _shared_variables
 	HWND32 blocked_state_hwnd;
 	int blocked_state;
 
+	unsigned int conn_serial;
+
 } shared_variables;
 
 static HANDLE g_mutex = NULL;
@@ -86,6 +91,19 @@ is_toplevel(HWND hwnd)
 	   window." See http://msdn2.microsoft.com/en-us/library/ms632597(VS.85).aspx. */
 	toplevel = (!parent || parent == GetDesktopWindow());
 	return toplevel;
+}
+
+/* checks instance connection serial against shared. */
+static void
+check_conn_serial() 
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+	if (g_conn_serial != g_shdata->conn_serial) 
+	{
+		vchannel_reopen();
+		g_conn_serial = g_shdata->conn_serial;
+	}
+	ReleaseMutex(g_mutex);
 }
 
 /* Returns true if a window is a menu window. */
@@ -140,6 +158,8 @@ update_position(HWND hwnd)
 	memcpy(&blocked, &g_shdata->block_move, sizeof(RECT));
 	ReleaseMutex(g_mutex);
 
+	check_conn_serial();
+
 	vchannel_block();
 
 	if (!GetWindowRect(hwnd, &rect)) {
@@ -172,6 +192,8 @@ update_zorder(HWND hwnd)
 	block_hwnd = long_to_hwnd(g_shdata->blocked_zchange[0]);
 	block_behind = long_to_hwnd(g_shdata->blocked_zchange[1]);
 	ReleaseMutex(g_mutex);
+
+	check_conn_serial();
 
 	vchannel_block();
 
@@ -351,6 +373,8 @@ update_icon(HWND hwnd, HICON icon, int large)
 		return;
 	}
 
+	check_conn_serial();
+
 	chunks = (size + ICON_CHUNK - 1) / ICON_CHUNK;
 	for (i = 0; i < chunks; i++) {
 		for (j = 0; j < ICON_CHUNK; j++) {
@@ -374,6 +398,8 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	LPARAM lparam;
 
 	LONG style;
+
+	check_conn_serial();
 
 	if (!g_wm_seamless_focus)
 		goto end;
@@ -537,6 +563,8 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 	if (code < 0)
 		goto end;
 
+	check_conn_serial();
+
 	hwnd = ((CWPRETSTRUCT *) details)->hwnd;
 	msg = ((CWPRETSTRUCT *) details)->message;
 	wparam = ((CWPRETSTRUCT *) details)->wParam;
@@ -620,6 +648,8 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 	if (code < 0)
 		goto end;
 
+	check_conn_serial();
+
 	switch (code) {
 	case HCBT_MINMAX:
 		{
@@ -673,6 +703,15 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 }
 
 EXTERN void
+IncConnectionSerial(void)
+{
+	WaitForSingleObject(g_mutex, INFINITE);
+	g_shdata->conn_serial++;
+	ReleaseMutex(g_mutex);
+		
+}
+
+EXTERN void
 SetHooks(void)
 {
 	if (!g_cbt_hook)
@@ -709,6 +748,8 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 
 	if (!g_wm_seamless_focus)
 		return;
+
+	check_conn_serial();
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->block_move_hwnd = hwnd_to_long(hwnd);
@@ -786,6 +827,8 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 
 	if (!g_wm_seamless_focus)
 		return;
+
+	check_conn_serial();
 
 	vchannel_block();
 

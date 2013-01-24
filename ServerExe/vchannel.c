@@ -4,6 +4,7 @@
 
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
+   Copyright 2013 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -142,6 +143,24 @@ vchannel_open()
 		g_vchannel = NULL;
 		return -1;
 	}
+
+	return 0;
+}
+
+EXTERN int
+vchannel_reopen()
+{
+	vchannel_block();
+	if (g_vchannel)
+		WTSVirtualChannelClose(g_vchannel);
+
+	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
+					   WTS_CURRENT_SESSION, CHANNELNAME);
+
+	vchannel_unblock();
+
+	if (g_vchannel == NULL)
+		return -1;
 
 	return 0;
 }

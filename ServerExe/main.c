@@ -47,6 +47,7 @@ static DWORD g_system_num_procs;
 static BOOL g_connected;
 static BOOL g_desktop_hidden;
 
+typedef void (*inc_conn_serial_t) ();
 typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
@@ -610,6 +611,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	set_hooks_proc_t set_hooks_fn;
 	remove_hooks_proc_t remove_hooks_fn;
 	get_instance_count_proc_t instance_count_fn;
+	inc_conn_serial_t inc_conn_serial_fn;
 
 	int check_counter;
 
@@ -643,6 +645,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		goto close_vchannel;
 	}
 
+	inc_conn_serial_fn = (inc_conn_serial_t) GetProcAddress(hookdll, "IncConnectionSerial");
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
 	remove_hooks_fn =
 		(remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
@@ -729,6 +732,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
 			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
+
+			inc_conn_serial_fn();
+			vchannel_reopen();
 
 			flags = SEAMLESS_HELLO_RECONNECT;
 			if (g_desktop_hidden)
