@@ -26,6 +26,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <sys/time.h>
 #include <wtsapi32.h>
 #include <cchannel.h>
 
@@ -34,6 +35,8 @@
 #include "resource.h"
 
 #define APP_NAME "SeamlessRDP Shell"
+// TODO: the session timeout should match the liftime of the RDP reconnection blob
+#define SESSION_TIMEOUT 60
 #define HELPER_TIMEOUT 2000
 
 /* Global data */
@@ -46,6 +49,7 @@ static DWORD g_system_num_procs;
 
 static BOOL g_connected;
 static BOOL g_desktop_hidden;
+static time_t g_session_disconnect_ts;
 
 typedef void (*inc_conn_serial_t) ();
 typedef void (*set_hooks_proc_t) ();
@@ -472,6 +476,12 @@ should_terminate(void)
 	PWTS_PROCESS_INFO pinfo;
 	DWORD i, j, count;
 
+	if (g_connected || g_session_disconnect_ts == 0)
+		return FALSE;
+
+	if ((time(NULL) - g_session_disconnect_ts) < SESSION_TIMEOUT)
+		return FALSE;
+
 	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
 		return TRUE;
 
@@ -615,8 +625,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	int check_counter;
 
-	if (strlen(cmdline) == 0) {
-		message("No command line specified.");
+	if (strlen(cmdline) != 0) {
+		message("Seamless RDP Shell should be started without any arguments.");
 		return -1;
 	}
 
@@ -704,28 +714,20 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	/* We don't want windows denying requests to activate windows. */
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
-	/* Prevent start of a stand alone console window which is not supported. */
-	if ( (!strncmp(cmdline,"cmd ",4) || !strncmp(cmdline,"cmd.exe",7)) &&
-	     !strstr(cmdline," /c ")) {
-		message("Running a seamless console window is not supported.");
-		goto unhook;
-	}
-
-	if (!launch_app(cmdline)) {
-		// CreateProcess failed.
-		char msg[256];
-		_snprintf(msg, sizeof(msg),
-			"Unable to launch the requested application:\n%s", cmdline);
-		message(msg);
-		goto unhook;
-	}
-
+	g_session_disconnect_ts = 0;
 	check_counter = 5;
 	while (check_counter-- || !should_terminate()) {
 		BOOL connected;
 		MSG msg;
 
 		connected = is_connected();
+
+		if (!connected && !g_session_disconnect_ts)
+			g_session_disconnect_ts = time(NULL);
+
+		if (connected && g_session_disconnect_ts)
+			g_session_disconnect_ts = 0;
+		
 		if (connected && !g_connected) {
 			int flags;
 			/* These get reset on each reconnect */
@@ -768,8 +770,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	success = 1;
 
-  unhook:
-	remove_hooks_fn();
+ 	remove_hooks_fn();
 
 	free_system_procs();
 
