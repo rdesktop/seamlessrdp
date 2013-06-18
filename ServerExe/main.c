@@ -68,27 +68,33 @@ static focus_proc_t g_focus_fn = NULL;
 static set_state_proc_t g_set_state_fn = NULL;
 
 static void
-message(const char *text)
+messageW(const wchar_t * wtext)
 {
-	wchar_t *wtext;
+	MessageBoxW(GetDesktopWindow(), wtext, L"SeamlessRDP Shell", MB_OK);
+}
+
+static int
+utf8_to_utf16(const char *input, wchar_t ** output)
+{
 	size_t size;
 
-	wtext = NULL;
+	*output = NULL;
 
-	/* convert utf-8 to unicode*/
+	/* convert utf-8 to utf-16 */
 	size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-				   text, strlen(text) + 1, NULL, 0) * 2;
+		input, strlen(input) + 1, NULL, 0) * 2;
+
+	if (size == 0)
+		return 1;
 
 	if (size) {
-	    wtext = malloc(size);
-	    memset(wtext, 0, size);
-	    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-				text, strlen(text) + 1, wtext, size);
+		*output = malloc(size);
+		memset(*output, 0, size);
+		MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+			input, strlen(input) + 1, *output, size);
 	}
 
-	MessageBoxW(GetDesktopWindow(), wtext, L"SeamlessRDP Shell", MB_OK);
-
-	free(wtext);
+	return 0;
 }
 
 static char *
@@ -101,13 +107,10 @@ unescape(const char *str)
 	memcpy(ns, str, strlen(str) + 1);
 	ps = pd = ns;
 
-	while (*ps != '\0')
-	{
+	while (*ps != '\0') {
 		/* check if found escaped character */
-		if (ps[0] == '%')
-		{
-			if (sscanf(ps, "%%%2X", &c) == 1)
-			{
+		if (ps[0] == '%') {
+			if (sscanf(ps, "%%%2X", &c) == 1) {
 				pd[0] = c;
 				ps += 3;
 				pd++;
@@ -305,26 +308,22 @@ static void
 do_spawn(unsigned int serial, char *cmd)
 {
 	HANDLE app = NULL;
-	wchar_t *wcmd;
-	size_t size;
+	wchar_t *wcmd, *wmsg;
 
-	/* convert utf-8 to unicode*/
-	size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-				   cmd, strlen(cmd) + 1, NULL, 0) * 2;
-
-	if (size) {
-	    wcmd = malloc(size);
-	    memset(wcmd, 0, size);
-	    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-				cmd, strlen(cmd) + 1, wcmd, size);
+	if (utf8_to_utf16(cmd, &wcmd) != 0) {
+		messageW
+			(L"Failed to launch application due to invalid unicode in command line.");
+		return;
 	}
 
 	app = launch_appW(wcmd);
 	if (!app) {
 		char msg[256];
 		_snprintf(msg, sizeof(msg),
-			  "Unable to launch the requested application:\n%s", cmd);
-		message(msg);
+			"Unable to launch the requested application:\n%s", cmd);
+		utf8_to_utf16(msg, &wmsg);
+		messageW(wmsg);
+		free(wmsg);
 	}
 
 	free(wcmd);
@@ -382,31 +381,27 @@ build_system_procs(void)
 	DWORD j, res, spsize;
 
 	res = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-			   "SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\SysProcs",
-			   0, KEY_READ, &hKey);
+		"SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\SysProcs",
+		0, KEY_READ, &hKey);
 
 	if (res == ERROR_SUCCESS)
 		RegQueryInfoKey(hKey, NULL, NULL, NULL,
-				NULL, NULL, NULL, &g_system_num_procs, &spsize,
-				NULL, NULL, NULL );
+			NULL, NULL, NULL, &g_system_num_procs, &spsize, NULL, NULL, NULL);
 
-	if(!g_system_num_procs)
-	{
+	if (!g_system_num_procs) {
 		g_system_num_procs = 2;
 		g_system_procs = malloc(sizeof(char *) * g_system_num_procs);
 		g_system_procs[0] = strdup("ieuser.exe");
 		g_system_procs[1] = strdup("ctfmon.exe");
-	}
-	else
-	{
-		spsize = spsize+1;
+	} else {
+		spsize = spsize + 1;
 		g_system_procs = malloc(sizeof(char *) * g_system_num_procs);
 		for (j = 0; j < g_system_num_procs; j++) {
 			DWORD s = spsize;
 			g_system_procs[j] = malloc(s);
 			memset(g_system_procs[j], 0, s);
 			RegEnumValue(hKey, j, g_system_procs[j], &s,
-				     NULL, NULL, NULL, NULL);
+				NULL, NULL, NULL, NULL);
 		}
 	}
 
@@ -421,7 +416,7 @@ free_system_procs(void)
 {
 	DWORD j;
 
-	for (j = 0;j < g_system_num_procs; j++)
+	for (j = 0; j < g_system_num_procs; j++)
 		free(g_system_procs[j]);
 
 	free(g_system_procs);
@@ -489,7 +484,7 @@ should_terminate(void)
 		if (pinfo[i].SessionId != g_session_id)
 			continue;
 
-		for(j = 0; j < g_system_num_procs; j++) {
+		for (j = 0; j < g_system_num_procs; j++) {
 			if (0 == _stricmp(pinfo[i].pProcessName, g_system_procs[j]))
 				goto skip_to_next_process;
 		}
@@ -504,7 +499,7 @@ should_terminate(void)
 			return FALSE;
 		}
 
-skip_to_next_process:
+	  skip_to_next_process:
 		continue;
 	}
 
@@ -550,6 +545,7 @@ is_desktop_hidden(void)
 static HANDLE
 launch_helper()
 {
+	wchar_t *wmsg;
 	HANDLE app = NULL;
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
@@ -563,7 +559,9 @@ launch_helper()
 			char msg[256];
 			_snprintf(msg, sizeof(msg),
 				"Unable to launch the requested application:\n%s", cmd);
-			message(msg);
+			utf8_to_utf16(msg, &wmsg);
+			messageW(wmsg);
+			free(wmsg);
 		}
 
 		/* Wait until helper is started, so that it gets included in
@@ -575,7 +573,7 @@ launch_helper()
 			break;
 		case WAIT_TIMEOUT:
 		case WAIT_FAILED:
-			message("Hooking helper failed to start within time limit");
+			messageW(L"Hooking helper failed to start within time limit");
 			break;
 		}
 	}
@@ -601,11 +599,11 @@ kill_15_9(HANDLE proc, const char *wndname, DWORD timeout)
 	case WAIT_TIMEOUT:
 		// Still running, kill hard
 		if (!TerminateProcess(proc, 1)) {
-			message("Unable to terminate process");
+			messageW(L"Unable to terminate process");
 		}
 		break;
 	case WAIT_FAILED:
-		message("Unable to wait for process");
+		messageW(L"Unable to wait for process");
 		break;
 	}
 }
@@ -626,12 +624,13 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	int check_counter;
 
 	if (strlen(cmdline) != 0) {
-		message("Seamless RDP Shell should be started without any arguments.");
+		messageW
+			(L"Seamless RDP Shell should be started without any arguments.");
 		return -1;
 	}
 
 	if (vchannel_open()) {
-		message("Unable to set up the virtual channel.");
+		messageW(L"Unable to set up the virtual channel.");
 		return -1;
 	}
 
@@ -645,17 +644,18 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		hookdll = LoadLibrary("seamlessrdp64.dll");
 		break;
 	default:
-		message("Unsupported processor architecture.");
+		messageW(L"Unsupported processor architecture.");
 		break;
 
 	}
 
 	if (!hookdll) {
-		message("Could not load hook DLL. Unable to continue.");
+		messageW(L"Could not load hook DLL. Unable to continue.");
 		goto close_vchannel;
 	}
 
-	inc_conn_serial_fn = (inc_conn_serial_t) GetProcAddress(hookdll, "IncConnectionSerial");
+	inc_conn_serial_fn =
+		(inc_conn_serial_t) GetProcAddress(hookdll, "IncConnectionSerial");
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
 	remove_hooks_fn =
 		(remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
@@ -670,21 +670,21 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn
 		|| !g_move_window_fn || !g_zchange_fn || !g_focus_fn
 		|| !g_set_state_fn) {
-		message
-			("Hook DLL doesn't contain the correct functions. Unable to continue.");
+		messageW
+			(L"Hook DLL doesn't contain the correct functions. Unable to continue.");
 		goto close_hookdll;
 	}
 
 	/* Check if the DLL is already loaded */
 	switch (instance_count_fn()) {
 	case 0:
-		message("Hook DLL failed to initialize.");
+		messageW(L"Hook DLL failed to initialize.");
 		goto close_hookdll;
 		break;
 	case 1:
 		break;
 	default:
-		message("Another running instance of Seamless RDP detected.");
+		messageW(L"Another running instance of Seamless RDP detected.");
 		goto close_hookdll;
 	}
 
@@ -727,7 +727,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 		if (connected && g_session_disconnect_ts)
 			g_session_disconnect_ts = 0;
-		
+
 		if (connected && !g_connected) {
 			int flags;
 			/* These get reset on each reconnect */
@@ -770,7 +770,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 	success = 1;
 
- 	remove_hooks_fn();
+	remove_hooks_fn();
 
 	free_system_procs();
 
