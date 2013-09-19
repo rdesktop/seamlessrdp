@@ -760,7 +760,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 	ReleaseMutex(g_mutex);
 
 	SetWindowPos(hwnd, NULL, x, y, width, height,
-		SWP_NOACTIVATE | SWP_NOZORDER);
+		SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER);
 
 	vchannel_write("ACK", "%u", serial);
 
@@ -788,8 +788,28 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 	g_shdata->blocked_zchange[1] = hwnd_to_long(behind);
 	ReleaseMutex(g_mutex);
 
-	if (behind == NULL)
+	LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+	if (behind) {
+		LONG bhstyle = GetWindowLong(behind, GWL_EXSTYLE);
+		/* Avoid that topmost windows references non-topmost
+		   windows, and vice versa. */
+		if (exstyle & WS_EX_TOPMOST) {
+			if (!(bhstyle & WS_EX_TOPMOST)) {
+				/* Disallow, move to bottom of the topmost
+				   stack. */
+				/* FIXME: Remains to be implemented */
+				behind = HWND_TOP;
+			}
+		} else {
+			if (bhstyle & WS_EX_TOPMOST) {
+				/* Move to top of non-topmost
+				   stack. */
+				behind = HWND_TOP;
+			}
+		}
+	} else {
 		behind = HWND_TOP;
+	}
 
 	SetWindowPos(hwnd, behind, 0, 0, 0, 0,
 		SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
