@@ -155,7 +155,7 @@ vchannel_reopen()
 		WTSVirtualChannelClose(g_vchannel);
 
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
-					   WTS_CURRENT_SESSION, CHANNELNAME);
+		WTS_CURRENT_SESSION, CHANNELNAME);
 
 	vchannel_unblock();
 

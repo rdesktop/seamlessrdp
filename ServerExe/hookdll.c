@@ -95,11 +95,10 @@ is_toplevel(HWND hwnd)
 
 /* checks instance connection serial against shared. */
 static void
-check_conn_serial() 
+check_conn_serial()
 {
 	WaitForSingleObject(g_mutex, INFINITE);
-	if (g_conn_serial != g_shdata->conn_serial) 
-	{
+	if (g_conn_serial != g_shdata->conn_serial) {
 		vchannel_reopen();
 		g_conn_serial = g_shdata->conn_serial;
 	}
@@ -708,7 +707,7 @@ IncConnectionSerial(void)
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->conn_serial++;
 	ReleaseMutex(g_mutex);
-		
+
 }
 
 EXTERN void
