@@ -35,9 +35,6 @@
 
 EXTERN void debug(char *format, ...);
 
-EXTERN long hwnd_to_long(HWND hwnd);
-EXTERN HWND long_to_hwnd(long val);
-
 EXTERN int vchannel_open();
 EXTERN void vchannel_close();
 EXTERN int vchannel_reopen();

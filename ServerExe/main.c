@@ -30,6 +30,7 @@
 #include <wtsapi32.h>
 #include <cchannel.h>
 
+#include "shared.h"
 #include "vchannel.h"
 
 #include "resource.h"
