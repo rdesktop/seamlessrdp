@@ -10,7 +10,7 @@ libvchannel_la_LIBADD = -lwtsapi32
 
 
 seamlessrdpshell_SOURCES = main.c
-seamlessrdpshell_LDADD = libshared.la libvchannel.la -lwtsapi32
+seamlessrdpshell_LDADD = libshared.la -lwtsapi32
 seamlessrdpshell_LDFLAGS = -mwindows
 
 if OS_IS_WIN32
