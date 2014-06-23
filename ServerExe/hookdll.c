@@ -163,7 +163,7 @@ update_position(HWND hwnd)
 	vchannel_block();
 
 	if (!GetWindowRect(hwnd, &rect)) {
-		debug("GetWindowRect failed!");
+		vchannel_debug("GetWindowRect failed!");
 		goto end;
 	}
 
@@ -238,7 +238,7 @@ update_icon(HWND hwnd, HICON icon, int large)
 		return;
 
 	if ((!large && size != 16 * 16 * 4) || (large && size != 32 * 32 * 4)) {
-		debug("Unexpected icon size.");
+		vchannel_debug("Unexpected icon size.");
 		return;
 	}
 
@@ -385,7 +385,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 				vchannel_write("DELICON", "0x%08lx,RGBA,16,16", hwnd);
 			break;
 		default:
-			debug("Weird icon size %d", (int) wparam);
+			vchannel_debug("Weird icon size %d", (int) wparam);
 		}
 
 		break;
@@ -550,7 +550,7 @@ cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 			else if ((show == SW_MAXIMIZE) || (show == SW_SHOWMAXIMIZED))
 				state = 2;
 			else {
-				debug("Unexpected show: %d", show);
+				vchannel_debug("Unexpected show: %d", show);
 				break;
 			}
 
@@ -635,7 +635,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 	vchannel_write("ACK", "%u", serial);
 
 	if (!GetWindowRect(hwnd, &rect))
-		debug("GetWindowRect failed!");
+		vchannel_debug("GetWindowRect failed!");
 	else if ((rect.left != x) || (rect.top != y) || (rect.right != x + width)
 		|| (rect.bottom != y + height))
 		update_position(hwnd);
@@ -751,7 +751,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	else if (state == 2)
 		ShowWindow(hwnd, SW_MAXIMIZE);
 	else
-		debug("Invalid state %d sent.", state);
+		vchannel_debug("Invalid state %d sent.", state);
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	g_shdata->blocked_state_hwnd = 0;

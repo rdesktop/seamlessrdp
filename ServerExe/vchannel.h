@@ -33,7 +33,7 @@
 #define SEAMLESS_HELLO_RECONNECT	0x0001
 #define SEAMLESS_HELLO_HIDDEN		0x0002
 
-EXTERN void debug(char *format, ...);
+EXTERN void vchannel_debug(char *format, ...);
 
 EXTERN int vchannel_open();
 EXTERN void vchannel_close();

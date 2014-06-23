@@ -43,7 +43,7 @@ static HANDLE g_vchannel_serial = NULL;
 static unsigned int g_opencount = 0;
 
 EXTERN void
-debug(char *format, ...)
+vchannel_debug(char *format, ...)
 {
 	va_list argp;
 	char buf[256];

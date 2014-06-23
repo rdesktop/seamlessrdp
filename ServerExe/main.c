@@ -188,7 +188,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 		hwnd_to_long(hwnd), (long) pid, hwnd_to_long(parent), flags);
 
 	if (!GetWindowRect(hwnd, &rect)) {
-		debug("GetWindowRect failed!");
+		vchannel_debug("GetWindowRect failed!");
 		return TRUE;
 	}
 
