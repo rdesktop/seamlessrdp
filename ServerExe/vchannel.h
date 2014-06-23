@@ -4,7 +4,7 @@
 
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
-   Copyright 2013 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2013-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,8 +37,6 @@ EXTERN void debug(char *format, ...);
 
 EXTERN long hwnd_to_long(HWND hwnd);
 EXTERN HWND long_to_hwnd(long val);
-
-EXTERN const char *unicode_to_utf8(const unsigned short *string);
 
 EXTERN int vchannel_open();
 EXTERN void vchannel_close();

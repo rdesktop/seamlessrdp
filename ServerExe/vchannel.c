@@ -4,7 +4,7 @@
 
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
-   Copyright 2013 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2013-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ long_to_hwnd(long l)
 #define CONVERT_BUFFER_SIZE 1024
 static char convert_buffer[CONVERT_BUFFER_SIZE];
 
-EXTERN const char *
+static const char *
 unicode_to_utf8(const unsigned short *string)
 {
 	unsigned char *buf;
