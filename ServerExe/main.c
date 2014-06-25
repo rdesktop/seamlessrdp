@@ -212,7 +212,7 @@ enum_cb(HWND hwnd, LPARAM lparam)
 
 	GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-	g_vchannel_write_fn("TITLE", "0x%x,%s,0x%x", hwnd,
+	g_vchannel_write_fn("TITLE", "0x%08lx,%s,0x%x", hwnd_to_long(hwnd),
 		g_vchannel_strfilter_unicode_fn(title), 0);
 
 	if (styles & WS_MAXIMIZE)
