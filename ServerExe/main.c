@@ -50,6 +50,7 @@ static DWORD g_system_num_procs;
 static BOOL g_connected;
 static BOOL g_desktop_hidden;
 static time_t g_session_disconnect_ts;
+static BOOL g_persistent_mode;
 
 typedef void (*inc_conn_serial_t) ();
 typedef void (*set_hooks_proc_t) ();
@@ -345,6 +346,12 @@ do_spawn(unsigned int serial, char *cmd)
 }
 
 static void
+do_persistent(unsigned int serial, int enable)
+{
+	g_persistent_mode = enable;
+}
+
+static void
 process_cmds(void)
 {
 	char line[VCHANNEL_MAX_LINE];
@@ -384,6 +391,8 @@ process_cmds(void)
 			do_destroy(long_to_hwnd(strtoul(tok3, NULL, 0)));
 		else if (strcmp(tok1, "SPAWN") == 0)
 			do_spawn(strtoul(tok2, NULL, 0), tok3);
+		else if (strcmp(tok1, "PERSISTENT") == 0)
+			do_persistent(strtoul(tok2, NULL, 0), strtol(tok3, NULL, 0));
 
 		free(p);
 	}
@@ -486,10 +495,20 @@ should_terminate(void)
 	PWTS_PROCESS_INFO pinfo;
 	DWORD i, j, count;
 
-	if (g_connected || g_session_disconnect_ts == 0)
-		return FALSE;
+	if (!g_connected && g_persistent_mode)
+	{
+		if (g_session_disconnect_ts == 0)
+			return FALSE;
 
-	if ((time(NULL) - g_session_disconnect_ts) < SESSION_TIMEOUT)
+		if ((time(NULL) - g_session_disconnect_ts) < SESSION_TIMEOUT)
+			return FALSE;
+
+		/* timeout reached while waiting for reconnection to
+		   persistent session, terminating session. */
+		return TRUE;
+	}
+
+	if (g_persistent_mode)
 		return FALSE;
 
 	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
@@ -736,6 +755,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 
 	g_session_disconnect_ts = 0;
+	g_persistent_mode = 1;
 	check_counter = 5;
 	while (check_counter-- || !should_terminate()) {
 		BOOL connected;
@@ -755,6 +775,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, TRUE, NULL, 0);
 			SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
 			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
+			g_persistent_mode = 1;
 
 			inc_conn_serial_fn();
 			g_vchannel_reopen_fn();
