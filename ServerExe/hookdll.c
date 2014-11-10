@@ -125,6 +125,7 @@ get_parent(HWND hwnd)
 	HWND result;
 	HWND owner;
 	LONG exstyle;
+	char name[512];
 
 	/* Use the same logic to determine if the window should be
 	   "transient" (ie have no task icon) as MS uses. This is documented at 
@@ -136,10 +137,19 @@ get_parent(HWND hwnd)
 		result = NULL;
 	} else {
 		/* no taskbar icon */
-		if (owner)
+		if (owner) {
 			result = owner;
-		else
+
+			/* MS Office assigns wrong owner for tooltips which will
+			   create problems with focusing of correct window after
+			   hide of tooltip. This is a workaround to always ignore
+			   use of owner of Office Tooltips. */
+			GetClassName(hwnd, name, sizeof(name));
+			if (strcmp(name, "OfficeTooltip") == 0)
+				result = (HWND) - 1;			
+		} else {
 			result = (HWND) - 1;
+		}
 	}
 
 	return result;
