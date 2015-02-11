@@ -6,7 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006-2008 Pierre Ossman <ossman@cendio.se> for Cendio AB
-   Copyright 2013-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2013-2015 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ static HHOOK g_wndproc_hook = NULL;
 static HHOOK g_wndprocret_hook = NULL;
 
 static HINSTANCE g_instance = NULL;
+
+static int g_initialized = 0;
 
 static unsigned int g_conn_serial;
 
@@ -278,7 +280,7 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	LONG style;
 
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		goto end;
 
 	if (code < 0)
@@ -436,7 +438,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	LONG style;
 
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		goto end;
 
 	if (code < 0)
@@ -521,7 +523,7 @@ wndprocret_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 static LRESULT CALLBACK
 cbt_hook_proc(int code, WPARAM wparam, LPARAM lparam)
 {
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		goto end;
 
 	if (code < 0)
@@ -625,7 +627,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 {
 	RECT rect;
 
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		return;
 
 	check_conn_serial();
@@ -659,7 +661,7 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 EXTERN void
 SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 {
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		return;
 
 	WaitForSingleObject(g_mutex, INFINITE);
@@ -703,7 +705,7 @@ SafeZChange(unsigned int serial, HWND hwnd, HWND behind)
 EXTERN void
 SafeFocus(unsigned int serial, HWND hwnd)
 {
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		return;
 
 	WaitForSingleObject(g_mutex, INFINITE);
@@ -724,7 +726,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 	LONG style;
 	int curstate;
 
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		return;
 
 	check_conn_serial();
@@ -772,7 +774,7 @@ SafeSetState(unsigned int serial, HWND hwnd, int state)
 EXTERN int
 GetInstanceCount()
 {
-	if (!g_wm_seamless_focus)
+	if (!g_initialized)
 		return 0;
 
 	return g_shdata->instance_count;
@@ -807,6 +809,7 @@ DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpReserved)
 			++g_shdata->instance_count;
 			ReleaseMutex(g_mutex);
 			g_wm_seamless_focus = RegisterWindowMessage(FOCUS_MSG_NAME);
+			g_initialized = 1;
 		}
 		break;
 
