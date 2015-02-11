@@ -278,13 +278,13 @@ wndproc_hook_proc(int code, WPARAM cur_thread, LPARAM details)
 
 	LONG style;
 
-	check_conn_serial();
-
 	if (!g_wm_seamless_focus)
 		goto end;
 
 	if (code < 0)
 		goto end;
+
+	check_conn_serial();
 
 	hwnd = ((CWPSTRUCT *) details)->hwnd;
 	msg = ((CWPSTRUCT *) details)->message;
