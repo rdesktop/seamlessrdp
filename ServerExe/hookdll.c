@@ -148,7 +148,7 @@ get_parent(HWND hwnd)
 			   use of owner of Office Tooltips. */
 			GetClassName(hwnd, name, sizeof(name));
 			if (strcmp(name, "OfficeTooltip") == 0)
-				result = (HWND) - 1;			
+				result = (HWND) - 1;
 		} else {
 			result = (HWND) - 1;
 		}

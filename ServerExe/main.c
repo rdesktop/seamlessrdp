@@ -62,13 +62,14 @@ typedef void (*move_window_proc_t) (unsigned int serial, HWND hwnd, int x,
 typedef void (*zchange_proc_t) (unsigned int serial, HWND hwnd, HWND behind);
 typedef void (*focus_proc_t) (unsigned int serial, HWND hwnd);
 typedef void (*set_state_proc_t) (unsigned int serial, HWND hwnd, int state);
-typedef int (*vchannel_reopen_t)();
-typedef void (*vchannel_block_t)();
-typedef void (*vchannel_unblock_t)();
-typedef int (*vchannel_write_t)(const char *command, const char *format, ...);
-typedef int (*vchannel_read_t)(char *line, size_t length);
-typedef const char *(*vchannel_strfilter_unicode_t)(const unsigned short *string);
-typedef void (*vchannel_debug_t)(char *format, ...);
+typedef int (*vchannel_reopen_t) ();
+typedef void (*vchannel_block_t) ();
+typedef void (*vchannel_unblock_t) ();
+typedef int (*vchannel_write_t) (const char *command, const char *format, ...);
+typedef int (*vchannel_read_t) (char *line, size_t length);
+typedef const char *(*vchannel_strfilter_unicode_t) (const unsigned short
+	*string);
+typedef void (*vchannel_debug_t) (char *format, ...);
 
 static move_window_proc_t g_move_window_fn = NULL;
 static zchange_proc_t g_zchange_fn = NULL;
@@ -495,8 +496,7 @@ should_terminate(void)
 	PWTS_PROCESS_INFO pinfo;
 	DWORD i, j, count;
 
-	if (!g_connected && g_persistent_mode)
-	{
+	if (!g_connected && g_persistent_mode) {
 		if (g_session_disconnect_ts == 0)
 			return FALSE;
 
@@ -696,20 +696,27 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	g_focus_fn = (focus_proc_t) GetProcAddress(hookdll, "SafeFocus");
 	g_set_state_fn = (set_state_proc_t) GetProcAddress(hookdll, "SafeSetState");
 
-	g_vchannel_reopen_fn = (vchannel_reopen_t) GetProcAddress(hookdll, "vchannel_reopen");
-	g_vchannel_block_fn = (vchannel_block_t) GetProcAddress(hookdll, "vchannel_block");
-	g_vchannel_unblock_fn = (vchannel_unblock_t) GetProcAddress(hookdll, "vchannel_unblock");
-	g_vchannel_write_fn = (vchannel_write_t) GetProcAddress(hookdll, "vchannel_write");     
-	g_vchannel_read_fn = (vchannel_read_t) GetProcAddress(hookdll, "vchannel_read");
-	g_vchannel_strfilter_unicode_fn = (vchannel_strfilter_unicode_t) GetProcAddress(hookdll, "vchannel_strfilter_unicode");
-	g_vchannel_debug_fn = (vchannel_debug_t) GetProcAddress(hookdll, "vchannel_debug");
+	g_vchannel_reopen_fn =
+		(vchannel_reopen_t) GetProcAddress(hookdll, "vchannel_reopen");
+	g_vchannel_block_fn =
+		(vchannel_block_t) GetProcAddress(hookdll, "vchannel_block");
+	g_vchannel_unblock_fn =
+		(vchannel_unblock_t) GetProcAddress(hookdll, "vchannel_unblock");
+	g_vchannel_write_fn =
+		(vchannel_write_t) GetProcAddress(hookdll, "vchannel_write");
+	g_vchannel_read_fn =
+		(vchannel_read_t) GetProcAddress(hookdll, "vchannel_read");
+	g_vchannel_strfilter_unicode_fn =
+		(vchannel_strfilter_unicode_t) GetProcAddress(hookdll,
+		"vchannel_strfilter_unicode");
+	g_vchannel_debug_fn =
+		(vchannel_debug_t) GetProcAddress(hookdll, "vchannel_debug");
 
 	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn
-	    || !g_move_window_fn || !g_zchange_fn || !g_focus_fn || !g_set_state_fn
-	    || !g_vchannel_reopen_fn || !g_vchannel_block_fn || !g_vchannel_unblock_fn
-	    || !g_vchannel_write_fn || !g_vchannel_read_fn || !g_vchannel_strfilter_unicode_fn
-	    || !g_vchannel_debug_fn)
-        {
+		|| !g_move_window_fn || !g_zchange_fn || !g_focus_fn || !g_set_state_fn
+		|| !g_vchannel_reopen_fn || !g_vchannel_block_fn
+		|| !g_vchannel_unblock_fn || !g_vchannel_write_fn || !g_vchannel_read_fn
+		|| !g_vchannel_strfilter_unicode_fn || !g_vchannel_debug_fn) {
 		messageW
 			(L"Hook DLL doesn't contain the correct functions. Unable to continue.");
 		goto close_hookdll;
