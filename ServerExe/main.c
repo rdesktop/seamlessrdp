@@ -6,7 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
-   Copyright 2012-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2012-2015 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -83,11 +83,22 @@ static vchannel_read_t g_vchannel_read_fn = NULL;
 static vchannel_strfilter_unicode_t g_vchannel_strfilter_unicode_fn = NULL;
 static vchannel_debug_t g_vchannel_debug_fn = NULL;
 
+static LONG volatile g_mbox_cnt = 0;
+
+static DWORD WINAPI
+mbox_thread(LPVOID lpParam)
+{
+       InterlockedIncrement(&g_mbox_cnt);
+       MessageBoxW(GetDesktopWindow(), (wchar_t *)lpParam, L"SeamlessRDP Shell", MB_OK);
+       free(lpParam);
+       InterlockedDecrement(&g_mbox_cnt);
+       return 0;
+}
 
 static void
 messageW(const wchar_t * wtext)
 {
-	MessageBoxW(GetDesktopWindow(), wtext, L"SeamlessRDP Shell", MB_OK);
+	CreateThread(NULL, 0, mbox_thread, (LPVOID) _wcsdup(wtext), 0, NULL);
 }
 
 static int
@@ -509,6 +520,9 @@ should_terminate(void)
 	}
 
 	if (g_persistent_mode)
+		return FALSE;
+
+	if (g_mbox_cnt != 0)
 		return FALSE;
 
 	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
