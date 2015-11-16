@@ -4,7 +4,7 @@
 
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
-   Copyright 2013-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2013-2015 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ EXTERN int vchannel_is_open();
 /* read may only be used by a single process. write is completely safe */
 EXTERN int vchannel_read(char *line, size_t length);
 EXTERN int vchannel_write(const char *command, const char *format, ...);
+EXTERN int vchannel_process();
 
 EXTERN void vchannel_block();
 EXTERN void vchannel_unblock();

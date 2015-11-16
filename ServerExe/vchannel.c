@@ -4,7 +4,7 @@
 
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
    Copyright 2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
-   Copyright 2013-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2013-2015 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,10 +37,23 @@
 #define INVALID_CHARS ","
 #define REPLACEMENT_CHAR '_'
 
+#define BUFFER_SIZE 1024*1024
+typedef struct buffer_t
+{
+	size_t pw;
+	size_t pr;
+	size_t size;
+	char data[BUFFER_SIZE];
+} buffer_t;
+
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
 static HANDLE g_vchannel_serial = NULL;
-static unsigned int g_opencount = 0;
+static HANDLE g_evwr = NULL;
+static HANDLE g_evrd = NULL;
+
+static HANDLE g_map_file;
+static buffer_t *g_buffer;
 
 EXTERN void
 vchannel_debug(char *format, ...)
@@ -102,28 +115,53 @@ unicode_to_utf8(const unsigned short *string)
 EXTERN int
 vchannel_open()
 {
-	g_opencount++;
-	if (g_opencount > 1)
+	if (g_vchannel != NULL)
 		return 0;
 
 	g_vchannel = WTSVirtualChannelOpen(WTS_CURRENT_SERVER_HANDLE,
 		WTS_CURRENT_SESSION, CHANNELNAME);
 
 	if (g_vchannel == NULL)
-		return -1;
+		goto bail_out;
 
 	g_mutex = CreateMutex(NULL, FALSE, "Local\\SeamlessChannel");
+	if (g_mutex == NULL)
+		goto bail_out;
 
 	g_vchannel_serial =
 		CreateSemaphore(NULL, 0, INT_MAX, "Local\\SeamlessRDPSerial");
+	if (g_vchannel_serial == NULL)
+		goto bail_out;
 
-	if (!g_mutex || !g_vchannel_serial) {
-		WTSVirtualChannelClose(g_vchannel);
-		g_vchannel = NULL;
-		return -1;
-	}
+	g_map_file = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
+		PAGE_READWRITE, 0, sizeof(buffer_t), "Local\\SeamlessChannelBuffer");
+	if (!g_map_file)
+		goto bail_out;
+
+	g_buffer =
+		MapViewOfFile(g_map_file, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(buffer_t));
+	if (!g_buffer)
+		goto bail_out;
+
+	g_evrd =
+		CreateEvent(NULL, FALSE, FALSE, "Local\\SeamlessChannelBufferRead");
+	g_evwr =
+		CreateEvent(NULL, FALSE, FALSE, "Local\\SeamlessChannelBufferWrite");
+
+	if (!g_evrd || !g_evwr)
+		goto bail_out;
+
+	g_buffer->size = BUFFER_SIZE;
+	g_buffer->pw = g_buffer->pr = 0;
 
 	return 0;
+
+  bail_out:
+	MessageBoxW(GetDesktopWindow(), L"Failed to open vchannel",
+		L"SeamlessRDP Shell", MB_OK);
+	vchannel_close();
+
+	return -1;
 }
 
 EXTERN int
@@ -147,18 +185,22 @@ vchannel_reopen()
 EXTERN void
 vchannel_close()
 {
-	g_opencount--;
-	if (g_opencount > 0)
-		return;
-
 	if (g_mutex)
 		CloseHandle(g_mutex);
 
 	if (g_vchannel)
 		WTSVirtualChannelClose(g_vchannel);
 
+	if (g_buffer)
+		UnmapViewOfFile(g_buffer);
+
+	if (g_map_file)
+		CloseHandle(g_map_file);
+
 	g_mutex = NULL;
 	g_vchannel = NULL;
+	g_map_file = NULL;
+	g_buffer = NULL;
 }
 
 EXTERN int
@@ -178,7 +220,6 @@ vchannel_read(char *line, size_t length)
 	static size_t size = 0;
 
 	char *newline;
-	int line_size;
 
 	BOOL result;
 	ULONG bytes_read;
@@ -224,7 +265,6 @@ vchannel_read(char *line, size_t length)
 	*newline = '\0';
 
 	strcpy(line, buffer);
-	line_size = newline - buffer;
 
 	size -= newline - buffer + 1;
 	memmove(buffer, newline + 1, size);
@@ -235,66 +275,202 @@ vchannel_read(char *line, size_t length)
 EXTERN int
 vchannel_write(const char *command, const char *format, ...)
 {
-	BOOL result;
+	DWORD res;
 	va_list argp;
+	char args[VCHANNEL_MAX_LINE];
+	int i, size, ret;
+	ULONG bytes_written;
+
+	if (!g_buffer || !g_mutex || !g_evwr) {
+		/* Setup the client side of buffer writing if initialized */
+		g_mutex = OpenMutex(SYNCHRONIZE, FALSE, "Local\\SeamlessChannel");
+		if (!g_mutex) {
+			/* fatal: failed to open required mutex */
+			return -1;
+		}
+
+		g_map_file =
+			OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE,
+			"Local\\SeamlessChannelBuffer");
+		if (!g_map_file) {
+			/* fatal: failed to open require file mapping object */
+			return -1;
+		}
+
+		g_buffer =
+			MapViewOfFile(g_map_file, FILE_MAP_ALL_ACCESS, 0, 0,
+			sizeof(buffer_t));
+		if (!g_buffer) {
+			/* fatal: failed to map view of file mapping object */
+			return -1;
+		}
+		g_evwr =
+			OpenEvent(EVENT_MODIFY_STATE, FALSE,
+			"Local\\SeamlessChannelBufferWrite");
+		if (!g_evwr) {
+			/* fatal: failed to open required buffer write event */
+			return -1;
+		}
+	}
+
+	va_start(argp, format);
+	ret = _vsnprintf(args, sizeof(args), format, argp);
+	va_end(argp);
+	assert(ret > 0);
+
+	/* verify that command + args fits in buffer, if not wait for
+	   read event which indicates that free space in buffer has
+	   changed */
+	size = strlen(command) + 1 + strlen(args) + 1;
+	while (1) {
+		res = WaitForSingleObject(g_mutex, INFINITE);
+		if (res != WAIT_OBJECT_0) {
+			/* failed to aquire lock, assume that seamlessrdpshell is killed */
+			g_mutex = NULL;
+			return -1;
+		}
+
+		/* check if there is free space to write size data into buffer */
+		if (g_buffer->pw < g_buffer->pr && g_buffer->pw + size >= g_buffer->pr) {
+			/* Write of size would override read pointer */
+		} else if (g_buffer->pw + size >= g_buffer->size
+			&& (g_buffer->pw + size) % g_buffer->size >= g_buffer->pr) {
+			/* Write of size would wrap and override read pointer */
+		} else {
+			/* message fits in buffer, break out of retry loop */
+			break;
+		}
+
+		/* lets wait for read event and recheck available
+		   space in buffer for a complete write operation of
+		   full message size */
+		ReleaseMutex(g_mutex);
+		res = WaitForSingleObject(g_evrd, 10 * 1000);
+		if (res == WAIT_TIMEOUT) {
+			/* Timeout waiting for event, assume seamlessrdpshell is killed */
+			g_mutex = NULL;
+			return -1;
+		}
+	}
+
+	/* write NULL terminated strings command and args to buffer
+	   write buffer position */
+	for (i = 0; i < strlen(command) + 1; i++) {
+		g_buffer->data[g_buffer->pw] = command[i];
+		g_buffer->pw = (g_buffer->pw + 1) % g_buffer->size;
+	}
+
+	for (i = 0; i < strlen(args) + 1; i++) {
+		g_buffer->data[g_buffer->pw] = args[i];
+		g_buffer->pw = (g_buffer->pw + 1) % g_buffer->size;
+	}
+
+	/* signal that data is available on buffer */
+	SetEvent(g_evwr);
+	ReleaseMutex(g_mutex);
+	return 0;
+}
+
+/* reads all available command in buffer and write them to the virtual
+   channel. return number of messages, on error < 0 is return */
+EXTERN int
+vchannel_process()
+{
+	int messages;
+	DWORD res;
+	BOOL result;
+	char *pd;
+	char args[VCHANNEL_MAX_LINE];
+	char command[VCHANNEL_MAX_LINE];
 	char buf[VCHANNEL_MAX_LINE];
-	int size, ret;
+	int ret;
 	ULONG bytes_written;
 	LONG prev_serial;
 
 	assert(vchannel_is_open());
+	if (g_buffer == NULL)
+		return -1;
 
+	/* wait for data available event */
+	res = WaitForSingleObject(g_evwr, 100);
+	if (res == WAIT_TIMEOUT)
+		return 0;
+
+	/* aquire lock */
 	WaitForSingleObject(g_mutex, INFINITE);
 
-	/* Increase serial */
-	if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
-		if (GetLastError() == ERROR_TOO_MANY_POSTS) {
-			/* Reset serial to zero */
-			while (WaitForSingleObject(g_vchannel_serial, 0) == WAIT_OBJECT_0);
-			if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
-				return -1;
+	/* check if there is data available for processing */
+	if (g_buffer->pr == g_buffer->pw) {
+		ReleaseMutex(g_mutex);
+		return 0;
+	}
+
+	/* process all available comands in buffer */
+	messages = 0;
+	while (g_buffer->pr != g_buffer->pw) {
+		/* Increase serial */
+		if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
+			if (GetLastError() == ERROR_TOO_MANY_POSTS) {
+				/* Reset serial to zero */
+				while (WaitForSingleObject(g_vchannel_serial,
+						0) == WAIT_OBJECT_0);
+				if (!ReleaseSemaphore(g_vchannel_serial, 1, &prev_serial)) {
+					return -1;
+				}
 			}
 		}
+
+		/* read command string from buffer */
+		pd = command;
+		while (1) {
+			*pd = g_buffer->data[g_buffer->pr];
+			if (*pd == '\0')
+				break;
+			pd++;
+			g_buffer->pr = (g_buffer->pr + 1) % g_buffer->size;
+		}
+		g_buffer->pr = (g_buffer->pr + 1) % g_buffer->size;
+
+		/* read args string from buffer */
+		pd = args;
+		while (1) {
+			*pd = g_buffer->data[g_buffer->pr];
+			if (*pd == '\0')
+				break;
+			pd++;
+			g_buffer->pr = (g_buffer->pr + 1) % g_buffer->size;
+		}
+		g_buffer->pr = (g_buffer->pr + 1) % g_buffer->size;
+
+		SetEvent(g_evrd);
+
+		/* build seamless rdp message be sent over channel */
+		ret =
+			_snprintf(buf, sizeof(buf), "%s,%u,%s", command, prev_serial, args);
+		if (ret < 0 || ret >= sizeof(buf)) {
+			/* Skip writing command if failed to create
+			   message, either failure or truncation */
+			continue;
+		}
+
+		/* write the message over the virtual channel */
+		result =
+			WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf),
+			&bytes_written);
+		result =
+			WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
+
+		if (!result) {
+			/* TODO: handle write failed on virtual channel */
+			break;
+		}
+
+		messages++;
 	}
-
-	ret = _snprintf(buf, sizeof(buf), "%s,%u,", command, prev_serial);
-
-	if (ret < 0) {
-		// If the command and serial didn't fit, let's skip
-		// this message
-		return -1;
-	} else {
-		size = ret;
-	}
-	assert(size <= sizeof(buf));
-	buf[sizeof(buf) - 1] = '\0';
-
-	va_start(argp, format);
-	ret = _vsnprintf(buf + size, sizeof(buf) - size, format, argp);
-	va_end(argp);
-
-	if (ret < 0) {
-		// Truncated, but let's write what we have              
-		size = sizeof(buf) - 1;
-	} else {
-		size = ret;
-	}
-	buf[sizeof(buf) - 1] = '\0';
-	assert(size < sizeof(buf));
-
-	result =
-		WTSVirtualChannelWrite(g_vchannel, buf, (ULONG) strlen(buf),
-		&bytes_written);
-	result =
-		WTSVirtualChannelWrite(g_vchannel, "\n", (ULONG) 1, &bytes_written);
-
 	ReleaseMutex(g_mutex);
-
-	if (!result)
-		return -1;
-
-	return bytes_written;
+	return messages;
 }
+
 
 EXTERN void
 vchannel_block()
