@@ -6,7 +6,7 @@
 
    Copyright 2005-2010 Peter Åstrand <astrand@cendio.se> for Cendio AB
    Copyright 2006 Pierre Ossman <ossman@cendio.se> for Cendio AB
-   Copyright 2012-2014 Henrik Andersson <hean01@cendio.se> for Cendio AB
+   Copyright 2012-2015 Henrik Andersson <hean01@cendio.se> for Cendio AB
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,7 +52,6 @@ static BOOL g_desktop_hidden;
 static time_t g_session_disconnect_ts;
 static BOOL g_persistent_mode;
 
-typedef void (*inc_conn_serial_t) ();
 typedef void (*set_hooks_proc_t) ();
 typedef void (*remove_hooks_proc_t) ();
 typedef int (*get_instance_count_proc_t) ();
@@ -62,32 +61,28 @@ typedef void (*move_window_proc_t) (unsigned int serial, HWND hwnd, int x,
 typedef void (*zchange_proc_t) (unsigned int serial, HWND hwnd, HWND behind);
 typedef void (*focus_proc_t) (unsigned int serial, HWND hwnd);
 typedef void (*set_state_proc_t) (unsigned int serial, HWND hwnd, int state);
-typedef int (*vchannel_reopen_t) ();
-typedef void (*vchannel_block_t) ();
-typedef void (*vchannel_unblock_t) ();
-typedef int (*vchannel_write_t) (const char *command, const char *format, ...);
-typedef int (*vchannel_read_t) (char *line, size_t length);
-typedef const char *(*vchannel_strfilter_unicode_t) (const unsigned short
-	*string);
-typedef void (*vchannel_debug_t) (char *format, ...);
 
 static move_window_proc_t g_move_window_fn = NULL;
 static zchange_proc_t g_zchange_fn = NULL;
 static focus_proc_t g_focus_fn = NULL;
 static set_state_proc_t g_set_state_fn = NULL;
-static vchannel_reopen_t g_vchannel_reopen_fn = NULL;
-static vchannel_block_t g_vchannel_block_fn = NULL;
-static vchannel_unblock_t g_vchannel_unblock_fn = NULL;
-static vchannel_write_t g_vchannel_write_fn = NULL;
-static vchannel_read_t g_vchannel_read_fn = NULL;
-static vchannel_strfilter_unicode_t g_vchannel_strfilter_unicode_fn = NULL;
-static vchannel_debug_t g_vchannel_debug_fn = NULL;
 
+static LONG volatile g_mbox_cnt = 0;
+
+static DWORD WINAPI
+mbox_thread(LPVOID lpParam)
+{
+       InterlockedIncrement(&g_mbox_cnt);
+       MessageBoxW(GetDesktopWindow(), (wchar_t *)lpParam, L"SeamlessRDP Shell", MB_OK);
+       free(lpParam);
+       InterlockedDecrement(&g_mbox_cnt);
+       return 0;
+}
 
 static void
 messageW(const wchar_t * wtext)
 {
-	MessageBoxW(GetDesktopWindow(), wtext, L"SeamlessRDP Shell", MB_OK);
+	CreateThread(NULL, 0, mbox_thread, (LPVOID) _wcsdup(wtext), 0, NULL);
 }
 
 static int
@@ -200,22 +195,22 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	if (styles & DS_MODALFRAME)
 		flags |= SEAMLESS_CREATE_MODAL;
 
-	g_vchannel_write_fn("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
+	vchannel_write("CREATE", "0x%08lx,0x%08lx,0x%08lx,0x%08x",
 		hwnd_to_long(hwnd), (long) pid, hwnd_to_long(parent), flags);
 
 	if (!GetWindowRect(hwnd, &rect)) {
-		g_vchannel_debug_fn("GetWindowRect failed!");
+		vchannel_debug("GetWindowRect failed!");
 		return TRUE;
 	}
 
-	g_vchannel_write_fn("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
+	vchannel_write("POSITION", "0x%08lx,%d,%d,%d,%d,0x%08x",
 		hwnd,
 		rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, 0);
 
 	GetWindowTextW(hwnd, title, sizeof(title) / sizeof(*title));
 
-	g_vchannel_write_fn("TITLE", "0x%08lx,%s,0x%x", hwnd_to_long(hwnd),
-		g_vchannel_strfilter_unicode_fn(title), 0);
+	vchannel_write("TITLE", "0x%08lx,%s,0x%x", hwnd_to_long(hwnd),
+		vchannel_strfilter_unicode(title), 0);
 
 	if (styles & WS_MAXIMIZE)
 		state = 2;
@@ -224,8 +219,10 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		state = 0;
 
-	g_vchannel_write_fn("STATE", "0x%08lx,0x%08x,0x%08x", hwnd, state, 0);
+	vchannel_write("STATE", "0x%08lx,0x%08x,0x%08x", hwnd, state, 0);
 
+	/* we need to process in this callback so we dont fill up the buffer */
+	vchannel_process();
 	return TRUE;
 }
 
@@ -278,15 +275,11 @@ launch_appW(LPWSTR cmdline)
 static void
 do_sync(void)
 {
-	g_vchannel_block_fn();
-
-	g_vchannel_write_fn("SYNCBEGIN", "0x0");
+	vchannel_write("SYNCBEGIN", "0x0");
 
 	EnumWindows(enum_cb, 0);
 
-	g_vchannel_write_fn("SYNCEND", "0x0");
-
-	g_vchannel_unblock_fn();
+	vchannel_write("SYNCEND", "0x0");
 }
 
 static void
@@ -360,7 +353,7 @@ process_cmds(void)
 
 	char *p, *tok1, *tok2, *tok3, *tok4, *tok5, *tok6, *tok7, *tok8;
 
-	while ((size = g_vchannel_read_fn(line, sizeof(line))) >= 0) {
+	while ((size = vchannel_read(line, sizeof(line))) >= 0) {
 
 		p = unescape(line);
 
@@ -511,6 +504,9 @@ should_terminate(void)
 	if (g_persistent_mode)
 		return FALSE;
 
+	if (g_mbox_cnt != 0)
+		return FALSE;
+
 	if (!WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pinfo, &count))
 		return TRUE;
 
@@ -653,7 +649,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	set_hooks_proc_t set_hooks_fn;
 	remove_hooks_proc_t remove_hooks_fn;
 	get_instance_count_proc_t instance_count_fn;
-	inc_conn_serial_t inc_conn_serial_fn;
 
 	int check_counter;
 
@@ -683,8 +678,6 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		goto bail_out;
 	}
 
-	inc_conn_serial_fn =
-		(inc_conn_serial_t) GetProcAddress(hookdll, "IncConnectionSerial");
 	set_hooks_fn = (set_hooks_proc_t) GetProcAddress(hookdll, "SetHooks");
 	remove_hooks_fn =
 		(remove_hooks_proc_t) GetProcAddress(hookdll, "RemoveHooks");
@@ -696,27 +689,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	g_focus_fn = (focus_proc_t) GetProcAddress(hookdll, "SafeFocus");
 	g_set_state_fn = (set_state_proc_t) GetProcAddress(hookdll, "SafeSetState");
 
-	g_vchannel_reopen_fn =
-		(vchannel_reopen_t) GetProcAddress(hookdll, "vchannel_reopen");
-	g_vchannel_block_fn =
-		(vchannel_block_t) GetProcAddress(hookdll, "vchannel_block");
-	g_vchannel_unblock_fn =
-		(vchannel_unblock_t) GetProcAddress(hookdll, "vchannel_unblock");
-	g_vchannel_write_fn =
-		(vchannel_write_t) GetProcAddress(hookdll, "vchannel_write");
-	g_vchannel_read_fn =
-		(vchannel_read_t) GetProcAddress(hookdll, "vchannel_read");
-	g_vchannel_strfilter_unicode_fn =
-		(vchannel_strfilter_unicode_t) GetProcAddress(hookdll,
-		"vchannel_strfilter_unicode");
-	g_vchannel_debug_fn =
-		(vchannel_debug_t) GetProcAddress(hookdll, "vchannel_debug");
-
 	if (!set_hooks_fn || !remove_hooks_fn || !instance_count_fn
-		|| !g_move_window_fn || !g_zchange_fn || !g_focus_fn || !g_set_state_fn
-		|| !g_vchannel_reopen_fn || !g_vchannel_block_fn
-		|| !g_vchannel_unblock_fn || !g_vchannel_write_fn || !g_vchannel_read_fn
-		|| !g_vchannel_strfilter_unicode_fn || !g_vchannel_debug_fn) {
+		|| !g_move_window_fn || !g_zchange_fn || !g_focus_fn || !g_set_state_fn)
+	{
 		messageW
 			(L"Hook DLL doesn't contain the correct functions. Unable to continue.");
 		goto close_hookdll;
@@ -735,6 +710,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 		goto close_hookdll;
 	}
 
+	vchannel_open();
+
 	helper = launch_helper();
 
 	ProcessIdToSessionId(GetCurrentProcessId(), &g_session_id);
@@ -746,7 +723,7 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 	g_connected = is_connected();
 	g_desktop_hidden = is_desktop_hidden();
 
-	g_vchannel_write_fn("HELLO", "0x%08x",
+	vchannel_write("HELLO", "0x%08x",
 		g_desktop_hidden ? SEAMLESS_HELLO_HIDDEN : 0);
 
 	set_hooks_fn();
@@ -784,13 +761,12 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, 0, 0);
 			g_persistent_mode = 1;
 
-			inc_conn_serial_fn();
-			g_vchannel_reopen_fn();
+			vchannel_reopen();
 
 			flags = SEAMLESS_HELLO_RECONNECT;
 			if (g_desktop_hidden)
 				flags |= SEAMLESS_HELLO_HIDDEN;
-			g_vchannel_write_fn("HELLO", "0x%08x", flags);
+			vchannel_write("HELLO", "0x%08x", flags);
 		}
 
 		g_connected = connected;
@@ -800,9 +776,9 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 
 			hidden = is_desktop_hidden();
 			if (hidden && !g_desktop_hidden)
-				g_vchannel_write_fn("HIDE", "0x%08x", 0);
+				vchannel_write("HIDE", "0x%08x", 0);
 			else if (!hidden && g_desktop_hidden)
-				g_vchannel_write_fn("UNHIDE", "0x%08x", 0);
+				vchannel_write("UNHIDE", "0x%08x", 0);
 
 			g_desktop_hidden = hidden;
 
@@ -813,8 +789,8 @@ WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmdline, int cmdshow)
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+		vchannel_process();
 		process_cmds();
-		Sleep(100);
 	}
 
 	success = 1;
