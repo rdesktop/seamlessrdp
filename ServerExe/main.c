@@ -72,11 +72,12 @@ static LONG volatile g_mbox_cnt = 0;
 static DWORD WINAPI
 mbox_thread(LPVOID lpParam)
 {
-       InterlockedIncrement(&g_mbox_cnt);
-       MessageBoxW(GetDesktopWindow(), (wchar_t *)lpParam, L"SeamlessRDP Shell", MB_OK);
-       free(lpParam);
-       InterlockedDecrement(&g_mbox_cnt);
-       return 0;
+	InterlockedIncrement(&g_mbox_cnt);
+	MessageBoxW(GetDesktopWindow(), (wchar_t *) lpParam, L"SeamlessRDP Shell",
+		MB_OK);
+	free(lpParam);
+	InterlockedDecrement(&g_mbox_cnt);
+	return 0;
 }
 
 static void
