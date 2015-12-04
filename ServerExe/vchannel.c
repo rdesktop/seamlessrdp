@@ -58,6 +58,8 @@ static HANDLE g_evrd = NULL;
 static HANDLE g_map_file;
 static buffer_t *g_buffer;
 
+static BOOL g_seamless_shell = TRUE;
+
 EXTERN void
 vchannel_debug(char *format, ...)
 {
@@ -284,11 +286,16 @@ vchannel_write(const char *command, const char *format, ...)
 	int i, size, ret;
 	ULONG bytes_written;
 
-	if (!g_buffer || !g_mutex || !g_evwr) {
-		/* Setup the client side of buffer writing if initialized */
+	if (g_seamless_shell == FALSE)
+		return -1;
+
+	if (!g_buffer || !g_mutex || !g_evwr || !g_evrd) {
+		/* Setup the client side of buffer writing if not yet
+		   initialized */
 		g_mutex = OpenMutex(SYNCHRONIZE, FALSE, "Local\\SeamlessChannel");
 		if (!g_mutex) {
 			/* fatal: failed to open required mutex */
+			g_seamless_shell = FALSE;
 			return -1;
 		}
 
@@ -297,6 +304,7 @@ vchannel_write(const char *command, const char *format, ...)
 			"Local\\SeamlessChannelBuffer");
 		if (!g_map_file) {
 			/* fatal: failed to open require file mapping object */
+			g_seamless_shell = FALSE;
 			return -1;
 		}
 
@@ -305,13 +313,25 @@ vchannel_write(const char *command, const char *format, ...)
 			sizeof(buffer_t));
 		if (!g_buffer) {
 			/* fatal: failed to map view of file mapping object */
+			g_seamless_shell = FALSE;
 			return -1;
 		}
+
+		g_evrd =
+			OpenEvent(EVENT_ALL_ACCESS, FALSE,
+			"Local\\SeamlessChannelBufferRead");
+		if (!g_evrd) {
+			/* fatal: failed to open required buffer read event */
+			g_seamless_shell = FALSE;
+			return -1;
+		}
+
 		g_evwr =
 			OpenEvent(EVENT_MODIFY_STATE, FALSE,
 			"Local\\SeamlessChannelBufferWrite");
 		if (!g_evwr) {
 			/* fatal: failed to open required buffer write event */
+			g_seamless_shell = FALSE;
 			return -1;
 		}
 	}
@@ -329,7 +349,7 @@ vchannel_write(const char *command, const char *format, ...)
 		res = WaitForSingleObject(g_mutex, INFINITE);
 		if (res != WAIT_OBJECT_0) {
 			/* failed to aquire lock, assume that seamlessrdpshell is killed */
-			g_mutex = NULL;
+			g_seamless_shell = FALSE;
 			return -1;
 		}
 
@@ -349,9 +369,12 @@ vchannel_write(const char *command, const char *format, ...)
 		   full message size */
 		ReleaseMutex(g_mutex);
 		res = WaitForSingleObject(g_evrd, 10 * 1000);
-		if (res == WAIT_TIMEOUT) {
-			/* Timeout waiting for event, assume seamlessrdpshell is killed */
-			g_mutex = NULL;
+		WaitForSingleObject(g_mutex, INFINITE);
+		if (res != WAIT_OBJECT_0) {
+			/* Error or Timeout while waiting for event,
+			   assume seamlessrdpshell is killed */
+			g_seamless_shell = FALSE;
+			ReleaseMutex(g_mutex);
 			return -1;
 		}
 	}
