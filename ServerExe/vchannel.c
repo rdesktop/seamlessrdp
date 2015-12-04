@@ -29,6 +29,7 @@
 #include <windows.h>
 #include <wtsapi32.h>
 #include <cchannel.h>
+#include <inttypes.h>
 
 #include "vchannel.h"
 
@@ -38,13 +39,15 @@
 #define REPLACEMENT_CHAR '_'
 
 #define BUFFER_SIZE 1024*1024
-typedef struct buffer_t
-{
-	size_t pw;
-	size_t pr;
-	size_t size;
+typedef struct __attribute__ ((__packed__)) buffer_t {
+	uint32_t pw;
+	uint32_t pr;
+	uint32_t size;
 	char data[BUFFER_SIZE];
 } buffer_t;
+
+_Static_assert(sizeof(buffer_t) == (4 + 4 + 4 + BUFFER_SIZE),
+	"Unexpected size of buffer_t");
 
 static HANDLE g_mutex = NULL;
 static HANDLE g_vchannel = NULL;
