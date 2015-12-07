@@ -38,6 +38,7 @@
 #define INVALID_CHARS ","
 #define REPLACEMENT_CHAR '_'
 
+#define TIMEOUT 10*1000
 #define BUFFER_SIZE 96*1024
 typedef struct __attribute__ ((__packed__)) buffer_t {
 	uint32_t pw;
@@ -346,7 +347,7 @@ vchannel_write(const char *command, const char *format, ...)
 	   changed */
 	size = strlen(command) + 1 + strlen(args) + 1;
 	while (1) {
-		res = WaitForSingleObject(g_mutex, INFINITE);
+		res = WaitForSingleObject(g_mutex, TIMEOUT);
 		if (res != WAIT_OBJECT_0) {
 			/* failed to aquire lock, assume that seamlessrdpshell is killed */
 			g_seamless_shell = FALSE;
@@ -368,11 +369,11 @@ vchannel_write(const char *command, const char *format, ...)
 		   space in buffer for a complete write operation of
 		   full message size */
 		ReleaseMutex(g_mutex);
-		res = WaitForSingleObject(g_evrd, 10 * 1000);
-		WaitForSingleObject(g_mutex, INFINITE);
+		res = WaitForSingleObject(g_evrd, TIMEOUT);
 		if (res != WAIT_OBJECT_0) {
 			/* Error or Timeout while waiting for event,
 			   assume seamlessrdpshell is killed */
+			WaitForSingleObject(g_mutex, TIMEOUT);
 			g_seamless_shell = FALSE;
 			ReleaseMutex(g_mutex);
 			return -1;
@@ -501,6 +502,9 @@ vchannel_process()
 EXTERN void
 vchannel_block()
 {
+	/* FIXME: This should use TIMEOUT instead of INFINITE. However
+	   that would require to implement error handling for all use
+	   of vchannel_block() */
 	WaitForSingleObject(g_mutex, INFINITE);
 }
 
