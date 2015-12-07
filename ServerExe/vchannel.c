@@ -38,7 +38,7 @@
 #define INVALID_CHARS ","
 #define REPLACEMENT_CHAR '_'
 
-#define BUFFER_SIZE 1024*1024
+#define BUFFER_SIZE 96*1024
 typedef struct __attribute__ ((__packed__)) buffer_t {
 	uint32_t pw;
 	uint32_t pr;
