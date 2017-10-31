@@ -148,6 +148,7 @@ update_position(HWND hwnd)
 	RECT rect, blocked;
 	HWND blocked_hwnd;
 	unsigned int serial;
+	HRESULT res;
 
 	WaitForSingleObject(g_mutex, INFINITE);
 	blocked_hwnd = long_to_hwnd(g_shdata->block_move_hwnd);
@@ -157,10 +158,19 @@ update_position(HWND hwnd)
 
 	vchannel_block();
 
-	if (DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
-		&rect, sizeof(RECT)) != S_OK) {
-		vchannel_debug("DwmGetWindowAttributeGetWindowRect failed!");
-		goto end;
+	res = DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
+	                            &rect, sizeof(RECT));
+
+	/* DwmGetWindowAttribute can fail on Windows 2008 R2. If this
+	   happens, fall back to GetWindowRect.
+
+	   This assumes that DwmGetWindowAttribute does not fail
+	   intermittently, but is consistently "broken".
+	   (See also: SafeMoveWindow) */
+
+	if (res != S_OK) {
+		if (!GetWindowRect(hwnd, &rect))
+			goto end;
 	}
 
 	if ((hwnd == blocked_hwnd) && (rect.left == blocked.left)
@@ -601,30 +611,35 @@ SafeMoveWindow(unsigned int serial, HWND hwnd, int x, int y, int width,
 	   given coordinates needs to be offset with the width of the
 	   resize borders since update_position removes them. */
 
-	if (DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
-		&rect, sizeof(RECT)) != S_OK) {
-		vchannel_debug("DwmGetWindowAttribute failed!");
-		goto no_window_shift;
-	}
-
 	if (!GetWindowRect(hwnd, &fullrect)) {
 		vchannel_debug("GetWindowRect failed!");
 		goto no_window_shift;
 	}
 
-	bordersize[0] = rect.top - fullrect.top;
-	bordersize[3] = rect.left - fullrect.left;
-	bordersize[1] = fullrect.right - rect.right;
-	bordersize[2] = fullrect.bottom - rect.bottom;
+	if (DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS,
+		&rect, sizeof(RECT)) == S_OK) {
+		/* DwmGetWindowAttribute can fail on Windows 2008 R2
+		   for reasons unknown. If we can't calculate the size
+		   of the borders just work with what GetWindowRect
+		   gives us.
 
-	height += bordersize[0];
-	height += bordersize[2];
+		   This assumes that DwmGetWindowAttribute also fails
+		   in SafeMoveWindow - see comments there. */
 
-	width += bordersize[1];
-	width += bordersize[3];
+		bordersize[0] = rect.top - fullrect.top;
+		bordersize[3] = rect.left - fullrect.left;
+		bordersize[1] = fullrect.right - rect.right;
+		bordersize[2] = fullrect.bottom - rect.bottom;
 
-	x -= bordersize[3];
-	y -= bordersize[0];
+		height += bordersize[0];
+		height += bordersize[2];
+
+		width += bordersize[1];
+		width += bordersize[3];
+
+		x -= bordersize[3];
+		y -= bordersize[0];
+	}
 
  no_window_shift:
 	WaitForSingleObject(g_mutex, INFINITE);
