@@ -32,12 +32,12 @@ if OS_IS_WIN32
 lib_LTLIBRARIES = seamlessrdp32.la
 seamlessrdp32_la_SOURCES = hookdll.c
 seamlessrdp32_la_LDFLAGS = -avoid-version -module -no-undefined 
-seamlessrdp32_la_LIBADD = libshared.la libvchannel.la -lgdi32
+seamlessrdp32_la_LIBADD = libshared.la libvchannel.la -lgdi32 -ldwmapi
 endif
 
 if OS_IS_WIN64
 lib_LTLIBRARIES = seamlessrdp64.la
 seamlessrdp64_la_SOURCES = hookdll.c
 seamlessrdp64_la_LDFLAGS = -avoid-version -module -no-undefined 
-seamlessrdp64_la_LIBADD = libshared.la libvchannel.la -lgdi32
+seamlessrdp64_la_LIBADD = libshared.la libvchannel.la -lgdi32 -ldwmapi
 endif
