@@ -19,38 +19,50 @@ involved! We welcome all contributions.
 
 The ServerExe directory contains the server-side components of
 SeamlessRDP: the SeamlessRDP shell and window hooks. It uses a
-autotools-based build system.
+autotools-based build system. It is designed to support both 32 and
+64bit applications and therefore building is a bit complicated.
 
 
-## Building from a source archive (seamlessrdp-1.0.tar.gz)
+## Build instructions (Linux)
 
-    cd seamlessrdp-1.0
-    ./configure
-    make
+You need to have both mingw32 and mingw64 installed to be able to
+cross compile so that you can build both 32 and 64bit binaries for
+Windows. To build 64bit version of SeamlessRDP, mingw32 is required to
+be built due to that the 64bit version of SeamlessRDP can launch 32bit
+applications.
 
+Enter the ServerExe directory.
 
-## Building from a git checkout
+	cd ServerExe
 
-    cd ServerExe
-    ./autogen.sh
-    ./configure
-    make
+Skip the following step to setup build environment if you have
+downloaded a release tarball of SeamlessRDP.
 
+	./autogen.sh
 
-## Cross-compiling from Linux
+Start with building the 32bit binaries as following:
 
-With a cross-compiling environment for Windows installed, tell
-configure that you want to build for a Windows platform by running
-`./configure` with `--host` set to a suitable triplet for your
-cross-compiling setup. Examples:
+	./configure --host=i686-pc-mingw32
+	make
 
-    ./configure --host=i686-pc-mingw32  # for 32-bit Windows
-    ./configure --host=x86_64-w64-mingw32  # for 64-bit Windows
+This produces seamlessrdp32.dll, seamlesrdphook32.exe and 32bit
+version of seamlessrdpshell.exe. If you only want a 32bit version of
+SeamlessRDP, you are now done with the building and can continue with
+the Installation step below.
+
+If you want to build 64bit version, build the 64 binaries like this:
+
+	./configure --host==x86_64-w64-mingw32
+	make
+
+This step produces seamlessrdp64.dll, seamlessrdphook64.exe and a
+64bit version of seamlesrdpshell.exe, which completes the set of files
+for 64bit version of SeamlessRDP.
 
 
 # Installing
 
-After compiling with `make`, you can create a zip file with the
+After building SeamlessRDP, you can create a zip file with the
 required contents.
 
     zip -j seamlessrdp.zip .libs/seamlessrdpshell.exe .libs/seamlessrdp??.dll .libs/seamlessrdphook??.exe
