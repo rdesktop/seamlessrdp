@@ -4,6 +4,9 @@ SeamlessRDP is an extension to RDP servers that allows publishing
 Windows applications from an RDP server to your local desktop, similar
 to RAIL/RemoteApp.
 
+SeamlessRDP requires Windows Server 2008r2 or later to operate
+correctly.
+
 
 # Contributing
 
