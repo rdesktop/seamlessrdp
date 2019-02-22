@@ -190,6 +190,11 @@ enum_cb(HWND hwnd, LPARAM lparam)
 	else
 		parent = NULL;
 
+	/* We only enumerate one level at a time in order to make sure
+	   we send parent windows before their children. */
+	if (lparam != parent)
+		return TRUE;
+
 	GetWindowThreadProcessId(hwnd, &pid);
 
 	flags = 0;
@@ -224,6 +229,10 @@ enum_cb(HWND hwnd, LPARAM lparam)
 
 	/* we need to process in this callback so we dont fill up the buffer */
 	vchannel_process();
+
+	/* Parent sent, start sending its children */
+	EnumWindows(enum_cb, hwnd);
+
 	return TRUE;
 }
 
@@ -278,7 +287,8 @@ do_sync(void)
 {
 	vchannel_write("SYNCBEGIN", "0x0");
 
-	EnumWindows(enum_cb, 0);
+	/* Start with top level windows */
+	EnumWindows(enum_cb, NULL);
 
 	vchannel_write("SYNCEND", "0x0");
 }
